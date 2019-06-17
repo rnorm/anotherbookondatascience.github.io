@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Another Book on Data Science - More on R/Python Programming</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="bootstrap-1.1.0.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="small-screens.css">
+    <link rel="stylesheet" href="vs.css">
+    <link rel="stylesheet" href="code.css">
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-39101739-7', 'twitter.github.io');
+      ga('send', 'pageview');
+
+    </script>
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container-fluid fixed">
+          <h3><a href="index.html">More on R/Python Programming</a></h3>
+          <ul class="nav secondary-nav">
+            
+            
+              <li><a href="chapter3.html">Next&raquo;</a></li>
+            
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid" style="padding-top: 60px;">
+      <p>Sections in this Chapter:</p>
+<ul>
+	<li><a href="#script">Write &amp; run scripts</a></li>
+	<li><a href="#debug">Debugging</a></li>
+	<li><a href="#benchmark">Benchmarking</a></li>
+	<li><a href="#vectorization">Vectorization</a></li>
+	<li><a href="#parallelism">Embarrassingly parallelism in R/Python</a></li>
+	<li><a href="$scope">Scope of variables</a></li>
+	<li><a href="$Evaluation">Evaluation strategy</a></li>
+	<li><a href="$cpp">Speed up with C/C++ in R/Python</a></li>
+	<li><a href="$miscellaneous">Miscellaneous</a></li>
+</ul>
+<h2 id="script">Write &amp; run scripts</h2>
+<p>In the first Chapter, we are coding within the interactive mode of R/Python. When we are working on the real world projects, using an Integrated development environment (<span class="caps">IDE</span>) is a more pragmatic choice. There are not many choices for R <span class="caps">IDE</span>, and among them RStudio<sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup> is the best one I have used so far. As for Python, I would recommend either Visual Studio Code<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup> or PyCharm<sup class="footnote" id="fnr3"><a href="#fn3">3</a></sup>. But of course, you could use any text editor to write R/Python scripts.</p>
+<p>Let&#8217;s write a simple script to print <code>Hello World!</code> in R/Python. I have made a directory <code>chapter2</code> on my disk, the R script is saved as <code>hello_world.R</code> and the Python script is saved as <code>hello_world.py</code>, inside the directory.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<p>chapter2/hello_world.R<br />
+<language>R</language><br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="kp">print</span><span class="p">(</span><span class="s">&quot;Hello World!&quot;</span><span class="p">)</span></code></pre></figure></p>
+</div>
+<div class="coderight">
+<p>chapter2/hello_world.py<br />
+<language>Python</language><br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span></code></pre></figure></p>
+</div>
+</div>
+<hr />
+<p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> https://www.rstudio.com/products/rstudio</p>
+<p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://code.visualstudio.com/</p>
+<p class="footnote" id="fn3"><a href="#fnr3"><sup>3</sup></a> https://www.jetbrains.com/pycharm</p>
+    </div> <!-- /container-fluid -->
+    <!-- Footer -->
+<div id="footer">
+  <div class="inner">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span16">
+          <p>
+              All Rights Reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </body>
+</html>
