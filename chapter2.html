@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="small-screens.css">
     <link rel="stylesheet" href="vs.css">
     <link rel="stylesheet" href="code.css">
+    <link rel="stylesheet" href="application.css">
 
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -24,7 +25,7 @@
       m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
       })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-      ga('create', 'UA-39101739-7', 'twitter.github.io');
+      ga('create', 'UA-142297640-1', 'anotherbookondatascience.com');
       ga('send', 'pageview');
 
     </script>
@@ -75,10 +76,565 @@
 <figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span></code></pre></figure></p>
 </div>
 </div>
+<p>There are a few ways to run the R script. For example, we can run the script from the console with the <code>r -f filename</code> command. Also, we can open the R interactive session and use the <code>source()</code> function. I would recommend the second approach with <code>source()</code> function. As for the Python script, we can run it from the console.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>chapter2 <span class="o">$</span><span class="kp">ls</span>
+<span class="lineno">2 </span>hello_world.R	hello_world.py
+<span class="lineno">3 </span>chapter2 <span class="o">$</span>r <span class="o">-</span>f hello_world.R 
+<span class="lineno">4 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span><span class="s">&quot;Hello World!&quot;</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;Hello World!&quot;</span>
+<span class="lineno">6 </span>
+<span class="lineno">7 </span>chapter2 <span class="o">$</span>r
+<span class="lineno">8 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;hello_world.R&#39;</span><span class="p">)</span>
+<span class="lineno">9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;Hello World!&quot;</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">ls</span>
+<span class="lineno">2 </span><span class="n">hello_world</span><span class="o">.</span><span class="n">R</span>	<span class="n">hello_world</span><span class="o">.</span><span class="n">py</span>
+<span class="lineno">3 </span>
+<span class="lineno">4 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">hello_world</span><span class="o">.</span><span class="n">py</span> 
+<span class="lineno">5 </span><span class="n">Hello</span> <span class="n">World</span><span class="err">!</span></code></pre></figure></div>
+</div>
+<h2 id="debug">Debugging</h2>
+<p>Debugging is one of the most important aspects of programming. What is debugging in programming? The programs we write might include errors/bugs and debugging is a step-by-step process to find and remove the errors/bugs in order to get the desired results.</p>
+<p>If you are smart enough or the bugs are evident enough then you can debug the program on your mind without using a computer at all. But in general we need some tools/techniques to help us with debugging.</p>
+<h3>Print</h3>
+<p>Most of programming languages provide the functionality of printing, which is a natural way of debugging. By trying to place <code>print</code> statements at different positions we may finally catch the bugs. When I use <code>print</code> to debug, it&#8217;s feeling like playing the game of minesweeper. In Python, there is a module called <code>logging</code><sup class="footnote" id="fnr4"><a href="#fn4">4</a></sup> which could be used for debugging like the <code>print</code> function, but in a more elegant fashion.</p>
+<h4>Browser in R and pdb in Python</h4>
+<p>In R, there is a function <code>browser()</code> which interrupts the execution and allows the inspection of the current environment. Similarly, there is a module <code>pdb</code> in Python that provides more debugging features. We would only focus on the basic usages of <code>browser()</code> and the <code>set_trace()</code> function in <code>pdb</code> module.<br />
+The essential difference between debugging using <code>print()</code> and <code>browser()</code> and <code>set_trace()</code> is that the latter functions allows us to debug in an interactive mode.</p>
+<p>Let&#8217;s write a function which takes a sorted vector/list <code>v</code> and a target value <code>x</code> as input and returns the leftmost index <code>pos</code> of the sorted vector/list so that <code>v[pos]&gt;=x</code>. Since <code>v</code> is already sorted, we may simply loop through it from left to right to find <code>pos</code>.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<p>chapter2/find_pos.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>find_pos<span class="o">=</span><span class="kr">function</span><span class="p">(</span>v<span class="p">,</span>x<span class="p">){</span>
+<span class="lineno"> 2 </span>  <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">length</span><span class="p">(</span>v<span class="p">)){</span>
+<span class="lineno"> 3 </span>    <span class="kr">if</span> <span class="p">(</span>v<span class="p">[</span>i<span class="p">]</span><span class="o">&gt;=</span>x<span class="p">){</span>
+<span class="lineno"> 4 </span>      <span class="kr">return</span><span class="p">(</span>i<span class="p">)</span>
+<span class="lineno"> 5 </span>    <span class="p">}</span>
+<span class="lineno"> 6 </span>  <span class="p">}</span>
+<span class="lineno"> 7 </span><span class="p">}</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span>v<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">10</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="kp">print</span><span class="p">(</span>find_pos<span class="p">(</span>v<span class="p">,</span><span class="m">-1</span><span class="p">))</span>
+<span class="lineno">11 </span><span class="kp">print</span><span class="p">(</span>find_pos<span class="p">(</span>v<span class="p">,</span><span class="m">4</span><span class="p">))</span>
+<span class="lineno">12 </span><span class="kp">print</span><span class="p">(</span>find_pos<span class="p">(</span>v<span class="p">,</span><span class="m">11</span><span class="p">))</span></code></pre></figure></p>
+</div>
+<div class="coderight">
+<language>Python</language>
+<p>chapter2/find_pos.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="k">def</span> <span class="nf">find_pos</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno">2 </span>  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)):</span>
+<span class="lineno">3 </span>    <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno">4 </span>      <span class="k">return</span> <span class="n">i</span>
+<span class="lineno">5 </span>
+<span class="lineno">6 </span><span class="n">v</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span>
+<span class="lineno">7 </span><span class="nb">print</span><span class="p">(</span><span class="n">find_pos</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="lineno">8 </span><span class="nb">print</span><span class="p">(</span><span class="n">find_pos</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="lineno">9 </span><span class="nb">print</span><span class="p">(</span><span class="n">find_pos</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">11</span><span class="p">))</span></code></pre></figure></p>
+</div>
+</div>
+<p>Now let&#8217;s run these two scripts.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>chapter2 <span class="o">$</span>r
+<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;find_pos.R&#39;</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">3</span>
+<span class="lineno">5 </span><span class="kc">NULL</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">find_pos</span><span class="o">.</span><span class="n">py</span> 
+<span class="lineno">2 </span><span class="mi">0</span>
+<span class="lineno">3 </span><span class="mi">2</span>
+<span class="lineno">4 </span><span class="kc">None</span></code></pre></figure></div>
+</div>
+<p>When <code>x=11</code>, the function returns <code>NULL</code> in R and <code>None</code> in Python because there is no such element in <code>v</code> larger than <code>x</code>.<br />
+The implementation above is trivial, but not efficient. If you have some background in data structures and algorithms, you probably know this question can be solved by binary search. The essential idea of binary search comes from divide-and-conquer<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>. Since <code>v</code> is already sorted, we may divide it into two partitions by cutting it from the middle, and then we get the left partition and the right partition. <code>v</code> is sorted implies that both the left partition and the right partition are also sorted. If the target value <code>x</code> is larger than the rightmost element in the left partition, we can just discard the left partition and search <code>x</code> within the right partition. Otherwise, we can discard the right partition and search <code>x</code>  within the left partition. Once we have determined which partition to search, we may apply the idea recursively so that in each step we reduce the size of <code>v</code> by half. If the length of <code>v</code> is denoted as <code>n</code>, in terms of big O notation<sup class="footnote" id="fnr6"><a href="#fn6">6</a></sup>, the run time complexity of binary search is $\mathcal{O}(\log{}n)$, compared with $\mathcal{O}(n)$ of the for-loop implementation.</p>
+<p>The code below implements the binary search solution to our question (It is more intuitive to do it with recursion but here I write it with iteration since tail recursion optimization<sup class="footnote" id="fnr7"><a href="#fn7">7</a></sup> in R/Python is not supported).</p>
+<language>R</language>
+<p>chapter2/find_binary_search_buggy.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>binary_search_buggy<span class="o">=</span><span class="kr">function</span><span class="p">(</span>v<span class="p">,</span>x<span class="p">){</span>
+<span class="lineno"> 2 </span>  start <span class="o">=</span> <span class="m">1</span>
+<span class="lineno"> 3 </span>  end <span class="o">=</span> <span class="kp">length</span><span class="p">(</span>v<span class="p">)</span>
+<span class="lineno"> 4 </span>  <span class="kr">while</span> <span class="p">(</span>start<span class="o">&lt;</span>end<span class="p">){</span>
+<span class="lineno"> 5 </span>    mid <span class="o">=</span> <span class="p">(</span>start<span class="o">+</span>end<span class="p">)</span> <span class="o">%/%</span> <span class="m">2</span> <span class="c1"># %/% is the floor division operator</span>
+<span class="lineno"> 6 </span>    <span class="kr">if</span> <span class="p">(</span>v<span class="p">[</span>mid<span class="p">]</span><span class="o">&gt;=</span>x<span class="p">){</span>
+<span class="lineno"> 7 </span>      end <span class="o">=</span> mid
+<span class="lineno"> 8 </span>    <span class="p">}</span><span class="kp">else</span><span class="p">{</span>
+<span class="lineno"> 9 </span>      start <span class="o">=</span> mid<span class="m">+1</span>
+<span class="lineno">10 </span>    <span class="p">}</span>
+<span class="lineno">11 </span>  <span class="p">}</span>
+<span class="lineno">12 </span>  <span class="kr">return</span><span class="p">(</span>start<span class="p">)</span>
+<span class="lineno">13 </span><span class="p">}</span>
+<span class="lineno">14 </span>v<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">10</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="kp">print</span><span class="p">(</span>binary_search_buggy<span class="p">(</span>v<span class="p">,</span><span class="m">-1</span><span class="p">))</span>
+<span class="lineno">16 </span><span class="kp">print</span><span class="p">(</span>binary_search_buggy<span class="p">(</span>v<span class="p">,</span><span class="m">5</span><span class="p">))</span>
+<span class="lineno">17 </span><span class="kp">print</span><span class="p">(</span>binary_search_buggy<span class="p">(</span>v<span class="p">,</span><span class="m">11</span><span class="p">))</span></code></pre></figure></p>
+<language>Python</language>
+<p>chapter2/find_binary_search_buggy.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="k">def</span> <span class="nf">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno"> 2 </span>  <span class="n">start</span><span class="p">,</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+<span class="lineno"> 3 </span>  <span class="k">while</span> <span class="n">start</span><span class="o">&lt;</span><span class="n">end</span><span class="p">:</span>
+<span class="lineno"> 4 </span>    <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="n">end</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>  <span class="c1"># // is the floor division operator</span>
+<span class="lineno"> 5 </span>    <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno"> 6 </span>      <span class="n">end</span> <span class="o">=</span> <span class="n">mid</span>
+<span class="lineno"> 7 </span>    <span class="k">else</span><span class="p">:</span>
+<span class="lineno"> 8 </span>      <span class="n">start</span> <span class="o">=</span> <span class="n">mid</span><span class="o">+</span><span class="mi">1</span>
+<span class="lineno"> 9 </span>  <span class="k">return</span> <span class="n">start</span>
+<span class="lineno">10 </span>
+<span class="lineno">11 </span><span class="n">v</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span>
+<span class="lineno">12 </span><span class="nb">print</span><span class="p">(</span><span class="n">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="lineno">13 </span><span class="nb">print</span><span class="p">(</span><span class="n">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="lineno">14 </span><span class="nb">print</span><span class="p">(</span><span class="n">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">11</span><span class="p">))</span></code></pre></figure></p>
+<p>Now let&#8217;s run these two binary search scripts.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>chapter2 <span class="o">$</span>r
+<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;binary_search_buggy.R&#39;</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">3</span>
+<span class="lineno">5 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">binary_search_buggy</span><span class="o">.</span><span class="n">py</span>
+<span class="lineno">2 </span><span class="mi">0</span>
+<span class="lineno">3 </span><span class="mi">2</span>
+<span class="lineno">4 </span><span class="mi">3</span></code></pre></figure></div>
+</div>
+<p>The binary search solutions don&#8217;t work as expected when <code>x=11</code>. We write two new scripts.</p>
+<language>R</language>
+<p>chapter2/find_binary_search_buggy_debug.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>binary_search_buggy<span class="o">=</span><span class="kr">function</span><span class="p">(</span>v<span class="p">,</span>x<span class="p">){</span>
+<span class="lineno"> 2 </span>  <span class="kp">browser</span><span class="p">()</span>
+<span class="lineno"> 3 </span>  start <span class="o">=</span> <span class="m">1</span>
+<span class="lineno"> 4 </span>  end <span class="o">=</span> <span class="kp">length</span><span class="p">(</span>v<span class="p">)</span>
+<span class="lineno"> 5 </span>  <span class="kr">while</span> <span class="p">(</span>start<span class="o">&lt;</span>end<span class="p">){</span>
+<span class="lineno"> 6 </span>    mid <span class="o">=</span> <span class="p">(</span>start<span class="o">+</span>end<span class="p">)</span>
+<span class="lineno"> 7 </span>    <span class="kr">if</span> <span class="p">(</span>v<span class="p">[</span>mid<span class="p">]</span><span class="o">&gt;=</span>x<span class="p">){</span>
+<span class="lineno"> 8 </span>      end <span class="o">=</span> mid
+<span class="lineno"> 9 </span>    <span class="p">}</span><span class="kp">else</span><span class="p">{</span>
+<span class="lineno">10 </span>      start <span class="o">=</span> mid<span class="m">+1</span>
+<span class="lineno">11 </span>    <span class="p">}</span>
+<span class="lineno">12 </span>  <span class="p">}</span>
+<span class="lineno">13 </span>  <span class="kr">return</span><span class="p">(</span>start<span class="p">)</span>
+<span class="lineno">14 </span><span class="p">}</span>
+<span class="lineno">15 </span>v<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">10</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="kp">print</span><span class="p">(</span>binary_search_buggy<span class="p">(</span>v<span class="p">,</span><span class="m">11</span><span class="p">))</span></code></pre></figure></p>
+<language>Python</language>
+<p>chapter2/find_binary_search_buggy_debug.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">from</span> <span class="nn">pdb</span> <span class="k">import</span> <span class="n">set_trace</span>
+<span class="lineno"> 2 </span><span class="k">def</span> <span class="nf">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno"> 3 </span>  <span class="n">set_trace</span><span class="p">()</span>
+<span class="lineno"> 4 </span>  <span class="n">start</span><span class="p">,</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+<span class="lineno"> 5 </span>  <span class="k">while</span> <span class="n">start</span><span class="o">&lt;</span><span class="n">end</span><span class="p">:</span>
+<span class="lineno"> 6 </span>    <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="n">end</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>
+<span class="lineno"> 7 </span>    <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno"> 8 </span>      <span class="n">end</span> <span class="o">=</span> <span class="n">mid</span>
+<span class="lineno"> 9 </span>    <span class="k">else</span><span class="p">:</span>
+<span class="lineno">10 </span>      <span class="n">start</span> <span class="o">=</span> <span class="n">mid</span><span class="o">+</span><span class="mi">1</span>
+<span class="lineno">11 </span>  <span class="k">return</span> <span class="n">start</span>
+<span class="lineno">12 </span>
+<span class="lineno">13 </span><span class="n">v</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span>
+<span class="lineno">14 </span><span class="nb">print</span><span class="p">(</span><span class="n">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">11</span><span class="p">))</span></code></pre></figure></p>
+<p>Let&#8217;s try to debug the programs with the help of <code>browser()</code> and <code>set_trace()</code>.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;binary_search_buggy_debug.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span>Called from<span class="o">:</span> binary_search_buggy<span class="p">(</span>v<span class="p">,</span> <span class="m">11</span><span class="p">)</span>
+<span class="lineno"> 3 </span>Browse<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">&gt;</span> <span class="kp">ls</span><span class="p">()</span>
+<span class="lineno"> 4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;v&quot;</span> <span class="s">&quot;x&quot;</span>
+<span class="lineno"> 5 </span>Browse<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno"> 6 </span>debug at binary_search_buggy_debug.R<span class="c1">#3: start = 1</span>
+<span class="lineno"> 7 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno"> 8 </span>debug at binary_search_buggy_debug.R<span class="c1">#4: end = length(v)</span>
+<span class="lineno"> 9 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">10 </span>debug at binary_search_buggy_debug.R<span class="c1">#5: while (start &lt; end) {</span>
+<span class="lineno">11 </span>    mid <span class="o">=</span> <span class="p">(</span>start <span class="o">+</span> end<span class="p">)</span><span class="o">%/%</span><span class="m">2</span>
+<span class="lineno">12 </span>    <span class="kr">if</span> <span class="p">(</span>v<span class="p">[</span>mid<span class="p">]</span> <span class="o">&gt;=</span> x<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">13 </span>        end <span class="o">=</span> mid
+<span class="lineno">14 </span>    <span class="p">}</span>
+<span class="lineno">15 </span>    <span class="kr">else</span> <span class="p">{</span>
+<span class="lineno">16 </span>        start <span class="o">=</span> mid <span class="o">+</span> <span class="m">1</span>
+<span class="lineno">17 </span>    <span class="p">}</span>
+<span class="lineno">18 </span><span class="p">}</span>
+<span class="lineno">19 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">20 </span>debug at binary_search_buggy_debug.R<span class="c1">#6: mid = (start + end)%/%2</span>
+<span class="lineno">21 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">22 </span>debug at binary_search_buggy_debug.R<span class="c1">#7: if (v[mid] &gt;= x) {</span>
+<span class="lineno">23 </span>    end <span class="o">=</span> mid
+<span class="lineno">24 </span><span class="p">}</span> <span class="kr">else</span> <span class="p">{</span>
+<span class="lineno">25 </span>    start <span class="o">=</span> mid <span class="o">+</span> <span class="m">1</span>
+<span class="lineno">26 </span><span class="p">}</span>
+<span class="lineno">27 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">28 </span>debug at binary_search_buggy_debug.R<span class="c1">#10: start = mid + 1</span>
+<span class="lineno">29 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">30 </span>debug at binary_search_buggy_debug.R<span class="c1">#5: (while) start &lt; end</span>
+<span class="lineno">31 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">32 </span>debug at binary_search_buggy_debug.R<span class="c1">#6: mid = (start + end)%/%2</span>
+<span class="lineno">33 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">34 </span>debug at binary_search_buggy_debug.R<span class="c1">#7: if (v[mid] &gt;= x) {</span>
+<span class="lineno">35 </span>    end <span class="o">=</span> mid
+<span class="lineno">36 </span><span class="p">}</span> <span class="kr">else</span> <span class="p">{</span>
+<span class="lineno">37 </span>    start <span class="o">=</span> mid <span class="o">+</span> <span class="m">1</span>
+<span class="lineno">38 </span><span class="p">}</span>
+<span class="lineno">39 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">40 </span>debug at binary_search_buggy_debug.R<span class="c1">#10: start = mid + 1</span>
+<span class="lineno">41 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">42 </span>debug at binary_search_buggy_debug.R<span class="c1">#5: (while) start &lt; end</span>
+<span class="lineno">43 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> start
+<span class="lineno">44 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4</span>
+<span class="lineno">45 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">46 </span>debug at binary_search_buggy_debug.R<span class="c1">#13: return(start)</span>
+<span class="lineno">47 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> n
+<span class="lineno">48 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4</span></code></pre></figure><p>In the R code snippet above, we placed the <code>browser()</code> function on the top of the function <code>binary_search_buggy</code>. Then when we call the function we enter into the debugging environment. By calling <code>ls()</code> we see all variables in the current debugging scope, i.e., <code>v,x</code>. Typing <code>n</code> will evaluate the next statement. After typing <code>n</code> a few times, we finally exit from the while loop because <code>start = 4</code> such that <code>start &lt; end</code> is <span class="caps">FALSE</span>. As a result, the function just returns the value of start, i.e., 4. To exit from the debugging environment, we can type <code>Q</code>; to continue the execution we can type <code>c</code>.</p>
+<p>The root cause is that we didn&#8217;t deal with the corner case when the target value <code>x</code> is larger than the last/largest element in <code>v</code> correctly.</p>
+<p>Let&#8217;s debug the Python function using <code>pdb</code> module.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span> 
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno"> 3 </span><span class="o">-&gt;</span> <span class="n">start</span><span class="p">,</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+<span class="lineno"> 4 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">n</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno"> 6 </span><span class="o">-&gt;</span> <span class="k">while</span> <span class="n">start</span><span class="o">&lt;</span><span class="n">end</span><span class="p">:</span>
+<span class="lineno"> 7 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">l</span>
+<span class="lineno"> 8 </span>  <span class="mi">1</span>  	<span class="kn">from</span> <span class="nn">pdb</span> <span class="k">import</span> <span class="n">set_trace</span>
+<span class="lineno"> 9 </span>  <span class="mi">2</span>  	<span class="k">def</span> <span class="nf">binary_search_buggy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno">10 </span>  <span class="mi">3</span>  	  <span class="n">set_trace</span><span class="p">()</span>
+<span class="lineno">11 </span>  <span class="mi">4</span>  	  <span class="n">start</span><span class="p">,</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+<span class="lineno">12 </span>  <span class="mi">5</span>  <span class="o">-&gt;</span>	  <span class="k">while</span> <span class="n">start</span><span class="o">&lt;</span><span class="n">end</span><span class="p">:</span>
+<span class="lineno">13 </span>  <span class="mi">6</span>  	    <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="n">end</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>
+<span class="lineno">14 </span>  <span class="mi">7</span>  	    <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno">15 </span>  <span class="mi">8</span>  	      <span class="n">end</span> <span class="o">=</span> <span class="n">mid</span>
+<span class="lineno">16 </span>  <span class="mi">9</span>  	    <span class="k">else</span><span class="p">:</span>
+<span class="lineno">17 </span> <span class="mi">10</span>  	      <span class="n">start</span> <span class="o">=</span> <span class="n">mid</span><span class="o">+</span><span class="mi">1</span>
+<span class="lineno">18 </span> <span class="mi">11</span>  	  <span class="k">return</span> <span class="n">start</span>
+<span class="lineno">19 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">b</span> <span class="mi">7</span>
+<span class="lineno">20 </span><span class="n">Breakpoint</span> <span class="mi">1</span> <span class="n">at</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">7</span>
+<span class="lineno">21 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">c</span>
+<span class="lineno">22 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno">23 </span><span class="o">-&gt;</span> <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno">24 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">c</span>
+<span class="lineno">25 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno">26 </span><span class="o">-&gt;</span> <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno">27 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">mid</span>
+<span class="lineno">28 </span><span class="mi">2</span>
+<span class="lineno">29 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">n</span>
+<span class="lineno">30 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno">31 </span><span class="o">-&gt;</span> <span class="n">start</span> <span class="o">=</span> <span class="n">mid</span><span class="o">+</span><span class="mi">1</span>
+<span class="lineno">32 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">n</span>
+<span class="lineno">33 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno">34 </span><span class="o">-&gt;</span> <span class="k">while</span> <span class="n">start</span><span class="o">&lt;</span><span class="n">end</span><span class="p">:</span>
+<span class="lineno">35 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">start</span>
+<span class="lineno">36 </span><span class="mi">3</span>
+<span class="lineno">37 </span><span class="p">(</span><span class="n">Pdb</span><span class="p">)</span> <span class="n">n</span>
+<span class="lineno">38 </span><span class="o">&gt;</span> <span class="n">chapter2</span><span class="o">/</span><span class="n">binary_search_buggy_debug</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span><span class="n">binary_search_buggy</span><span class="p">()</span>
+<span class="lineno">39 </span><span class="o">-&gt;</span> <span class="k">return</span> <span class="n">start</span></code></pre></figure><p>Similar to R, command <code>n</code> would evaluate the next statement in <code>pdb</code>. Typing command <code>l</code> would show the current line of current execution. Command <code>b line_number</code> would set the corresponding line as a break point; and <code>c</code> would continue the execution until the next breakpoint (if exists).</p>
+<p>In R, besides the <code>browser()</code> function there are a pair of functions <code>debug() and undebug()</code> which are also very handy when we try to debug a function; especially when the function is wrapped in a package. More specifically, the <code>debug</code> function would invoke the debugging environment whenever we call the function to debug. See the example below how we invoke the debugging environment for the <code>sd</code> function (standard deviation calculation).</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">debug</span><span class="p">(</span>sd<span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> sd<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 4 </span>debugging <span class="kp">in</span><span class="o">:</span> sd<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 5 </span><span class="kp">debug</span><span class="o">:</span> <span class="kp">sqrt</span><span class="p">(</span>var<span class="p">(</span><span class="kr">if</span> <span class="p">(</span><span class="kp">is.vector</span><span class="p">(</span>x<span class="p">)</span> <span class="o">||</span> <span class="kp">is.factor</span><span class="p">(</span>x<span class="p">))</span> x <span class="kr">else</span> <span class="kp">as.double</span><span class="p">(</span>x<span class="p">),</span> 
+<span class="lineno"> 6 </span>    na.rm <span class="o">=</span> na.rm<span class="p">))</span>
+<span class="lineno"> 7 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> <span class="kp">ls</span><span class="p">()</span>
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;na.rm&quot;</span> <span class="s">&quot;x&quot;</span>    
+<span class="lineno"> 9 </span>Browse<span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="o">&gt;</span> Q
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="kp">undebug</span><span class="p">(</span>sd<span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> sd<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">12 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.5773503</span></code></pre></figure><p>The binary_search solutions are fixed below.</p>
+<language>R</language>
+<p>chapter2/find_binary_search.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>binary_search<span class="o">=</span><span class="kr">function</span><span class="p">(</span>v<span class="p">,</span>x<span class="p">){</span>
+<span class="lineno"> 2 </span>  <span class="kr">if</span> <span class="p">(</span>x<span class="o">&gt;</span>v<span class="p">[</span><span class="kp">length</span><span class="p">(</span>v<span class="p">)]){</span><span class="kr">return</span><span class="p">(</span><span class="kc">NULL</span><span class="p">)}</span>
+<span class="lineno"> 3 </span>  start <span class="o">=</span> <span class="m">1</span>
+<span class="lineno"> 4 </span>  end <span class="o">=</span> <span class="kp">length</span><span class="p">(</span>v<span class="p">)</span>
+<span class="lineno"> 5 </span>  <span class="kr">while</span> <span class="p">(</span>start<span class="o">&lt;</span>end<span class="p">){</span>
+<span class="lineno"> 6 </span>    mid <span class="o">=</span> <span class="p">(</span>start<span class="o">+</span>end<span class="p">)</span>
+<span class="lineno"> 7 </span>    <span class="kr">if</span> <span class="p">(</span>v<span class="p">[</span>mid<span class="p">]</span><span class="o">&gt;=</span>x<span class="p">){</span>
+<span class="lineno"> 8 </span>      end <span class="o">=</span> mid
+<span class="lineno"> 9 </span>    <span class="p">}</span><span class="kp">else</span><span class="p">{</span>
+<span class="lineno">10 </span>      start <span class="o">=</span> mid<span class="m">+1</span>
+<span class="lineno">11 </span>    <span class="p">}</span>
+<span class="lineno">12 </span>  <span class="p">}</span>
+<span class="lineno">13 </span>  <span class="kr">return</span><span class="p">(</span>start<span class="p">)</span>
+<span class="lineno">14 </span><span class="p">}</span></code></pre></figure></p>
+<language>Python</language>
+<p>chapter2/find_binary_search.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="k">def</span> <span class="nf">binary_search</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno"> 2 </span>  <span class="k">if</span> <span class="n">x</span><span class="o">&gt;</span><span class="n">v</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="k">return</span>
+<span class="lineno"> 3 </span>  <span class="n">start</span><span class="p">,</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+<span class="lineno"> 4 </span>  <span class="k">while</span> <span class="n">start</span><span class="o">&lt;</span><span class="n">end</span><span class="p">:</span>
+<span class="lineno"> 5 </span>    <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="n">end</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>
+<span class="lineno"> 6 </span>    <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">x</span><span class="p">:</span>
+<span class="lineno"> 7 </span>      <span class="n">end</span> <span class="o">=</span> <span class="n">mid</span>
+<span class="lineno"> 8 </span>    <span class="k">else</span><span class="p">:</span>
+<span class="lineno"> 9 </span>      <span class="n">start</span> <span class="o">=</span> <span class="n">mid</span><span class="o">+</span><span class="mi">1</span>
+<span class="lineno">10 </span>  <span class="k">return</span> <span class="n">start</span></code></pre></figure></p>
+<h2 id="benchmark">Benchmarking</h2>
+<p>By benchmarking, I mean measuring the entire operation time of a piece of program. There is another term called profiling which is related to benchmarking. But profiling is more complex since it commonly aims at understanding the behavior of the program and optimizing the program in terms of time elapsed during the operation.</p>
+<p>In R, I like using the <code>microbenchmark</code> package. And in Python, <code>timeit</code> module is a good tool to use when we want to benchmark a small bits of Python code.</p>
+<p>As mentioned before, the run time complexity of binary search is better than that of a for-loop search. We can do benchmarking to compare the two algorithms.</p>
+<language>R</language>
+<p>chapter2/benchmark.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>microbenchmark<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="kn">source</span><span class="p">(</span><span class="s">&#39;binary_search.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="kn">source</span><span class="p">(</span><span class="s">&#39;find_pos.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 4 </span>
+<span class="lineno"> 5 </span>v<span class="o">=</span><span class="m">1</span><span class="o">:</span><span class="m">10000</span>
+<span class="lineno"> 6 </span>
+<span class="lineno"> 7 </span><span class="c1"># call each function 1000 times;</span>
+<span class="lineno"> 8 </span><span class="c1"># each time we randomly select an integer as the target value</span>
+<span class="lineno"> 9 </span>
+<span class="lineno">10 </span><span class="c1"># for-loop solution</span>
+<span class="lineno">11 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="kp">print</span><span class="p">(</span>microbenchmark<span class="p">(</span>find_pos<span class="p">(</span>v<span class="p">,</span><span class="kp">sample</span><span class="p">(</span><span class="m">10000</span><span class="p">,</span><span class="m">1</span><span class="p">)),</span>times<span class="o">=</span><span class="m">1000</span><span class="p">))</span>
+<span class="lineno">13 </span><span class="c1"># binary-search solution</span>
+<span class="lineno">14 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="kp">print</span><span class="p">(</span>microbenchmark<span class="p">(</span>binary_search<span class="p">(</span>v<span class="p">,</span><span class="kp">sample</span><span class="p">(</span><span class="m">10000</span><span class="p">,</span><span class="m">1</span><span class="p">)),</span>times<span class="o">=</span><span class="m">1000</span><span class="p">))</span></code></pre></figure></p>
+<p>In the R code above, <code>times=1000</code> means we want to call the function <code>1000</code> times in the benchmarking process. The <code>sample()</code> function is used to draw samples from a set of elements. Specifically, we pass the argument <code>1</code> to <code>sample()</code> to draw a single element.  It&#8217;s the first time we use <code>set.seed()</code> function in this book. In R/Python, we draw random numbers based on the pseudorandom number generator (<span class="caps">PRNG</span>) algorithm<sup class="footnote" id="fnr8"><a href="#fn8">8</a></sup>. The sequence of numbers generated by <span class="caps">PRNG</span> is completed determined by an initial value, i.e., the seed. Whenever a program involves the usage of <span class="caps">PRNG</span>, it is better to set the seed in order to get replicable results (see the example below).</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> rnorm<span class="p">(</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.7385227</span>
+<span class="lineno">4 </span><span class="o">&gt;</span> rnorm<span class="p">(</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">-0.5147605</span></code></pre></figure></div>
+<div class="coderight">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> rnorm<span class="p">(</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.7385227</span>
+<span class="lineno">4 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> rnorm<span class="p">(</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.7385227</span></code></pre></figure></div>
+</div>
+<p>Now let&#8217;s run the R script to see the benchmarking result.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;benchmark.R&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span>Unit<span class="o">:</span> microseconds
+<span class="lineno">3 </span>                          expr  min       lq     mean   median       uq     max neval
+<span class="lineno">4 </span> find_pos<span class="p">(</span>v<span class="p">,</span> <span class="kp">sample</span><span class="p">(</span><span class="m">10000</span><span class="p">,</span> <span class="m">1</span><span class="p">))</span> <span class="m">3.96</span> <span class="m">109.5385</span> <span class="m">207.6627</span> <span class="m">207.5565</span> <span class="m">307.8875</span> <span class="m">536.171</span> <span class="m">1000</span>
+<span class="lineno">5 </span>
+<span class="lineno">6 </span>Unit<span class="o">:</span> microseconds
+<span class="lineno">7 </span>                               expr   min     lq    mean median     uq     max neval
+<span class="lineno">8 </span> binary_search<span class="p">(</span>v<span class="p">,</span> <span class="kp">sample</span><span class="p">(</span><span class="m">10000</span><span class="p">,</span> <span class="m">1</span><span class="p">))</span> <span class="m">5.898</span> <span class="m">6.3325</span> <span class="m">14.2159</span> <span class="m">6.6115</span> <span class="m">7.3635</span> <span class="m">6435.57</span> <span class="m">1000</span></code></pre></figure><p>The binary_search solution is much more efficient based on the benchmarking result.<br />
+Doing the same benchmarking in Python is a bit of complicated.</p>
+<language>Python</language>
+<p>chapter2/benchmark.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">from</span> <span class="nn">binary_search</span> <span class="k">import</span> <span class="n">binary_search</span>
+<span class="lineno"> 2 </span><span class="kn">from</span> <span class="nn">find_pos</span> <span class="k">import</span> <span class="n">find_pos</span>
+<span class="lineno"> 3 </span><span class="kn">import</span> <span class="nn">timeit</span>
+<span class="lineno"> 4 </span><span class="kn">import</span> <span class="nn">random</span>
+<span class="lineno"> 5 </span>
+<span class="lineno"> 6 </span><span class="n">v</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10001</span><span class="p">))</span>
+<span class="lineno"> 7 </span>
+<span class="lineno"> 8 </span><span class="k">def</span> <span class="nf">test_for_loop</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno"> 9 </span>  <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2019</span><span class="p">)</span>
+<span class="lineno">10 </span>  <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">11 </span>    <span class="n">find_pos</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10000</span><span class="p">))</span>
+<span class="lineno">12 </span>
+<span class="lineno">13 </span><span class="k">def</span> <span class="nf">test_bs</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">14 </span>  <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2019</span><span class="p">)</span>
+<span class="lineno">15 </span>  <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">16 </span>    <span class="n">binary_search</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10000</span><span class="p">))</span>
+<span class="lineno">17 </span>
+<span class="lineno">18 </span><span class="c1"># for-loop solution</span>
+<span class="lineno">19 </span><span class="nb">print</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s1">&#39;test_for_loop(1000)&#39;</span><span class="p">,</span><span class="n">setup</span><span class="o">=</span><span class="s1">&#39;from __main__ import test_for_loop&#39;</span><span class="p">,</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="lineno">20 </span><span class="c1"># binary_search solution</span>
+<span class="lineno">21 </span><span class="nb">print</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s1">&#39;test_bs(1000)&#39;</span><span class="p">,</span><span class="n">setup</span><span class="o">=</span><span class="s1">&#39;from __main__ import test_bs&#39;</span><span class="p">,</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></code></pre></figure></p>
+<p>The most interesting part of the Python code above is <code>from __main__ import</code>. Let&#8217;s ignore it for now, and we would revisit it later.</p>
+<p>Below is the benchmarking result in Python (the unit is second).</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span> <span class="n">benchmark</span><span class="o">.</span><span class="n">py</span>
+<span class="lineno">2 </span><span class="mf">0.284618441</span>
+<span class="lineno">3 </span><span class="mf">0.00396658900000002</span></code></pre></figure><h2 id="vectorization">Vectorization</h2>
+<p>In parallel computing, automatic vectorization<sup class="footnote" id="fnr9"><a href="#fn9">9</a></sup> means a program in a scalar implementation is converted to a vector implementation which process multiple pairs of operands simultaneously by compilers that feature auto-vectorization. For example, let&#8217;s calculate the element-wise sum of two arrays <code>x</code> and <code>y</code> of the same length in C programming language.</p>
+<language>C</language>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span></span><span class="lineno">1 </span><span class="kt">int</span> <span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">};</span>
+<span class="lineno">2 </span><span class="kt">int</span> <span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">};</span>
+<span class="lineno">3 </span><span class="kt">int</span> <span class="n">z</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+<span class="lineno">4 </span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="mi">4</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">){</span>
+<span class="lineno">5 </span>    <span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="lineno">6 </span><span class="p">}</span></code></pre></figure><p>The C code above might be vectorized by the compiler so that the actual number of iterations performed could be less than 4. If 4 pairs of operands are processed at once, there would be only 1 iteration. Automatic vectorization may make the program runs much faster in some languages like C. However, when we talk about vectorization in R/Python, it is different from automatic vectorization. Vectorization in R/Python usually refers to the human effort paid to avoid for-loops. First, let&#8217;s see some examples of how for-loops may slow your programs in R/Python.</p>
+<language>R</language>
+<p>chapter2/vectorization_1.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>microbenchmark<span class="p">)</span>
+<span class="lineno"> 2 </span>
+<span class="lineno"> 3 </span><span class="c1"># generate n standard normal r.v</span>
+<span class="lineno"> 4 </span>rnorm_loop <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">){</span>
+<span class="lineno"> 5 </span>x<span class="o">=</span><span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span>n<span class="p">)</span>
+<span class="lineno"> 6 </span><span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>n<span class="p">)</span> <span class="p">{</span>x<span class="p">[</span>i<span class="p">]</span><span class="o">=</span>rnorm<span class="p">(</span><span class="m">1</span><span class="p">)}</span>
+<span class="lineno"> 7 </span><span class="p">}</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span>rnorm_vec <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">){</span>
+<span class="lineno">10 </span>x<span class="o">=</span>rnorm<span class="p">(</span>n<span class="p">)</span>
+<span class="lineno">11 </span><span class="p">}</span>
+<span class="lineno">12 </span>
+<span class="lineno">13 </span>n<span class="o">=</span><span class="m">100</span>
+<span class="lineno">14 </span><span class="c1"># for loop</span>
+<span class="lineno">15 </span><span class="kp">print</span><span class="p">(</span>microbenchmark<span class="p">(</span>rnorm_loop<span class="p">(</span>n<span class="p">),</span>times<span class="o">=</span><span class="m">1000</span><span class="p">))</span>
+<span class="lineno">16 </span><span class="c1"># vectorize</span>
+<span class="lineno">17 </span><span class="kp">print</span><span class="p">(</span>microbenchmark<span class="p">(</span>rnorm_vec<span class="p">(</span>n<span class="p">),</span>times<span class="o">=</span><span class="m">1000</span><span class="p">))</span></code></pre></figure></p>
+<p>Running the R code results in the following result on my local machine.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;vectorization_1.R&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span>Unit<span class="o">:</span> microseconds
+<span class="lineno">3 </span>          expr     min      lq     mean   median      uq     max neval
+<span class="lineno">4 </span> rnorm_loop<span class="p">(</span>n<span class="p">)</span> <span class="m">131.622</span> <span class="m">142.699</span> <span class="m">248.7603</span> <span class="m">145.3995</span> <span class="m">270.212</span> <span class="m">16355.6</span>  <span class="m">1000</span>
+<span class="lineno">5 </span>Unit<span class="o">:</span> microseconds
+<span class="lineno">6 </span>         expr   min    lq     mean median    uq      max neval
+<span class="lineno">7 </span> rnorm_vec<span class="p">(</span>n<span class="p">)</span> <span class="m">6.696</span> <span class="m">7.128</span> <span class="m">10.87463</span>  <span class="m">7.515</span> <span class="m">8.291</span> <span class="m">2422.338</span>  <span class="m">1000</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">timeit</span>
+<span class="lineno"> 2 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 3 </span>
+<span class="lineno"> 4 </span><span class="k">def</span> <span class="nf">rnorm_for_loop</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno"> 5 </span>  <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">n</span> <span class="c1"># create a list with n 0s</span>
+<span class="lineno"> 6 </span>  <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2019</span><span class="p">)</span>
+<span class="lineno"> 7 </span>  <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno"> 8 </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="lineno"> 9 </span>
+<span class="lineno">10 </span><span class="k">def</span> <span class="nf">rnorm_vec</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">11 </span>  <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2019</span><span class="p">)</span>
+<span class="lineno">12 </span>  <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno">13 </span> 
+<span class="lineno">14 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;for loop&quot;</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;rnorm_for_loop(100)&quot;,setup=&quot;from __main__ import rnorm_for_loop&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;vectorized&quot;</span><span class="p">)</span>
+<span class="lineno">17 </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;rnorm_vec(100)&quot;,setup=&quot;from __main__ import rnorm_vec&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span></code></pre></figure><p>Please note that in this Python example we are using the <code>random</code> submodule of <code>numpy</code> module instead of the built-in <code>random</code> module since <code>random</code> module doesn&#8217;t provide the vectorized version of random number generation function. Running the Python code results in the following result on my local machine.</p>
+<p>Also, the <code>timeit.timeit</code> measures the total time to run the main statements <code>number</code> times, but not the average time per run.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">vectorization_1</span><span class="o">.</span><span class="n">py</span> 
+<span class="lineno">2 </span><span class="k">for</span> <span class="n">loop</span>
+<span class="lineno">3 </span><span class="mf">0.258466</span> <span class="n">seconds</span>
+<span class="lineno">4 </span><span class="n">vectorized</span>
+<span class="lineno">5 </span><span class="mf">0.008213</span> <span class="n">seconds</span></code></pre></figure><p>In either R or Python, the vectorized version of random normal random variable (r.v.) is significantly faster than the scalar version. It is worth noting the usage of the <code>print(f'')</code> statement in the Python code, which is different from the way how we print the object of <code>Complex</code> class in \autoref{ch:chp1</code>. In the code above, we use the <code>f-string</code><sup class="footnote" id="fnr10"><a href="#fn10">10</a></sup> which is a literal string prefixed with <code>'f'</code> containing expressions inside <code>\{\</code></code> which would be replaced with their values. <code>f-string</code> was a feature introduced since Python 3.6. If you are familiar with Scala, you may find that this feature is quite similar with the string interpolation mechanism introduced since Scala 2.10.</p>
+<p>It&#8217;s also worth noting that lots of built-in functions in R are already vectorized, such as the basic arithmetic operators, comparison operators, <code>ifelse()</code>, element-wise logical operators <code>&amp;,|</code>. But the logical operators <code>&amp;&amp;, ||</code> are not vectorized.</p>
+<p>In addition to vectorization, there are also some built-in functions which may help to avoid the usages of for-loops. For example, in R we might be able use the <code>apply</code> family of functions to replace for-loops; and in Python the <code>map()</code> function can also be useful. In the Python <code>pandas</code> module, there are also many usages of <code>map/apply</code> methods. But in general the usage of <code>apply/map</code> functions has little or nothing to do with performance improvement. However, appropriate usages of such functions may help with the readability of the program. Compared with the <code>apply</code> family of functions in R, I think the <code>do.call()</code> function  is more useful in practice. We would spend some time in <code>do.call()</code> later.</p>
+<appnamebold>Application</appnamebold><appname>- Biham–Middleton–Levine (<span class="caps">BML</span>) traffic model</appname>
+<blockquote class="blockquote">
+<p class="mb-3">
+Considering the importance of vectorization in scientific programming, let&#8217;s try to get more familiar with vectorization thorough the Biham–Middleton–Levine (<span class="caps">BML</span>) traffic model<sup class="footnote" id="fnr11"><a href="#fn11">11</a></sup>. The <span class="caps">BML</span> model is very important in modern studies of traffic flow since it exhibits a sharp phase transition from free flowing status to a fully jammed status. A simplified <span class="caps">BML</span> model could be characterized as follows:
+<ul>
+	<li>Initialized on a 2-D lattice, each site of which is either empty or occupied by a colored particle (blue or red);</li>
+	<li>Particles are distributed randomly through the initialization according to a uniform distribution; the two colors of particles are equally distributed.</li>
+	<li>On even time steps, all blue particles attempt to move one site up and an attempt fails if the site to occupy is not empty;</li>
+	<li>On Odd time steps, all red particles attempt to move one site right and an attempt fails if the site to occupy is not empty;</li>
+	<li>The lattice is assumed periodic which means when a particle moves out of the lattice, it would move into the lattice from the opposite side.<br />
+</p><br />
+</blockquote></li>
+</ul>
+<p>The <span class="caps">BML</span> model specified above is implemented in both R/Python as follows to illustrate the usage of vectorization.</p>
+<language>R</language>
+<p>chapter2/<span class="caps">BML</span>.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>R6<span class="p">)</span>
+<span class="lineno"> 2 </span>BML <span class="o">=</span> R6Class<span class="p">(</span>
+<span class="lineno"> 3 </span>  <span class="s">&quot;BML&quot;</span><span class="p">,</span>
+<span class="lineno"> 4 </span>  public <span class="o">=</span> <span class="kt">list</span><span class="p">(</span>
+<span class="lineno"> 5 </span>    <span class="c1"># alpha is the parameter of the uniform distribution to control particle distribution&#39;s density</span>
+<span class="lineno"> 6 </span>    <span class="c1"># m*n is the dimension of the lattice</span>
+<span class="lineno"> 7 </span>    alpha <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno"> 8 </span>    m <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno"> 9 </span>    n <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno">10 </span>    lattice <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno">11 </span>    initialize <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>alpha<span class="p">,</span> m<span class="p">,</span> n<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">12 </span>      self<span class="o">$</span>alpha <span class="o">=</span> alpha
+<span class="lineno">13 </span>      self<span class="o">$</span>m <span class="o">=</span> m
+<span class="lineno">14 </span>      self<span class="o">$</span>n <span class="o">=</span> n
+<span class="lineno">15 </span>      self<span class="o">$</span>initialize_lattice<span class="p">()</span>
+<span class="lineno">16 </span>    <span class="p">},</span>
+<span class="lineno">17 </span>    initialize_lattice <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="lineno">18 </span>      <span class="c1"># 0 -&gt; empty site</span>
+<span class="lineno">19 </span>      <span class="c1"># 1 -&gt; blue particle</span>
+<span class="lineno">20 </span>      <span class="c1"># 2 -&gt; red particle</span>
+<span class="lineno">21 </span>      u <span class="o">=</span> runif<span class="p">(</span>self<span class="o">$</span>m <span class="o">*</span> self<span class="o">$</span>n<span class="p">)</span>
+<span class="lineno">22 </span>      <span class="c1"># the usage of L is to make sure the elements in particles are of type integer;</span>
+<span class="lineno">23 </span>      <span class="c1"># otherwise they would be created as double</span>
+<span class="lineno">24 </span>      particles <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0L</span><span class="p">,</span> self<span class="o">$</span>m <span class="o">*</span> self<span class="o">$</span>n<span class="p">)</span>
+<span class="lineno">25 </span>      <span class="c1"># doing inverse transform sampling</span>
+<span class="lineno">26 </span>      particles<span class="p">[(</span>u <span class="o">&gt;</span> self<span class="o">$</span>alpha<span class="p">)</span> <span class="o">&amp;</span>
+<span class="lineno">27 </span>                  <span class="p">(</span>u <span class="o">&lt;=</span> <span class="p">(</span>self<span class="o">$</span>alpha <span class="o">+</span> <span class="m">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="m">2</span><span class="p">)]</span> <span class="o">=</span> <span class="m">1L</span>
+<span class="lineno">28 </span>      particles<span class="p">[</span>u <span class="o">&gt;</span> <span class="p">(</span>self<span class="o">$</span>alpha <span class="o">+</span> <span class="m">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="m">2</span><span class="p">]</span> <span class="o">=</span> <span class="m">2L</span>
+<span class="lineno">29 </span>      self<span class="o">$</span>lattice <span class="o">=</span> <span class="kt">array</span><span class="p">(</span>particles<span class="p">,</span> <span class="kt">c</span><span class="p">(</span>self<span class="o">$</span>m<span class="p">,</span> self<span class="o">$</span>n<span class="p">))</span>
+<span class="lineno">30 </span>    <span class="p">},</span>
+<span class="lineno">31 </span>    odd_step <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="lineno">32 </span>      blue.index <span class="o">=</span> <span class="kp">which</span><span class="p">(</span>self<span class="o">$</span>lattice <span class="o">==</span> <span class="m">1L</span><span class="p">,</span> arr.ind <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+<span class="lineno">33 </span>      <span class="c1"># make a copy of the index</span>
+<span class="lineno">34 </span>      blue.up.index <span class="o">=</span> blue.index
+<span class="lineno">35 </span>      <span class="c1"># blue particles move 1 site up</span>
+<span class="lineno">36 </span>      blue.up.index<span class="p">[,</span> <span class="m">1</span><span class="p">]</span> <span class="o">=</span> blue.index<span class="p">[,</span> <span class="m">1</span><span class="p">]</span> <span class="o">-</span> <span class="m">1L</span>
+<span class="lineno">37 </span>      <span class="c1"># periodic boundary condition</span>
+<span class="lineno">38 </span>      blue.up.index<span class="p">[</span>blue.up.index<span class="p">[,</span> <span class="m">1</span><span class="p">]</span> <span class="o">==</span> <span class="m">0L</span><span class="p">,</span> <span class="m">1</span><span class="p">]</span> <span class="o">=</span> self<span class="o">$</span>m
+<span class="lineno">39 </span>      <span class="c1"># find which moves are feasible</span>
+<span class="lineno">40 </span>      blue.movable <span class="o">=</span> self<span class="o">$</span>lattice<span class="p">[</span>blue.up.index<span class="p">]</span> <span class="o">==</span> <span class="m">0L</span>
+<span class="lineno">41 </span>      <span class="c1"># move blue particles one site up</span>
+<span class="lineno">42 </span>      <span class="c1"># drop=FALSE prevents the 2D array degenerates to 1D array</span>
+<span class="lineno">43 </span>      self<span class="o">$</span>lattice<span class="p">[</span>blue.up.index<span class="p">[</span>blue.movable<span class="p">,</span> <span class="p">,</span> drop <span class="o">=</span> <span class="kc">FALSE</span><span class="p">]]</span> <span class="o">=</span> <span class="m">1L</span>
+<span class="lineno">44 </span>      self<span class="o">$</span>lattice<span class="p">[</span>blue.index<span class="p">[</span>blue.movable<span class="p">,</span> <span class="p">,</span> drop <span class="o">=</span> <span class="kc">FALSE</span><span class="p">]]</span> <span class="o">=</span> <span class="m">0L</span>
+<span class="lineno">45 </span>    <span class="p">},</span>
+<span class="lineno">46 </span>    even_step <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="lineno">47 </span>      red.index <span class="o">=</span> <span class="kp">which</span><span class="p">(</span>self<span class="o">$</span>lattice <span class="o">==</span> <span class="m">2L</span><span class="p">,</span> arr.ind <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+<span class="lineno">48 </span>      <span class="c1"># make a copy of the index</span>
+<span class="lineno">49 </span>      red.right.index <span class="o">=</span> red.index
+<span class="lineno">50 </span>      <span class="c1"># red particles move 1 site right</span>
+<span class="lineno">51 </span>      red.right.index<span class="p">[,</span> <span class="m">2</span><span class="p">]</span> <span class="o">=</span> red.index<span class="p">[,</span> <span class="m">2</span><span class="p">]</span> <span class="o">+</span> <span class="m">1L</span>
+<span class="lineno">52 </span>      <span class="c1"># periodic boundary condition</span>
+<span class="lineno">53 </span>      red.right.index<span class="p">[</span>red.right.index<span class="p">[,</span> <span class="m">2</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span>self<span class="o">$</span>n <span class="o">+</span> <span class="m">1L</span><span class="p">),</span> <span class="m">2</span><span class="p">]</span> <span class="o">=</span> <span class="m">1</span>
+<span class="lineno">54 </span>      <span class="c1"># find which moves are feasible</span>
+<span class="lineno">55 </span>      red.movable <span class="o">=</span> self<span class="o">$</span>lattice<span class="p">[</span>red.right.index<span class="p">]</span> <span class="o">==</span> <span class="m">0L</span>
+<span class="lineno">56 </span>      <span class="c1"># move red particles one site right</span>
+<span class="lineno">57 </span>      self<span class="o">$</span>lattice<span class="p">[</span>red.right.index<span class="p">[</span>red.movable<span class="p">,</span> <span class="p">,</span> drop <span class="o">=</span> <span class="kc">FALSE</span><span class="p">]]</span> <span class="o">=</span> <span class="m">2L</span>
+<span class="lineno">58 </span>      self<span class="o">$</span>lattice<span class="p">[</span>red.index<span class="p">[</span>red.movable<span class="p">,</span> <span class="p">,</span> drop <span class="o">=</span> <span class="kc">FALSE</span><span class="p">]]</span> <span class="o">=</span> <span class="m">0L</span>
+<span class="lineno">59 </span>    <span class="p">}</span>
+<span class="lineno">60 </span>  <span class="p">)</span>
+<span class="lineno">61 </span><span class="p">)</span></code></pre></figure></p>
+<p>Now we can create a simple <span class="caps">BML</span> system on a $5\times5$ lattice using the R code above.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;BML.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> bml<span class="o">=</span>BML<span class="o">$</span>new<span class="p">(</span><span class="m">0.4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">5</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> bml<span class="o">$</span>lattice
+<span class="lineno"> 5 </span>     <span class="p">[,</span><span class="m">1</span><span class="p">]</span> <span class="p">[,</span><span class="m">2</span><span class="p">]</span> <span class="p">[,</span><span class="m">3</span><span class="p">]</span> <span class="p">[,</span><span class="m">4</span><span class="p">]</span> <span class="p">[,</span><span class="m">5</span><span class="p">]</span>
+<span class="lineno"> 6 </span><span class="p">[</span><span class="m">1</span><span class="p">,]</span>    <span class="m">2</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">1</span>    <span class="m">1</span>
+<span class="lineno"> 7 </span><span class="p">[</span><span class="m">2</span><span class="p">,]</span>    <span class="m">2</span>    <span class="m">2</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">1</span>
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">3</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">2</span>
+<span class="lineno"> 9 </span><span class="p">[</span><span class="m">4</span><span class="p">,]</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>
+<span class="lineno">10 </span><span class="p">[</span><span class="m">5</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">0</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> bml<span class="o">$</span>odd_step<span class="p">()</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> bml<span class="o">$</span>lattice
+<span class="lineno">13 </span>     <span class="p">[,</span><span class="m">1</span><span class="p">]</span> <span class="p">[,</span><span class="m">2</span><span class="p">]</span> <span class="p">[,</span><span class="m">3</span><span class="p">]</span> <span class="p">[,</span><span class="m">4</span><span class="p">]</span> <span class="p">[,</span><span class="m">5</span><span class="p">]</span>
+<span class="lineno">14 </span><span class="p">[</span><span class="m">1</span><span class="p">,]</span>    <span class="m">2</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">1</span>    <span class="m">0</span>
+<span class="lineno">15 </span><span class="p">[</span><span class="m">2</span><span class="p">,]</span>    <span class="m">2</span>    <span class="m">2</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">1</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="m">3</span><span class="p">,]</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">2</span>
+<span class="lineno">17 </span><span class="p">[</span><span class="m">4</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">0</span>
+<span class="lineno">18 </span><span class="p">[</span><span class="m">5</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">1</span>
+<span class="lineno">19 </span><span class="o">&gt;</span> bml<span class="o">$</span>even_step<span class="p">()</span>
+<span class="lineno">20 </span><span class="o">&gt;</span> bml<span class="o">$</span>lattice
+<span class="lineno">21 </span>     <span class="p">[,</span><span class="m">1</span><span class="p">]</span> <span class="p">[,</span><span class="m">2</span><span class="p">]</span> <span class="p">[,</span><span class="m">3</span><span class="p">]</span> <span class="p">[,</span><span class="m">4</span><span class="p">]</span> <span class="p">[,</span><span class="m">5</span><span class="p">]</span>
+<span class="lineno">22 </span><span class="p">[</span><span class="m">1</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">2</span>    <span class="m">1</span>    <span class="m">0</span>
+<span class="lineno">23 </span><span class="p">[</span><span class="m">2</span><span class="p">,]</span>    <span class="m">2</span>    <span class="m">2</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">1</span>
+<span class="lineno">24 </span><span class="p">[</span><span class="m">3</span><span class="p">,]</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">2</span>
+<span class="lineno">25 </span><span class="p">[</span><span class="m">4</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">0</span>
+<span class="lineno">26 </span><span class="p">[</span><span class="m">5</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">1</span></code></pre></figure><p>In the initialization step, we used the inverse transform sampling approach<sup class="footnote" id="fnr12"><a href="#fn12">12</a></sup> to generate the status of each site. Inverse transform sampling method is basic but powerful approach to generate r.v. from any probability distribution given its cumulative distribution function (<span class="caps">CDF</span>). Reading the wiki page is enough to master this sampling method.</p>
 <hr />
 <p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> https://www.rstudio.com/products/rstudio</p>
 <p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://code.visualstudio.com/</p>
 <p class="footnote" id="fn3"><a href="#fnr3"><sup>3</sup></a> https://www.jetbrains.com/pycharm</p>
+<p class="footnote" id="fn4"><a href="#fnr4"><sup>4</sup></a> https://docs.python.org/3/library/logging.html</p>
+<p class="footnote" id="fn5"><a href="#fnr5"><sup>5</sup></a> https://en.wikipedia.org/wiki/Divide-and-conquer_algorithm</p>
+<p class="footnote" id="fn6"><a href="#fnr6"><sup>6</sup></a> https://en.wikipedia.org/wiki/Big_O_notation</p>
+<p class="footnote" id="fn7"><a href="#fnr7"><sup>7</sup></a> https://en.wikipedia.org/wiki/Tail_call</p>
+<p class="footnote" id="fn8"><a href="#fnr8"><sup>8</sup></a> https://en.wikipedia.org/wiki/Pseudorandom_number_generator</p>
+<p class="footnote" id="fn9"><a href="#fnr9"><sup>9</sup></a> https://en.wikipedia.org/wiki/Automatic_vectorization</p>
+<p class="footnote" id="fn10"><a href="#fnr10"><sup>10</sup></a> https://www.python.org/dev/peps/pep-0498</p>
+<p class="footnote" id="fn11"><a href="#fnr11"><sup>11</sup></a> https://en.wikipedia.org/wiki/Biham-Middleton-Levine_traffic_model</p>
+<p class="footnote" id="fn12"><a href="#fnr12"><sup>12</sup></a> https://en.wikipedia.org/wiki/Inverse_transform_sampling</p>
     </div> <!-- /container-fluid -->
     <!-- Footer -->
 <div id="footer">
@@ -87,13 +643,35 @@
       <div class="row">
         <div class="span16">
           <p>
-              All Rights Reserved.
+              &copy; 2019 All rights reserved
           </p>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+    
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+<script
+  type="text/javascript"
+  charset="utf-8"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+>
+</script>
+<script
+  type="text/javascript"
+  charset="utf-8"
+  src="https://vincenttam.github.io/javascripts/MathJaxLocal.js"
+>
+</script>
 
   </body>
 </html>

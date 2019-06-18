@@ -35,6 +35,8 @@ div.codewrapper {
     margin-right: 0%;
   }
 
-language{background-color:#bec1fa;font-style: italic; line-height:24px;}
+language{background-color:#bec1fa;font-style: italic; line-height:16px;}
 language{padding:2px 4px 2px 3px;font-family:Monaco, Andale Mono, Courier New, monospace;font-size:8px;-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px;color:#000;}
 
+appname{padding: 0px 5px 0px 0px;color:#0652DD; line-height:16px;font-size:16px}
+appnamebold{padding: 0px 5px 0px 0px;color:#0652DD;font-weight: bold; line-height:16px;font-size:16px}
