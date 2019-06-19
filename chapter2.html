@@ -56,23 +56,23 @@
 	<li><a href="#benchmark">Benchmarking</a></li>
 	<li><a href="#vectorization">Vectorization</a></li>
 	<li><a href="#parallelism">Embarrassingly parallelism in R/Python</a></li>
-	<li><a href="$scope">Scope of variables</a></li>
-	<li><a href="$Evaluation">Evaluation strategy</a></li>
-	<li><a href="$cpp">Speed up with C/C++ in R/Python</a></li>
-	<li><a href="$miscellaneous">Miscellaneous</a></li>
+	<li><a href="#scope">Scope of variables</a></li>
+	<li><a href="#evaluation">Evaluation strategy</a></li>
+	<li><a href="#cpp">Speed up with C/C++ in R/Python</a></li>
+	<li><a href="#miscellaneous">Miscellaneous</a></li>
 </ul>
 <h2 id="script">Write &amp; run scripts</h2>
 <p>In the first Chapter, we are coding within the interactive mode of R/Python. When we are working on the real world projects, using an Integrated development environment (<span class="caps">IDE</span>) is a more pragmatic choice. There are not many choices for R <span class="caps">IDE</span>, and among them RStudio<sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup> is the best one I have used so far. As for Python, I would recommend either Visual Studio Code<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup> or PyCharm<sup class="footnote" id="fnr3"><a href="#fn3">3</a></sup>. But of course, you could use any text editor to write R/Python scripts.</p>
 <p>Let&#8217;s write a simple script to print <code>Hello World!</code> in R/Python. I have made a directory <code>chapter2</code> on my disk, the R script is saved as <code>hello_world.R</code> and the Python script is saved as <code>hello_world.py</code>, inside the directory.</p>
 <div class="codewrapper">
 <div class="codeleft">
+<language>R</language>
 <p>chapter2/hello_world.R<br />
-<language>R</language><br />
 <figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="kp">print</span><span class="p">(</span><span class="s">&quot;Hello World!&quot;</span><span class="p">)</span></code></pre></figure></p>
 </div>
 <div class="coderight">
+<language>Python</language>
 <p>chapter2/hello_world.py<br />
-<language>Python</language><br />
 <figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span></code></pre></figure></p>
 </div>
 </div>
@@ -517,17 +517,17 @@ Doing the same benchmarking in Python is a bit of complicated.</p>
 <span class="lineno">5 </span><span class="mf">0.008213</span> <span class="n">seconds</span></code></pre></figure><p>In either R or Python, the vectorized version of random normal random variable (r.v.) is significantly faster than the scalar version. It is worth noting the usage of the <code>print(f'')</code> statement in the Python code, which is different from the way how we print the object of <code>Complex</code> class in \autoref{ch:chp1</code>. In the code above, we use the <code>f-string</code><sup class="footnote" id="fnr10"><a href="#fn10">10</a></sup> which is a literal string prefixed with <code>'f'</code> containing expressions inside <code>\{\</code></code> which would be replaced with their values. <code>f-string</code> was a feature introduced since Python 3.6. If you are familiar with Scala, you may find that this feature is quite similar with the string interpolation mechanism introduced since Scala 2.10.</p>
 <p>It&#8217;s also worth noting that lots of built-in functions in R are already vectorized, such as the basic arithmetic operators, comparison operators, <code>ifelse()</code>, element-wise logical operators <code>&amp;,|</code>. But the logical operators <code>&amp;&amp;, ||</code> are not vectorized.</p>
 <p>In addition to vectorization, there are also some built-in functions which may help to avoid the usages of for-loops. For example, in R we might be able use the <code>apply</code> family of functions to replace for-loops; and in Python the <code>map()</code> function can also be useful. In the Python <code>pandas</code> module, there are also many usages of <code>map/apply</code> methods. But in general the usage of <code>apply/map</code> functions has little or nothing to do with performance improvement. However, appropriate usages of such functions may help with the readability of the program. Compared with the <code>apply</code> family of functions in R, I think the <code>do.call()</code> function  is more useful in practice. We would spend some time in <code>do.call()</code> later.</p>
-<appnamebold>Application</appnamebold><appname>- Biham–Middleton–Levine (<span class="caps">BML</span>) traffic model</appname>
-<blockquote class="blockquote">
-<p class="mb-3">
+<appname>Application &#8211; Biham–Middleton–Levine (<span class="caps">BML</span>) traffic model</appname>
+<blockquote class="appquote">
+<p>
 Considering the importance of vectorization in scientific programming, let&#8217;s try to get more familiar with vectorization thorough the Biham–Middleton–Levine (<span class="caps">BML</span>) traffic model<sup class="footnote" id="fnr11"><a href="#fn11">11</a></sup>. The <span class="caps">BML</span> model is very important in modern studies of traffic flow since it exhibits a sharp phase transition from free flowing status to a fully jammed status. A simplified <span class="caps">BML</span> model could be characterized as follows:
+</p>
 <ul>
 	<li>Initialized on a 2-D lattice, each site of which is either empty or occupied by a colored particle (blue or red);</li>
 	<li>Particles are distributed randomly through the initialization according to a uniform distribution; the two colors of particles are equally distributed.</li>
 	<li>On even time steps, all blue particles attempt to move one site up and an attempt fails if the site to occupy is not empty;</li>
 	<li>On Odd time steps, all red particles attempt to move one site right and an attempt fails if the site to occupy is not empty;</li>
 	<li>The lattice is assumed periodic which means when a particle moves out of the lattice, it would move into the lattice from the opposite side.<br />
-</p><br />
 </blockquote></li>
 </ul>
 <p>The <span class="caps">BML</span> model specified above is implemented in both R/Python as follows to illustrate the usage of vectorization.</p>
@@ -622,6 +622,496 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <span class="lineno">24 </span><span class="p">[</span><span class="m">3</span><span class="p">,]</span>    <span class="m">1</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">2</span>
 <span class="lineno">25 </span><span class="p">[</span><span class="m">4</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">1</span>    <span class="m">0</span>
 <span class="lineno">26 </span><span class="p">[</span><span class="m">5</span><span class="p">,]</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">1</span></code></pre></figure><p>In the initialization step, we used the inverse transform sampling approach<sup class="footnote" id="fnr12"><a href="#fn12">12</a></sup> to generate the status of each site. Inverse transform sampling method is basic but powerful approach to generate r.v. from any probability distribution given its cumulative distribution function (<span class="caps">CDF</span>). Reading the wiki page is enough to master this sampling method.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 2 </span>
+<span class="lineno"> 3 </span><span class="k">class</span> <span class="nc">BML</span><span class="p">:</span>
+<span class="lineno"> 4 </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="lineno"> 5 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+<span class="lineno"> 6 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 7 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_lattice</span><span class="p">()</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span>    <span class="k">def</span> <span class="nf">initialize_lattice</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="lineno">10 </span>        <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="lineno">11 </span>        <span class="c1"># instead of using default list, we use np.array to create the lattice</span>
+<span class="lineno">12 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="lineno">13 </span>        <span class="c1"># the parentheses below can&#39;t be ignored</span>
+<span class="lineno">14 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">u</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">u</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="lineno">15 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[</span><span class="n">u</span> <span class="o">&gt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="mf">2.0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="lineno">16 </span>
+<span class="lineno">17 </span>    <span class="k">def</span> <span class="nf">odd_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="lineno">18 </span>        <span class="c1"># please note that np.where returns a tuple which is immutable</span>
+<span class="lineno">19 </span>        <span class="n">blue_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lattice</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="lineno">20 </span>        <span class="n">blue_index_i</span> <span class="o">=</span> <span class="n">blue_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="lineno">21 </span>        <span class="n">blue_index_i</span><span class="p">[</span><span class="n">blue_index_i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>
+<span class="lineno">22 </span>        <span class="n">blue_movable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">blue_index_i</span><span class="p">,</span> <span class="n">blue_index</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="lineno">23 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">blue_index_i</span><span class="p">[</span><span class="n">blue_movable</span><span class="p">],</span>
+<span class="lineno">24 </span>                      <span class="n">blue_index</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">blue_movable</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="lineno">25 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">blue_index</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">blue_movable</span><span class="p">],</span>
+<span class="lineno">26 </span>                      <span class="n">blue_index</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">blue_movable</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno">27 </span>
+<span class="lineno">28 </span>    <span class="k">def</span> <span class="nf">even_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="lineno">29 </span>        <span class="n">red_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lattice</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+<span class="lineno">30 </span>        <span class="n">red_index_j</span> <span class="o">=</span> <span class="n">red_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="lineno">31 </span>        <span class="n">red_index_j</span><span class="p">[</span><span class="n">red_index_j</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno">32 </span>        <span class="n">red_movable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">red_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">red_index_j</span><span class="p">)]</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="lineno">33 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">red_index</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">red_movable</span><span class="p">],</span>
+<span class="lineno">34 </span>                      <span class="n">red_index_j</span><span class="p">[</span><span class="n">red_movable</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="lineno">35 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">[(</span><span class="n">red_index</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">red_movable</span><span class="p">],</span>
+<span class="lineno">36 </span>                      <span class="n">red_index</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">red_movable</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">0</span></code></pre></figure><p>The Python implementation is also given.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> import numpy as np
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> np.random.seed<span class="p">(</span><span class="m">2019</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> from BML import BML
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> bml<span class="o">=</span>BML<span class="p">(</span><span class="m">0.4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">5</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> bml.lattice
+<span class="lineno"> 6 </span><span class="kt">array</span><span class="p">([[</span><span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno"> 7 </span>       <span class="p">[</span><span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">],</span>
+<span class="lineno"> 8 </span>       <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">],</span>
+<span class="lineno"> 9 </span>       <span class="p">[</span><span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno">10 </span>       <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">]])</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> bml.odd_step<span class="p">()</span>
+<span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> bml.lattice
+<span class="lineno">13 </span><span class="kt">array</span><span class="p">([[</span><span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno">14 </span>       <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">],</span>
+<span class="lineno">15 </span>       <span class="p">[</span><span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">],</span>
+<span class="lineno">16 </span>       <span class="p">[</span><span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno">17 </span>       <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">]])</span>
+<span class="lineno">18 </span><span class="o">&gt;&gt;&gt;</span> bml.even_step<span class="p">()</span>
+<span class="lineno">19 </span><span class="o">&gt;&gt;&gt;</span> bml.lattice
+<span class="lineno">20 </span><span class="kt">array</span><span class="p">([[</span><span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno">21 </span>       <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">],</span>
+<span class="lineno">22 </span>       <span class="p">[</span><span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno">23 </span>       <span class="p">[</span><span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">2</span><span class="p">],</span>
+<span class="lineno">24 </span>       <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">]])</span></code></pre></figure><p>Please note that although we have imported <code>numpy</code> in <span class="caps">BML</span>.py, we import it again in the code above in order to set the random seed. If we change the line to <code>from BML import *</code>, we don&#8217;t need to import <code>numpy</code> again. But it is not recommended to <code>import *</code> from a module.</p>
+<h2 id="parallelism">Embarrassingly parallelism in R/Python</h2>
+<p>According to the explanation of wikipedia<sup class="footnote" id="fnr13"><a href="#fn13">13</a></sup>, single-threading is the processing of one command at a time, and its opposite is multithreading. A process is the instance of a computer program executed by one or many threads<sup class="footnote" id="fnr14"><a href="#fn14">14</a></sup>. Multithreading is not the same as parallelism. In a single processor environment, the processor can switch execution between threads, which results in concurrent execution. However, it is possible a process with multithreads runs on on a multiprocessor environment and each of the threads on a separate processor, which results in parallel execution.</p>
+<p>Both R and Python are single-threaded. In Python, there is a <code>threading</code> package<sup class="footnote" id="fnr15"><a href="#fn15">15</a></sup>, which supports multithreading on a single core. It may suit some specific tasks. For example, in web scraping multithreading on a single core may be able to speed up the program if the download time is in excess of the <span class="caps">CPU</span> processing time.</p>
+<p>Now let&#8217;s talk about embarrassingly parallelism by multi-processing. Embarrassingly parallel problem is one where little or no effort is needed to separate the problem into a number of parallel tasks<sup class="footnote" id="fnr16"><a href="#fn16">16</a></sup>. In R there are various packages supporting multi-processing on multiple <span class="caps">CPU</span> cores, for example, the <code>parallel</code> package, which is my favorite one. In Python, there are also some available modules, such as <code>multiprocessing</code>, <code>joblib</code> and <code>concurrent.futures</code>. Let&#8217;s see an application of embarrassingly parallelism to calculate $\pi$ using Monte Carlo simulation<sup class="footnote" id="fnr17"><a href="#fn17">17</a></sup>.</p>
+<appname>Application &#8211; Monte Carlo simulation to estimate $\pi$ via parallelization</appname>
+<blockquote class="appquote">
+<p>
+<p>Monte Carlo simulation provides a simple and straightforward way to estimate $\pi$. We know the area of a circle with radius 1 is just $\pi$. Thus, we can convert the original problem of $\pi$ calculation to a new problem, i.e., how to calculate the area of a circle with radius 1. We also know the area of a square with side length 2 is equal to 4. Thus, $\pi$ can be calculated as 4$r_{c/s}$ where $r_{c/s}$ denotes the ratio of areas of a circle with radius 1 and a square with side length 2. Now the problem is how to calculate the ratio $r_{c/s}$? When we randomly throw $n$ points into the square and $m$ of these pionts fall into the inscribed circle, then we can estimate the ratio as $m/n$. As a result, a natural estimate of $\pi$ is $4m/n$. This problem is an embarrassingly parallel problem by its nature. Let&#8217;s see how we implement the idea in R/Python.</p>
+</p>
+</blockquote>
+<figure class="text-center">
+<img src="figures/circle.png" alt="Generate points within a square and count how many times these points fall into the inscribed circle" style="display: block;margin: auto;" width="35%">
+        <figcaption class="centerfigcaption">Generate points within a square and count how many times these points fall into the inscribed circle</figcaption>
+</figure>
+<language>R</language>
+<p>chapter2/pi.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>parallel<span class="p">)</span>
+<span class="lineno"> 2 </span>count_inside_point <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">){</span>
+<span class="lineno"> 3 </span>  m <span class="o">=</span> <span class="m">0</span>
+<span class="lineno"> 4 </span>  <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>n<span class="p">){</span>
+<span class="lineno"> 5 </span>    p_x <span class="o">=</span> runif<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">-1</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+<span class="lineno"> 6 </span>    p_y <span class="o">=</span> runif<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">-1</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+<span class="lineno"> 7 </span>    <span class="kr">if</span> <span class="p">(</span>p_x<span class="o">^</span><span class="m">2</span> <span class="o">+</span> p_y<span class="o">^</span><span class="m">2</span> <span class="o">&lt;=</span><span class="m">1</span><span class="p">){</span>
+<span class="lineno"> 8 </span>      m <span class="o">=</span> m<span class="m">+1</span>
+<span class="lineno"> 9 </span>    <span class="p">}</span>
+<span class="lineno">10 </span>  <span class="p">}</span>
+<span class="lineno">11 </span>  m
+<span class="lineno">12 </span><span class="p">}</span>
+<span class="lineno">13 </span>
+<span class="lineno">14 </span><span class="c1"># now let&#39;s use the mcapply for parallelization</span>
+<span class="lineno">15 </span>generate_points_parallel <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">){</span>
+<span class="lineno">16 </span>  <span class="c1"># detectCores() returns the number of cores available</span>
+<span class="lineno">17 </span>  <span class="c1"># we assign the task to each core</span>
+<span class="lineno">18 </span>  <span class="kp">unlist</span><span class="p">(</span>mclapply<span class="p">(</span>X <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span>n <span class="o">%/%</span> detectCores<span class="p">(),</span> detectCores<span class="p">()),</span>FUN<span class="o">=</span>count_inside_point<span class="p">))</span>
+<span class="lineno">19 </span><span class="p">}</span>
+<span class="lineno">20 </span>
+<span class="lineno">21 </span><span class="c1"># now let&#39;s use vectorization</span>
+<span class="lineno">22 </span>generate_points_vectorized <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">){</span>
+<span class="lineno">23 </span>  p <span class="o">=</span> <span class="kt">array</span><span class="p">(</span>runif<span class="p">(</span>n<span class="o">*</span><span class="m">2</span><span class="p">,</span><span class="m">-1</span><span class="p">,</span><span class="m">1</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span>n<span class="p">,</span><span class="m">2</span><span class="p">))</span>
+<span class="lineno">24 </span>  <span class="kp">sum</span><span class="p">((</span>p<span class="p">[,</span><span class="m">1</span><span class="p">]</span><span class="o">^</span><span class="m">2</span><span class="o">+</span>p<span class="p">[,</span><span class="m">2</span><span class="p">]</span><span class="o">^</span><span class="m">2</span><span class="p">)</span><span class="o">&lt;=</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">25 </span><span class="p">}</span>
+<span class="lineno">26 </span>
+<span class="lineno">27 </span>pi_naive <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="kp">cat</span><span class="p">(</span><span class="s">&#39;naive: pi -&#39;</span><span class="p">,</span> <span class="m">4</span><span class="o">*</span>count_inside_point<span class="p">(</span>n<span class="p">)</span><span class="o">/</span>n<span class="p">,</span> <span class="s">&#39;\n&#39;</span><span class="p">)</span>
+<span class="lineno">28 </span>
+<span class="lineno">29 </span>pi_parallel <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="kp">cat</span><span class="p">(</span><span class="s">&#39;parallel: pi -&#39;</span><span class="p">,</span> <span class="m">4</span><span class="o">*</span><span class="kp">sum</span><span class="p">(</span>generate_points_parallel<span class="p">(</span>n<span class="p">))</span><span class="o">/</span>n<span class="p">,</span> <span class="s">&#39;\n&#39;</span><span class="p">)</span>
+<span class="lineno">30 </span>
+<span class="lineno">31 </span>pi_vectorized <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">)</span> <span class="kp">cat</span><span class="p">(</span><span class="s">&#39;vectorized: pi -&#39;</span><span class="p">,</span> <span class="m">4</span><span class="o">*</span><span class="kp">sum</span><span class="p">(</span>generate_points_vectorized<span class="p">(</span>n<span class="p">))</span><span class="o">/</span>n<span class="p">,</span> <span class="s">&#39;\n&#39;</span><span class="p">)</span></code></pre></figure></p>
+<p>In the above R code snippet, we use the function <code>mclapply</code> which is not currently available on some operation systems<sup class="footnote" id="fnr18"><a href="#fn18">18</a></sup>. When it is not available, we may consider to use <code>parLapply</code> instead.</p>
+<language>Python</language>
+<p>chapter2/pi.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="c1"># now let&#39;s try the parallel approach</span>
+<span class="lineno"> 2 </span><span class="c1"># each process uses the same seed, which is not desired</span>
+<span class="lineno"> 3 </span><span class="k">def</span> <span class="nf">generate_points_parallel</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno"> 4 </span>    <span class="n">pool</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">()</span>
+<span class="lineno"> 5 </span>    <span class="c1"># we ask each process to generate n//mp.cpu_count() points</span>
+<span class="lineno"> 6 </span>    <span class="k">return</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">count_inside_point</span><span class="p">,</span> <span class="p">[</span><span class="n">n</span><span class="o">//</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()]</span><span class="o">*</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">())</span>
+<span class="lineno"> 7 </span>
+<span class="lineno"> 8 </span><span class="c1"># set seed for each process</span>
+<span class="lineno"> 9 </span><span class="c1"># first, let&#39;s define a helper function</span>
+<span class="lineno">10 </span><span class="k">def</span> <span class="nf">helper</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="lineno">11 </span>    <span class="n">n</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">args</span>
+<span class="lineno">12 </span>    <span class="n">seed</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="lineno">13 </span>    <span class="k">return</span> <span class="n">count_inside_point</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno">14 </span>
+<span class="lineno">15 </span><span class="k">def</span> <span class="nf">generate_points_parallel_set_seed</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">16 </span>    <span class="n">pool</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">()</span> <span class="c1"># we can also specify the number of processes by Pool(number)</span>
+<span class="lineno">17 </span>    <span class="c1"># we ask each process to generate n//mp.cpu_count() points</span>
+<span class="lineno">18 </span>    <span class="k">return</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">helper</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="n">n</span><span class="o">//</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()]</span><span class="o">*</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span><span class="nb">range</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()))))</span>
+<span class="lineno">19 </span>
+<span class="lineno">20 </span><span class="c1"># another optimization via vectorization</span>
+<span class="lineno">21 </span><span class="k">def</span> <span class="nf">generate_points_vectorized</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">22 </span>    <span class="n">p</span> <span class="o">=</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="lineno">23 </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+<span class="lineno">24 </span>
+<span class="lineno">25 </span><span class="k">def</span> <span class="nf">pi_naive</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">26 </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pi: {count_inside_point(n)/n*4:.6f}&#39;</span><span class="p">)</span>
+<span class="lineno">27 </span>
+<span class="lineno">28 </span><span class="k">def</span> <span class="nf">pi_parallel</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">29 </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pi: {sum(generate_points_parallel_set_seed(n))/n*4:.6f}&#39;</span><span class="p">)</span>
+<span class="lineno">30 </span>
+<span class="lineno">31 </span><span class="k">def</span> <span class="nf">pi_vectorized</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">32 </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;pi: {generate_points_vectorized(n)/n*4:.6f}&#39;</span><span class="p">)</span></code></pre></figure></p>
+<p>In the above Python code snippet, we defined a function <code>generate_points_parallel</code> which returns a list of number of inside points. But the problem of this function is that each process in the pool shares the same random state. As a result, we will obtain the a list of duplicated numbers by calling this function. To overcome the issue, we defined another function <code>generate_points_parallel_set_seed</code>. Let&#8217;s see the results of our estimation for $\pi$ running on a laptop.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;pi.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">system.time</span><span class="p">(</span>pi_naive<span class="p">(</span><span class="m">1e6</span><span class="p">))</span>
+<span class="lineno"> 3 </span>naive<span class="o">:</span> <span class="kc">pi</span> <span class="o">-</span> <span class="m">3.144592</span> 
+<span class="lineno"> 4 </span>   user  system elapsed 
+<span class="lineno"> 5 </span>  <span class="m">8.073</span>   <span class="m">1.180</span>   <span class="m">9.333</span> 
+<span class="lineno"> 6 </span><span class="o">&gt;</span> <span class="kp">system.time</span><span class="p">(</span>pi_parallel<span class="p">(</span><span class="m">1e6</span><span class="p">))</span>
+<span class="lineno"> 7 </span>parallel<span class="o">:</span> <span class="kc">pi</span> <span class="o">-</span> <span class="m">3.1415</span> 
+<span class="lineno"> 8 </span>   user  system elapsed 
+<span class="lineno"> 9 </span>  <span class="m">4.107</span>   <span class="m">0.560</span>   <span class="m">4.833</span> 
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="kp">system.time</span><span class="p">(</span>pi_vectorized<span class="p">(</span><span class="m">1e6</span><span class="p">))</span>
+<span class="lineno">11 </span>vectorized<span class="o">:</span> <span class="kc">pi</span> <span class="o">-</span> <span class="m">3.141224</span> 
+<span class="lineno">12 </span>   user  system elapsed 
+<span class="lineno">13 </span>  <span class="m">0.180</span>   <span class="m">0.031</span>   <span class="m">0.214</span> </code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">timeit</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pi</span> <span class="k">import</span> <span class="n">pi_naive</span><span class="p">,</span> <span class="n">pi_parallel</span><span class="p">,</span> <span class="n">pi_vectorized</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;naive - {timeit.timeit(&quot;pi_naive(1000000)&quot;,setup=&quot;from __main__ import pi_naive&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="n">pi</span><span class="p">:</span> <span class="mf">3.141056</span>
+<span class="lineno"> 5 </span><span class="n">naive</span> <span class="o">-</span> <span class="mf">4.363822</span> <span class="n">seconds</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;parallel - {timeit.timeit(&quot;pi_parallel(1000000)&quot;,setup=&quot;from __main__ import pi_parallel&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="n">pi</span><span class="p">:</span> <span class="mf">3.141032</span>
+<span class="lineno"> 8 </span><span class="n">parallel</span> <span class="o">-</span> <span class="mf">2.204697</span> <span class="n">seconds</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;vectorized - {timeit.timeit(&quot;pi_vectorized(1000000)&quot;,setup=&quot;from __main__ import pi_vectorized&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="n">pi</span><span class="p">:</span> <span class="mf">3.139936</span>
+<span class="lineno">11 </span><span class="n">vectorized</span> <span class="o">-</span> <span class="mf">0.148950</span> <span class="n">seconds</span></code></pre></figure><p>We see the winner in this example is vectorization, and the parallel solution is better than the naive solution. However, when the problem cannot be vectorized we may use parallelization to achieve better performance.</p>
+<h2 id="scope">Scope of variables</h2>
+<p>We have seen how to define variables in R/Python in Chapter 1, and we have known that a variable is an identifier to a location in memory. What is the scope of a variable and why does it matter? Let&#8217;s first have a look at the code snippets below.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> var_func_1 <span class="o">=</span> <span class="kr">function</span><span class="p">(){</span><span class="kp">print</span><span class="p">(</span>x<span class="p">)}</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> var_func_1<span class="p">()</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> var_func_2 <span class="o">=</span> <span class="kr">function</span><span class="p">(){</span>x<span class="o">=</span>x<span class="m">+1</span><span class="p">;</span><span class="kp">print</span><span class="p">(</span>x<span class="p">)}</span>
+<span class="lineno">6 </span><span class="o">&gt;</span> var_func_2<span class="p">()</span>
+<span class="lineno">7 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span>
+<span class="lineno">8 </span><span class="o">&gt;</span> x
+<span class="lineno">9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="mi">1</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">var_func_1</span><span class="p">():</span><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">var_func_1</span><span class="p">()</span>
+<span class="lineno"> 4 </span><span class="mi">1</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">var_func_2</span><span class="p">():</span><span class="n">x</span><span class="o">+=</span><span class="mi">1</span>
+<span class="lineno"> 6 </span><span class="o">...</span> 
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">var_func_2</span><span class="p">()</span>
+<span class="lineno"> 8 </span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+<span class="lineno"> 9 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="lineno">10 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="n">var_func_2</span>
+<span class="lineno">11 </span><span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s1">&#39;x&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span></code></pre></figure></div>
+</div>
+<p>The results of the code above seem strange before knowing the concept of variable scope. Inside a function, a variable may refer to a function argument/parameter or it could be formally declared inside the function which is called a local variable. But in the code above, <code>x</code> is neither a function argument nor a local variable. How does the <code>print()</code> function know where the identifier <code>x</code> points to?</p>
+<p>The scope of a variable determines where the variable is available/accessible (can be referenced). Both R and Python apply lexical/static scoping for variables, which set the scope of a variable based on the structure of the program. In static scoping, when an &#8216;unknown&#8217; variable referenced, the function will try to find it from the most closely enclosing block. That explains how the <code>print()</code> function could find the variable <code>x</code>.</p>
+<p>In the R code above, <code>x=x+1</code> the first <code>x</code> is a local variable created by the <code>=</code> operator; the second <code>x</code> is referenced inside the function so the static scoping rule applies. As a result, a local variable <code>x</code> which is equal to 2 is created, which is independent with the <code>x</code> outside of the function <code>var_func_2()</code>. However, in Python when a variable is assigned a value in a statement the variable would treated as a local variable and that explains the <code>UnboundLocalError</code>.</p>
+<p>Is it possible to change a variable inside a function which is declared outside the function? Based on the static scoping rule only, it&#8217;s impossible. But there are workarounds in both R/Python. In R, we need the help of environment; and in Python we can use the keyword <code>global</code>.</p>
+<p>So what is an environment in R? An environment is a place where objects are stored. When we invoke the interactive R session, an environment named as <code>.GlobalEnv</code> is created automatically. We can also use the function <code>environment()</code> to get the present environment. The <code>ls()</code> function can take an environment as the argument to list all objects inside the environment.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">$</span>r
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">typeof</span><span class="p">(</span><span class="m">.</span>GlobalEnv<span class="p">)</span>
+<span class="lineno"> 3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;environment&quot;</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> <span class="kp">environment</span><span class="p">()</span>
+<span class="lineno"> 5 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> R_GlobalEnv<span class="o">&gt;</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="kp">ls</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;x&quot;</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> env_func_1<span class="o">=</span><span class="kr">function</span><span class="p">(</span>x<span class="p">){</span>
+<span class="lineno">10 </span><span class="o">+</span>   y<span class="o">=</span>x<span class="m">+1</span>
+<span class="lineno">11 </span><span class="o">+</span>   <span class="kp">print</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno">12 </span><span class="o">+</span>   <span class="kp">ls</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno">13 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> env_func_1<span class="p">(</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> <span class="mh">0x7fc59d165a20</span><span class="o">&gt;</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;x&quot;</span> <span class="s">&quot;y&quot;</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> env_func_2<span class="o">=</span><span class="kr">function</span><span class="p">(){</span><span class="kp">print</span><span class="p">(</span><span class="kp">environment</span><span class="p">())}</span>
+<span class="lineno">18 </span><span class="o">&gt;</span> env_func_2<span class="p">()</span>
+<span class="lineno">19 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> <span class="mh">0x7fc59d16f520</span><span class="o">&gt;</span></code></pre></figure><p>The above code shows that each function has its own environment containing all function arguments and local variables declared inside the function. In order to change a variable declared outside of a function, we need the access of the environment enclosing the variable to change. There is a function <code>parent_env(e)</code> that returns the parent environment of the given environment <code>e</code> in R. Using this function, we are able to change the value of <code>x</code> declared in <code>.GlobalEnv</code> inside a function which is also declared in <code>.GlobalEnv</code>. The <code>global</code> keyword in Python works in a totally different way, which is simple but less flexible.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> env_func_3<span class="o">=</span><span class="kr">function</span><span class="p">(){</span>
+<span class="lineno">3 </span><span class="o">+</span>   cur_env<span class="o">=</span><span class="kp">environment</span><span class="p">()</span>
+<span class="lineno">4 </span><span class="o">+</span>   par_env<span class="o">=</span><span class="kp">parent.env</span><span class="p">(</span>cur_env<span class="p">)</span>
+<span class="lineno">5 </span><span class="o">+</span>   par_env<span class="o">$</span>x<span class="o">=</span><span class="m">2</span>
+<span class="lineno">6 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno">7 </span><span class="o">&gt;</span> env_func_3<span class="p">()</span>
+<span class="lineno">8 </span><span class="o">&gt;</span> x
+<span class="lineno">9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">env_func_3</span><span class="p">():</span>
+<span class="lineno">2 </span><span class="o">...</span>   <span class="k">global</span> <span class="n">x</span>
+<span class="lineno">3 </span><span class="o">...</span>   <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="lineno">4 </span><span class="o">...</span> 
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="mi">1</span>
+<span class="lineno">6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">env_func_3</span><span class="p">()</span>
+<span class="lineno">7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
+<span class="lineno">8 </span><span class="mi">2</span></code></pre></figure><p>I seldomly use the <code>global</code> keyword in Python, if any. But the environment in R could be very handy in some occasions. In R, environment could be used as a purely mutable version of the <code>list</code> data structure.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="c1"># list is not purely mutable</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">list</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f829183f6f8&gt;&quot;</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> x<span class="o">$</span>a<span class="o">=</span><span class="m">2</span>
+<span class="lineno">6 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">7 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828f4d05c8&gt;&quot;</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="c1"># environment is purely mutable</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> <span class="n">x</span><span class="o">=</span><span class="n">new</span><span class="o">.</span><span class="n">env</span><span class="p">()</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="n">x</span>
+<span class="lineno">4 </span><span class="o">&lt;</span><span class="n">environment</span><span class="p">:</span> <span class="mh">0x7f8290aee7e8</span><span class="o">&gt;</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> <span class="n">x</span><span class="err">$</span><span class="n">a</span><span class="o">=</span><span class="mi">2</span>
+<span class="lineno">6 </span><span class="o">&gt;</span> <span class="n">x</span>
+<span class="lineno">7 </span><span class="o">&lt;</span><span class="n">environment</span><span class="p">:</span> <span class="mh">0x7f8290aee7e8</span><span class="o">&gt;</span></code></pre></figure></div>
+</div>
+<p>Actually, the object of an R6 class type is also an environment.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="c1"># load the Complex class that we defined in chapter 1</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> x <span class="o">=</span> Complex<span class="o">$</span>new<span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kp">typeof</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;environment&quot;</span></code></pre></figure><p>In Python, we can assign values to multiple variables in one line.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> x<span class="p">,</span>y <span class="o">=</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> x
+<span class="lineno">3 </span><span class="m">1</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> y
+<span class="lineno">5 </span><span class="m">2</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="mi">1</span> <span class="mi">2</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">6 </span><span class="mi">1</span> <span class="mi">2</span>
+<span class="lineno">7 </span><span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">8 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">9 </span><span class="mi">1</span> <span class="mi">2</span></code></pre></figure></div>
+</div>
+<p>Even though in the left snippet above there aren&#8217;t parentheses embracing <code>1,2</code> after the <code>=</code> operator, a tuple is created first and then the tuple is unpacked and assigned to <code>x, y</code>. Such mechanism doesn&#8217;t exist in R, but we can define our own multiple assignment operator with the help of environment.</p>
+<language>R</language>
+<p>chapter2/multi_assignment.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="sb">`%=%`</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>left<span class="p">,</span> right<span class="p">)</span> <span class="p">{</span>
+<span class="lineno"> 2 </span>  <span class="c1"># we require the RHS to be a list strictly</span>
+<span class="lineno"> 3 </span>  <span class="kp">stopifnot</span><span class="p">(</span><span class="kp">is.list</span><span class="p">(</span>right<span class="p">))</span>
+<span class="lineno"> 4 </span>  <span class="c1"># dest_env is the desitination environment enclosing the variables on LHS</span>
+<span class="lineno"> 5 </span>  dest_env <span class="o">=</span> <span class="kp">parent.env</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno"> 6 </span>  left <span class="o">=</span> <span class="kp">substitute</span><span class="p">(</span>left<span class="p">)</span>
+<span class="lineno"> 7 </span>
+<span class="lineno"> 8 </span>  recursive_assign <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>left<span class="p">,</span> right<span class="p">,</span> dest_env<span class="p">)</span> <span class="p">{</span>
+<span class="lineno"> 9 </span>    <span class="kr">if</span> <span class="p">(</span><span class="kp">length</span><span class="p">(</span>left<span class="p">)</span> <span class="o">==</span> <span class="m">1</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno">10 </span>      <span class="kp">assign</span><span class="p">(</span>x <span class="o">=</span> <span class="kp">deparse</span><span class="p">(</span>left<span class="p">),</span>
+<span class="lineno">11 </span>             value <span class="o">=</span> right<span class="p">,</span>
+<span class="lineno">12 </span>             envir <span class="o">=</span> dest_env<span class="p">)</span>
+<span class="lineno">13 </span>      <span class="kr">return</span><span class="p">()</span>
+<span class="lineno">14 </span>    <span class="p">}</span>
+<span class="lineno">15 </span>    <span class="kr">if</span> <span class="p">(</span><span class="kp">length</span><span class="p">(</span>left<span class="p">)</span> <span class="o">!=</span> <span class="kp">length</span><span class="p">(</span>right<span class="p">)</span> <span class="o">+</span> <span class="m">1</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno">16 </span>      <span class="kp">stop</span><span class="p">(</span><span class="s">&quot;LHS and RHS must have the same shapes&quot;</span><span class="p">)</span>
+<span class="lineno">17 </span>    <span class="p">}</span>
+<span class="lineno">18 </span>
+<span class="lineno">19 </span>    <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">2</span><span class="o">:</span><span class="kp">length</span><span class="p">(</span>left<span class="p">))</span> <span class="p">{</span>
+<span class="lineno">20 </span>      recursive_assign<span class="p">(</span>left<span class="p">[[</span>i<span class="p">]],</span> right<span class="p">[[</span>i <span class="o">-</span> <span class="m">1</span><span class="p">]],</span>  dest_env<span class="p">)</span>
+<span class="lineno">21 </span>    <span class="p">}</span>
+<span class="lineno">22 </span>  <span class="p">}</span>
+<span class="lineno">23 </span>
+<span class="lineno">24 </span>  recursive_assign<span class="p">(</span>left<span class="p">,</span> right<span class="p">,</span> dest_env<span class="p">)</span>
+<span class="lineno">25 </span><span class="p">}</span></code></pre></figure></p>
+<p>Before going into the script deeper, first let&#8217;s see the usage of the multiple assignment operator we defined.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;multi_assignment.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kt">c</span><span class="p">(</span>x<span class="p">,</span>y<span class="p">,</span>z<span class="p">)</span> <span class="o">%=%</span> <span class="kt">list</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="s">&quot;Hello World!&quot;</span><span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">))</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> x
+<span class="lineno"> 4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> y
+<span class="lineno"> 6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;Hello World!&quot;</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> z
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span> <span class="m">3</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kt">list</span><span class="p">(</span>a<span class="p">,</span>b<span class="p">)</span> <span class="o">%=%</span> <span class="kt">list</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="kp">as.Date</span><span class="p">(</span><span class="s">&#39;2019-01-01&#39;</span><span class="p">))</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> a
+<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> b
+<span class="lineno">13 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;2019-01-01&quot;</span></code></pre></figure><p>In the <code>\%=\%</code> operator defined above, we used two functions <code>substitute, deparse</code> which are very powerful but less known by R novices. To better understand these functions as well as some other less known R functions, the Rchaeology<sup class="footnote" id="fnr19"><a href="#fn19">19</a></sup> tutorial is worth reading.</p>
+<p>It is also interesting to see that we defined the function <code>recursive_assign</code> inside the <code>\%=\%</code> function. Both R and Python support the concept of first class functions. More specifically, a function in R/Python is an object, which can be</p>
+<ul>
+	<li>stored as a variable;</li>
+	<li>passed as a function argument;</li>
+	<li>returned from a function.</li>
+</ul>
+<p>The essential idea behind the <code>recursive_assign</code> function is a depth-first search (<span class="caps">DFS</span>), which is a fundamental graph traversing algorithm<sup class="footnote" id="fnr20"><a href="#fn20">20</a></sup>. In the context of the <code>recursive_assign</code> function, we use <span class="caps">DFS</span> to traverse the parse tree of the <code>left</code> argument created by calling <code>substitute(left)</code>.</p>
+<h2 id="Evaluation">Evaluation strategy</h2>
+<p>R is a lazy programming language since it uses lazy evaluation by default<sup class="footnote" id="fnr21"><a href="#fn21">21</a></sup>. Lazy evaluation strategy delays the evaluation of an expression until its value is needed. When an expression in R is evaluated, it follows an outermost reduction order in general. But Python is not a lazy programming language and the expression in Python follows an innermost reduction order.</p>
+<p>The code snippets below illustrate the innermost reduction vs. outermost reduction.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> divide <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">){</span><span class="kp">stopifnot</span><span class="p">(</span>y<span class="o">!=</span><span class="m">0</span><span class="p">);</span><span class="kr">return</span><span class="p">(</span>x<span class="o">/</span>y<span class="p">)}</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> power <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> p<span class="p">){</span><span class="kr">if</span> <span class="p">(</span>p<span class="o">==</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span> <span class="kr">else</span> x<span class="o">^</span>p<span class="p">}</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> power<span class="p">(</span>divide<span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">0</span><span class="p">),</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">4 </span>Error <span class="kr">in</span> divide<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span> <span class="o">:</span> y <span class="o">!=</span> <span class="m">0</span> is not <span class="kc">TRUE</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> power<span class="p">(</span>divide<span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">0</span><span class="p">),</span><span class="m">0</span><span class="p">)</span>
+<span class="lineno">6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">divide</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span><span class="o">/</span><span class="n">y</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">power</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span> <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">p</span><span class="o">==</span><span class="mi">0</span> <span class="k">else</span> <span class="n">x</span><span class="o">**</span><span class="n">p</span>
+<span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">power</span><span class="p">(</span><span class="n">divide</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="mi">0</span><span class="p">)</span>
+<span class="lineno">4 </span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+<span class="lineno">5 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="lineno">6 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="n">divide</span>
+<span class="lineno">7 </span><span class="ne">ZeroDivisionError</span><span class="p">:</span> <span class="n">division</span> <span class="n">by</span> <span class="n">zero</span></code></pre></figure></div>
+</div>
+<p>Because of the outermost reduction order, the R code snippet evaluate the function <code>power</code> first and since if second argument is 0 the first argument is not required to evaluate. Thus, the function call returns 1. But the Python code snippet first evaluates the function call of <code>divide</code> and an exception is raised because of division by zero.</p>
+<p>Although Python is an eager language, it is possible to simulate the lazy evaluation behavior. For example, the code inside a generator<sup class="footnote" id="fnr22"><a href="#fn22">22</a></sup> is evaluated when the generator is consumed but not evaluated when it is created. We can create a sequence of Fibonacci numbers with the help of <code>generator</code>.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">fib</span><span class="p">():</span>
+<span class="lineno"> 2 </span><span class="o">...</span>     <span class="s1">&#39;&#39;&#39;</span>
+<span class="lineno"> 3 </span><span class="s1">...     a generator to create Fibonacci numbers less than 10</span>
+<span class="lineno"> 4 </span><span class="s1">...     &#39;&#39;&#39;</span>
+<span class="lineno"> 5 </span><span class="o">...</span>     <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+<span class="lineno"> 6 </span><span class="o">...</span>     <span class="k">while</span> <span class="n">a</span><span class="o">&lt;</span><span class="mi">10</span><span class="p">:</span>
+<span class="lineno"> 7 </span><span class="o">...</span>         <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="o">+</span><span class="n">b</span>
+<span class="lineno"> 8 </span><span class="o">...</span>         <span class="k">yield</span> <span class="n">a</span>
+<span class="lineno"> 9 </span><span class="o">...</span> 
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">fib</span><span class="p">()</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="o">&lt;</span><span class="n">generator</span> <span class="nb">object</span> <span class="n">fib</span> <span class="n">at</span> <span class="mh">0x116dfc570</span><span class="o">&gt;</span>
+<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">...</span> 
+<span class="lineno">15 </span><span class="mi">1</span>
+<span class="lineno">16 </span><span class="mi">1</span>
+<span class="lineno">17 </span><span class="mi">2</span>
+<span class="lineno">18 </span><span class="mi">3</span>
+<span class="lineno">19 </span><span class="mi">5</span>
+<span class="lineno">20 </span><span class="mi">8</span>
+<span class="lineno">21 </span><span class="mi">13</span>
+<span class="lineno">22 </span><span class="o">&gt;&gt;&gt;</span> </code></pre></figure><p>In the code snippet above, we create a generator which generates the sequence of Fibonacci numbers less than 10. When the generator is created, the sequence is not generated immediately. When we consume the generator in a loop, each element is then generated as needed. It is also common to consume the generator with the <code>next</code> function.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">fib</span><span class="p">()</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="mi">1</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="mi">1</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="mi">2</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="mi">3</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="mi">5</span></code></pre></figure><h2 id="cpp">Speed up with C/C++ in R/Python</h2>
+<p>The purpose of this section is not to teach C/C++. If you know how to write C/C++ then it may help to improve the performance of R/Python program.</p>
+<p>It is recommended to use vectorization technique to speed up your program whenever possible. But what if it&#8217;s infeasible to vectorize the algorithm? One potential option is to use C/C++ in the R/Python code. According to my limited experience, it is much easier to use C/C++ in R with the help of <code>Rcpp</code> package than in Python. In Python, more options are available but not as straightforward as the solution of <code>Rcpp</code>. In this section, let&#8217;s use <code>Cython</code><sup class="footnote" id="fnr23"><a href="#fn23">23</a></sup>. Actually, <code>Cython</code> itself is a programming language written in Python and C. In <code>Rcpp</code> we can write C++ code directly and use it in native R code. With the help of <code>Cython</code>, we can write python-like code which is able to be compiled to C or C++ and automatically wrapped into python-importable modules. <code>Cython</code> could also wrap independent C or C++ code into python-importable modules.</p>
+<p>Let&#8217;s see how to calculate Fibonacci numbers with these tools. The first step is to install <code>Rcpp</code> package in R and the <code>Cython</code> module (use <code>pip</code>) in Python. Once they are installed, we can write the code in C++ directly for R. As for <code>Cython</code>, we write the python-like code which would be compiled to C/C++ later.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>C</language>
+<p>chapter2/Fibonacci.cpp<br />
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span></span><span class="lineno"> 1 </span><span class="cp">#include</span> <span class="cpf">&lt;Rcpp.h&gt;</span><span class="cp"></span>
+<span class="lineno"> 2 </span><span class="n">using</span> <span class="n">namespace</span> <span class="n">Rcpp</span><span class="p">;</span>
+<span class="lineno"> 3 </span>
+<span class="lineno"> 4 </span><span class="c1">// [[Rcpp::export]]</span>
+<span class="lineno"> 5 </span><span class="kt">int</span> <span class="nf">Fibonacci</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno"> 6 </span>  <span class="k">if</span> <span class="p">(</span><span class="n">n</span><span class="o">==</span><span class="mi">1</span> <span class="n">or</span> <span class="n">n</span><span class="o">==</span><span class="mi">2</span><span class="p">){</span>
+<span class="lineno"> 7 </span>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="lineno"> 8 </span>  <span class="p">}</span> 
+<span class="lineno"> 9 </span>  <span class="k">return</span> <span class="n">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">);</span>
+<span class="lineno">10 </span><span class="p">}</span></code></pre></figure></p>
+</div>
+<div class="coderight">
+<language>Cython</language>
+<p>chapter2/Fibonacci.pyx<br />
+<figure class="highlight"><pre><code class="language-cython" data-lang="cython"><span></span><span class="lineno"> 1 </span><span class="c">#!python</span>
+<span class="lineno"> 2 </span><span class="c">#cython: language_level=3</span>
+<span class="lineno"> 3 </span>
+<span class="lineno"> 4 </span><span class="k">cdef</span> <span class="kt">int</span> <span class="nf">Fibonacci_c</span><span class="p">(</span><span class="nb">int</span> <span class="n">n</span><span class="p">):</span>
+<span class="lineno"> 5 </span>    <span class="k">if</span> <span class="n">n</span><span class="o">==</span><span class="mf">1</span> <span class="ow">or</span> <span class="n">n</span><span class="o">==</span><span class="mf">2</span><span class="p">:</span>
+<span class="lineno"> 6 </span>        <span class="k">return</span> <span class="mf">1</span>
+<span class="lineno"> 7 </span>    <span class="k">return</span> <span class="n">Fibonacci_c</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mf">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Fibonacci_c</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mf">2</span><span class="p">)</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span><span class="k">def</span> <span class="nf">Fibonacci_static</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">10 </span>    <span class="k">return</span> <span class="n">Fibonacci_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno">11 </span>
+<span class="lineno">12 </span><span class="k">def</span> <span class="nf">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">13 </span>    <span class="k">if</span> <span class="n">n</span><span class="o">==</span><span class="mf">1</span> <span class="ow">or</span> <span class="n">n</span><span class="o">==</span><span class="mf">2</span><span class="p">:</span>
+<span class="lineno">14 </span>        <span class="k">return</span> <span class="mf">1</span>
+<span class="lineno">15 </span>    <span class="k">return</span> <span class="n">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mf">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mf">2</span><span class="p">)</span></code></pre></figure></p>
+</div>
+</div>
+<p>It&#8217;s worth noting the extension of the <code>Cython</code> file above is <code>pyx</code>, not <code>py</code>. And in <code>Fibonacci.pyx</code>, the function we defined is quite following the native Python syntax. But in <code>Cython</code> we can add static typing declarations which are often helpful to improve the performance, although not mandatory. The keyword <code>cdef</code> makes the function <code>Fibonacci_c</code> invisible to Python and thus we have to define the <code>Fibonacci_static</code> function as a wrapper which can be imported into Python. The function <code>Fibonacci</code> is not static typed for benchmarking.</p>
+<p>Let&#8217;s also implement the same functions in native R/Python for benchmarking purpose.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<p>chapter2/Fibonacci.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>Fibonacci_native <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>n<span class="p">){</span>
+<span class="lineno">2 </span>  <span class="kr">if</span> <span class="p">(</span>n<span class="o">==</span><span class="m">1</span> <span class="o">||</span> n<span class="o">==</span><span class="m">2</span><span class="p">){</span>
+<span class="lineno">3 </span>    <span class="m">1</span>
+<span class="lineno">4 </span>  <span class="p">}</span><span class="kr">else</span> <span class="p">{</span>
+<span class="lineno">5 </span>    Fibonacci_native<span class="p">(</span>n<span class="m">-1</span><span class="p">)</span> <span class="o">+</span> Fibonacci_native<span class="p">(</span>n<span class="m">-2</span><span class="p">)</span>
+<span class="lineno">6 </span>  <span class="p">}</span>
+<span class="lineno">7 </span><span class="p">}</span></code></pre></figure></p>
+</div>
+<div class="coderight">
+<language>Python</language>
+<p>chapter2/Fibonacci.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="k">def</span> <span class="nf">Fibonacci_native</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">2 </span>    <span class="k">if</span> <span class="n">n</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">n</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+<span class="lineno">3 </span>        <span class="k">return</span> <span class="mi">1</span>
+<span class="lineno">4 </span>    <span class="k">return</span> <span class="n">Fibonacci_native</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Fibonacci_native</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span></code></pre></figure></p>
+</div>
+</div>
+<p>Now let&#8217;s compare the performance of different implementations.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>microbenchmark<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>Rcpp<span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;Fibonacci_native}.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> sourceCpp<span class="p">(</span><span class="s">&#39;Fibonacci.cpp&#39;</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="c1"># the native implementation in R</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> microbenchmark<span class="p">(</span>Fibonacci_native<span class="p">(</span><span class="m">20</span><span class="p">),</span> times<span class="o">=</span><span class="m">1000</span><span class="p">)</span>
+<span class="lineno"> 7 </span>Unit<span class="o">:</span> milliseconds
+<span class="lineno"> 8 </span>                 expr      min       lq     mean   median       uq      max neval
+<span class="lineno"> 9 </span> Fibonacci_native<span class="p">(</span><span class="m">20</span><span class="p">)</span> <span class="m">3.917138</span> <span class="m">4.056468</span> <span class="m">4.456824</span> <span class="m">4.190078</span> <span class="m">4.462815</span> <span class="m">26.30846</span> <span class="m">1000</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> the C<span class="o">++</span> implementation
+<span class="lineno">11 </span><span class="o">&gt;</span> microbenchmark<span class="p">(</span>Fibonacci<span class="p">(</span><span class="m">20</span><span class="p">),</span> times<span class="o">=</span><span class="m">1000</span><span class="p">)</span>
+<span class="lineno">12 </span>Unit<span class="o">:</span> microseconds
+<span class="lineno">13 </span>          expr    min     lq     mean median     uq     max neval
+<span class="lineno">14 </span> Fibonacci<span class="p">(</span><span class="m">20</span><span class="p">)</span> <span class="m">14.251</span> <span class="m">14.482</span> <span class="m">15.81708</span> <span class="m">14.582</span> <span class="m">14.731</span> <span class="m">775.095</span>  <span class="m">1000</span></code></pre></figure><p>The native implementation in R is much slower the C++ implementation (see the difference of units).</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pyximport</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">pyximport</span><span class="o">.</span><span class="n">install</span><span class="p">()</span> 
+<span class="lineno"> 3 </span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">pyximport</span><span class="o">.</span><span class="n">pyximport</span><span class="o">.</span><span class="n">PyxImporter</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x1056f9f98</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">Fibonacci</span> <span class="k">import</span> <span class="n">Fibonacci_static</span><span class="p">,</span> <span class="n">Fibonacci</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">Fibonacci_native</span> <span class="k">import</span> <span class="n">Fibonacci_native</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">timeit</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_native(20)&quot;,setup=&quot;from __main__ import Fibonacci_native&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="mf">1.927359</span> <span class="n">seconds</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci(20)&quot;,setup=&quot;from __main__ import Fibonacci&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="mf">0.316726</span> <span class="n">seconds</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_static(20)&quot;,setup=&quot;from __main__ import Fibonacci_static&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="mf">0.012741</span> <span class="n">seconds</span></code></pre></figure><p>The results show the static typed implementation is the fastest, and the native implementation in pure Python is the slowest. Again the time measured by <code>timeit.timeit</code> is the total time to run the main statement 1000 times. The average time per run of <code>Fibonacci_static</code> function is close to the average time per run of <code>Fibonacci</code> in R.</p>
+<h2 id="miscellaneous">Miscellaneous</h2>
+<p>We have introduced the basics of R/Python programming so far. There are much more to learn to become an advanced user of R/Python. For example, the appropriate usages of <code>iterator, generator, decorator</code> could improve both the conciseness and readability of your Python code. The <code>generator</code><sup class="footnote" id="fnr24"><a href="#fn24">24</a></sup> is commonly seen in machine learning programs to prepare training/testing samples. <code>decorator</code> is a kind of syntactic sugar to allow the modification of a function&#8217;s behavior in a simple way. In R there are no built-in <code>iterator, generator, decorator</code>, but you may find some third-party libraries to mimic these features; or you may try to implement your own.</p>
+<p>One advantage of Python over R is that there are some built-in modules containing high-performance data structures or commonly-used algorithms implemented efficiently. For example, I enjoy using the <code>deque</code> structure in the Python <code>collections</code> module<sup class="footnote" id="fnr25"><a href="#fn25">25</a></sup>, but there is no built-in counterpart in R. We have written our own binary search algorithm earlier in this Chapter, which can also be replaced by the functions in the built-in module <code>bisect</code><sup class="footnote" id="fnr26"><a href="#fn26">26</a></sup> in Python.</p>
+<p>Another important aspect of programming is testing. Unit testing is a typical software testing method that is commonly adopted in practice. In R there are two third-party packages <code>testthat</code> and <code>RUnit</code>. In Python, the built-in <code>unittest</code> is quite powerful. Also, the third-party module <code>pytest</code><sup class="footnote" id="fnr27"><a href="#fn27">27</a></sup> is very popular.</p>
 <hr />
 <p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> https://www.rstudio.com/products/rstudio</p>
 <p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://code.visualstudio.com/</p>
@@ -635,6 +1125,21 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <p class="footnote" id="fn10"><a href="#fnr10"><sup>10</sup></a> https://www.python.org/dev/peps/pep-0498</p>
 <p class="footnote" id="fn11"><a href="#fnr11"><sup>11</sup></a> https://en.wikipedia.org/wiki/Biham-Middleton-Levine_traffic_model</p>
 <p class="footnote" id="fn12"><a href="#fnr12"><sup>12</sup></a> https://en.wikipedia.org/wiki/Inverse_transform_sampling</p>
+<p class="footnote" id="fn13"><a href="#fnr13"><sup>13</sup></a> https://en.wikipedia.org/wiki/Thread_(computing)</p>
+<p class="footnote" id="fn14"><a href="#fnr14"><sup>14</sup></a> https://en.wikipedia.org/wiki/Process_(computing)</p>
+<p class="footnote" id="fn15"><a href="#fnr15"><sup>15</sup></a> https://docs.python.org/3.7/library/threading.html</p>
+<p class="footnote" id="fn16"><a href="#fnr16"><sup>16</sup></a> https://en.wikipedia.org/wiki/Embarrassingly_parallel</p>
+<p class="footnote" id="fn17"><a href="#fnr17"><sup>17</sup></a> https://en.wikipedia.org/wiki/Monte_Carlo_method</p>
+<p class="footnote" id="fn18"><a href="#fnr18"><sup>18</sup></a> https://stat.ethz.ch/R-manual/R-devel/library/parallel/doc/parallel.pdf</p>
+<p class="footnote" id="fn19"><a href="#fnr19"><sup>19</sup></a> https://cran.r-project.org/web/packages/rockchalk/vignettes/Rchaeology.pdf</p>
+<p class="footnote" id="fn20"><a href="#fnr20"><sup>20</sup></a> https://en.wikipedia.org/wiki/Depth-first_search</p>
+<p class="footnote" id="fn21"><a href="#fnr21"><sup>21</sup></a> Floréal Morandat, Brandon Hill, Leo Osvald, and Jan Vitek. Evaluating the design of the r language. In European Conference on Object-Oriented Programming, pages 104–131. Springer, 2012.</p>
+<p class="footnote" id="fn22"><a href="#fnr22"><sup>22</sup></a> https://www.python.org/dev/peps/pep-0255</p>
+<p class="footnote" id="fn23"><a href="#fnr23"><sup>23</sup></a> https://en.wikipedia.org/wiki/Cython</p>
+<p class="footnote" id="fn24"><a href="#fnr24"><sup>24</sup></a> https://docs.python.org/3/howto/functional.html</p>
+<p class="footnote" id="fn25"><a href="#fnr25"><sup>25</sup></a> https://docs.python.org/3/library/collections.html</p>
+<p class="footnote" id="fn26"><a href="#fnr26"><sup>26</sup></a> https://docs.python.org/3.7/library/bisect.html</p>
+<p class="footnote" id="fn27"><a href="#fnr27"><sup>27</sup></a> https://docs.pytest.org/en/latest</p>
     </div> <!-- /container-fluid -->
     <!-- Footer -->
 <div id="footer">
@@ -642,8 +1147,8 @@ Considering the importance of vectorization in scientific programming, let&#8217
     <div class="container-fluid">
       <div class="row">
         <div class="span16">
-          <p>
-              &copy; 2019 All rights reserved
+          <p style="text-align:center">
+              &copy; 2019 Anotherbookondatascience.com, all rights reserved.
           </p>
         </div>
       </div>
