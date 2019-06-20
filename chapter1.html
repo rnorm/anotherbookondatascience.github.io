@@ -217,7 +217,35 @@
 </div>
 <p>Let&#8217;s go back to <code>fun1</code> and have a closer look at the <code>return</code>. In Python, if we want to return something we have to use the keyword <code>return</code> explicitly. <code>return</code> in R is a function but it is not a function in Python and that is why no parenthesis follows <code>return</code> in Python. In R, <code>return</code> is not required even though we need to return something from the function. Instead, we can just put the variables to return in the last line of the function defined in R. That being said, we can define <code>fun1</code> as follows.</p>
 <language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> fun1<span class="o">=</span><span class="kr">function</span><span class="p">(</span>x<span class="p">){</span>x<span class="o">*</span>x<span class="p">}</span></code></pre></figure><h2 id="control">Control flows</h2>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> fun1<span class="o">=</span><span class="kr">function</span><span class="p">(</span>x<span class="p">){</span>x<span class="o">*</span>x<span class="p">}</span></code></pre></figure><p>Sometimes we want to give a default value to an argument for a function, and both R and Python allow functions to have default values.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> log_fun <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> base<span class="o">=</span><span class="m">2</span><span class="p">){</span>
+<span class="lineno"> 2 </span><span class="o">+</span> <span class="kr">return</span><span class="p">(</span><span class="kp">log</span><span class="p">(</span>x<span class="p">,</span> base<span class="p">))</span>
+<span class="lineno"> 3 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> log_fun<span class="p">(</span><span class="m">5</span><span class="p">,</span> base<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2.321928</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> log_fun<span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2.321928</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> log_fun<span class="p">(</span>base<span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="m">5</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2.321928</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> </code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">log_fun</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="lineno"> 2 </span><span class="o">...</span>   <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">...</span> 
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">log_fun</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="mf">2.321928094887362</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">log_fun</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="mf">2.321928094887362</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">log_fun</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="lineno"> 9 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span>
+<span class="lineno">10 </span><span class="ne">SyntaxError</span><span class="p">:</span> <span class="n">positional</span> <span class="n">argument</span> <span class="n">follows</span> <span class="n">keyword</span> <span class="n">argument</span></code></pre></figure></div>
+</div>
+<p>In Python we have to put the arguments with default values to the end, which is not required in R. However, from readability perspective, it is better always to put them to the end. You may have noticed the error message above about positional argument. In Python there are two types of arguments, i.e., positional arguments and keyword arguments. Simply speaking, a keyword argument must be preceded by an identifier, e.g., base in the example above. And positional arguments refer to non-keyword arguments.</p>
+<h2 id="control">Control flows</h2>
 <p>To implement a complex logic in R/Python, we may need control flows.</p>
 <h3>If/else</h3>
 <p>Let&#8217;s define a function to return the absolute value of input.</p>
@@ -883,7 +911,7 @@ The default values of <code>start</code> and <code>step</code> are 0 and 1, resp
 <span class="lineno">20 </span><span class="o">+</span> <span class="p">},</span>
 <span class="lineno">21 </span><span class="o">+</span> <span class="c1"># override print function</span>
 <span class="lineno">22 </span><span class="o">+</span> print <span class="o">=</span> <span class="kr">function</span><span class="p">(){</span>
-<span class="lineno">23 </span><span class="o">+</span> 	<span class="kp">cat</span><span class="p">(</span><span class="kp">paste0</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>self<span class="o">$</span>real<span class="p">),</span><span class="s">&#39;+&#39;</span><span class="p">,</span><span class="kp">as.character</span><span class="p">(</span>self<span class="o">$</span>imag<span class="p">),</span><span class="s">&#39;j&#39;</span><span class="p">),</span><span class="s">&#39;\n&#39;</span><span class="p">)</span>
+<span class="lineno">23 </span><span class="o">+</span> 	<span class="kp">cat</span><span class="p">(</span><span class="kp">paste0</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>self<span class="o">$</span>real<span class="p">),</span> <span class="s">&#39;+&#39;</span><span class="p">,</span> <span class="kp">as.character</span><span class="p">(</span>self<span class="o">$</span>imag<span class="p">),</span><span class="s">&#39;j&#39;</span><span class="p">),</span> <span class="s">&#39;\n&#39;</span><span class="p">)</span>
 <span class="lineno">24 </span><span class="o">+</span> <span class="p">}</span>
 <span class="lineno">25 </span><span class="o">+</span> <span class="p">)</span>
 <span class="lineno">26 </span><span class="o">+</span> <span class="p">)</span>

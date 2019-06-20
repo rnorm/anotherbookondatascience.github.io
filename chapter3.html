@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Another Book on Data Science - data.table and pandas</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="bootstrap-1.1.0.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="small-screens.css">
+    <link rel="stylesheet" href="vs.css">
+    <link rel="stylesheet" href="code.css">
+    <link rel="stylesheet" href="application.css">
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-142297640-1', 'anotherbookondatascience.com');
+      ga('send', 'pageview');
+
+    </script>
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container-fluid fixed">
+          <h3><a href="index.html">data.table and pandas</a></h3>
+          <ul class="nav secondary-nav">
+            
+              <li><a href="chapter2.html">&laquo;Previous</a></li>
+            
+            
+              <li><a href="chapter4.html">Next&raquo;</a></li>
+            
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid" style="padding-top: 60px;">
+      <p>Sections in this Chapter:</p>
+<ul>
+	<li><a href="#sql"><span class="caps">SQL</span></a></li>
+	<li><a href="#start">Get started with data.table &amp; pandas</a></li>
+	<li><a href="#indexing">Indexing &amp; selecting data</a></li>
+	<li><a href="#add">Add/Remove/Update</a></li>
+	<li><a href="#groupby">Group by</a></li>
+	<li><a href="#join">Join</a></li>
+</ul>
+<p>Upon the feedbacks and requests from readers of the first few chapters, I made a decision to spend a whole chapter in the introduction of <code>data.table</code> and <code>pandas</code>. Of course, there are many other great data analysis tools in both R and Python. For example, many R users like using <code>dplyr</code> to build up data analysis pipelines. The performance of <code>data.table</code> is superior and that is the main reason I feel there is no need to use other tools for the same tasks in R. But if you are a big fan for the pipe operator <code>\%&gt;\%</code> you may use <code>data.table</code> and <code>dplyr</code> together. Regarding the big data ecosystem, Apache Spark has <span class="caps">API</span> in both R and Python. Recently, there are also some emerging projects aiming at better usability and performance, such as <code>Apache Arrow</code><sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup>, <code>Modin</code><sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>.</p>
+<h2 id="sql"><span class="caps">SQL</span></h2>
+<p>Similar to the previous chapters, I will introduce the tools side by side. However, I feel before diving into the world of <code>data.table</code> and <code>pandas</code>, it is better to talk a little bit about <span class="caps">SQL</span><sup class="footnote" id="fnr3"><a href="#fn3">3</a></sup>. <span class="caps">SQL</span> is a Query language designed for managing data in relational database management system (<span class="caps">RDBMS</span>). Some of the most popular RDBMSs include MS <span class="caps">SQL</span> Server, MySQL, PostgreSQL, etc. Different RDBMSs may use <span class="caps">SQL</span> languages with major or subtle differences.</p>
+<p>If you have never used <span class="caps">RDBMS</span> you may wonder why we need it?</p>
+<ul>
+	<li>first, we need a system to store the data;</li>
+	<li>second, we also need a system that allows us to easily access, manage and update the data.</li>
+</ul>
+<p>Let&#8217;s assume there is a table mtcars in a database (I&#8217;m using sqlite3 in this book) and see some simple tasks we can do with <span class="caps">SQL</span> queries.</p>
+<figcaption class="centerfigcaption">mtcars data loaded from R 3.5.1</figcaption>
+<table>
+	<tr>
+		<td>         <strong>name</strong>        </td>
+		<td>  <strong>mpg</strong> </td>
+		<td> <strong>cyl</strong> </td>
+		<td>  <strong>disp</strong> </td>
+		<td>  <strong>hp</strong> </td>
+		<td> <strong>drat</strong> </td>
+		<td>   <strong>wt</strong>  </td>
+		<td>  <strong>qsec</strong> </td>
+		<td> <strong>vs</strong> </td>
+		<td> <strong>am</strong> </td>
+		<td> <strong>gear</strong> </td>
+		<td> <strong>carb</strong> </td>
+	</tr>
+	<tr>
+		<td> Mazda RX4           </td>
+		<td>   21 </td>
+		<td>   6 </td>
+		<td>   160 </td>
+		<td> 110 </td>
+		<td>  3.9 </td>
+		<td>  2.62 </td>
+		<td> 16.46 </td>
+		<td>  0 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Mazda RX4 Wag       </td>
+		<td>   21 </td>
+		<td>   6 </td>
+		<td>   160 </td>
+		<td> 110 </td>
+		<td>  3.9 </td>
+		<td> 2.875 </td>
+		<td> 17.02 </td>
+		<td>  0 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Datsun 710          </td>
+		<td> 22.8 </td>
+		<td>   4 </td>
+		<td>   108 </td>
+		<td>  93 </td>
+		<td> 3.85 </td>
+		<td>  2.32 </td>
+		<td> 18.61 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Hornet 4 Drive      </td>
+		<td> 21.4 </td>
+		<td>   6 </td>
+		<td>   258 </td>
+		<td> 110 </td>
+		<td> 3.08 </td>
+		<td> 3.215 </td>
+		<td> 19.44 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Hornet Sportabout   </td>
+		<td> 18.7 </td>
+		<td>   8 </td>
+		<td>   360 </td>
+		<td> 175 </td>
+		<td> 3.15 </td>
+		<td>  3.44 </td>
+		<td> 17.02 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Valiant             </td>
+		<td> 18.1 </td>
+		<td>   6 </td>
+		<td>   225 </td>
+		<td> 105 </td>
+		<td> 2.76 </td>
+		<td>  3.46 </td>
+		<td> 20.22 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Duster 360          </td>
+		<td> 14.3 </td>
+		<td>   8 </td>
+		<td>   360 </td>
+		<td> 245 </td>
+		<td> 3.21 </td>
+		<td>  3.57 </td>
+		<td> 15.84 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Merc 240D           </td>
+		<td> 24.4 </td>
+		<td>   4 </td>
+		<td> 146.7 </td>
+		<td>  62 </td>
+		<td> 3.69 </td>
+		<td>  3.19 </td>
+		<td>    20 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    4 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Merc 230            </td>
+		<td> 22.8 </td>
+		<td>   4 </td>
+		<td> 140.8 </td>
+		<td>  95 </td>
+		<td> 3.92 </td>
+		<td>  3.15 </td>
+		<td>  22.9 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    4 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Merc 280            </td>
+		<td> 19.2 </td>
+		<td>   6 </td>
+		<td> 167.6 </td>
+		<td> 123 </td>
+		<td> 3.92 </td>
+		<td>  3.44 </td>
+		<td>  18.3 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    4 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Merc 280C           </td>
+		<td> 17.8 </td>
+		<td>   6 </td>
+		<td> 167.6 </td>
+		<td> 123 </td>
+		<td> 3.92 </td>
+		<td>  3.44 </td>
+		<td>  18.9 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    4 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Merc 450SE          </td>
+		<td> 16.4 </td>
+		<td>   8 </td>
+		<td> 275.8 </td>
+		<td> 180 </td>
+		<td> 3.07 </td>
+		<td>  4.07 </td>
+		<td>  17.4 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    3 </td>
+	</tr>
+	<tr>
+		<td> Merc 450SL          </td>
+		<td> 17.3 </td>
+		<td>   8 </td>
+		<td> 275.8 </td>
+		<td> 180 </td>
+		<td> 3.07 </td>
+		<td>  3.73 </td>
+		<td>  17.6 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    3 </td>
+	</tr>
+	<tr>
+		<td> Merc 450SLC         </td>
+		<td> 15.2 </td>
+		<td>   8 </td>
+		<td> 275.8 </td>
+		<td> 180 </td>
+		<td> 3.07 </td>
+		<td>  3.78 </td>
+		<td>    18 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    3 </td>
+	</tr>
+	<tr>
+		<td> Cadillac Fleetwood  </td>
+		<td> 10.4 </td>
+		<td>   8 </td>
+		<td>   472 </td>
+		<td> 205 </td>
+		<td> 2.93 </td>
+		<td>  5.25 </td>
+		<td> 17.98 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Lincoln Continental </td>
+		<td> 10.4 </td>
+		<td>   8 </td>
+		<td>   460 </td>
+		<td> 215 </td>
+		<td>    3 </td>
+		<td> 5.424 </td>
+		<td> 17.82 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Chrysler Imperial   </td>
+		<td> 14.7 </td>
+		<td>   8 </td>
+		<td>   440 </td>
+		<td> 230 </td>
+		<td> 3.23 </td>
+		<td> 5.345 </td>
+		<td> 17.42 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Fiat 128            </td>
+		<td> 32.4 </td>
+		<td>   4 </td>
+		<td>  78.7 </td>
+		<td>  66 </td>
+		<td> 4.08 </td>
+		<td>   2.2 </td>
+		<td> 19.47 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Honda Civic         </td>
+		<td> 30.4 </td>
+		<td>   4 </td>
+		<td>  75.7 </td>
+		<td>  52 </td>
+		<td> 4.93 </td>
+		<td> 1.615 </td>
+		<td> 18.52 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Toyota Corolla      </td>
+		<td> 33.9 </td>
+		<td>   4 </td>
+		<td>  71.1 </td>
+		<td>  65 </td>
+		<td> 4.22 </td>
+		<td> 1.835 </td>
+		<td>  19.9 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Toyota Corona       </td>
+		<td> 21.5 </td>
+		<td>   4 </td>
+		<td> 120.1 </td>
+		<td>  97 </td>
+		<td>  3.7 </td>
+		<td> 2.465 </td>
+		<td> 20.01 </td>
+		<td>  1 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Dodge Challenger    </td>
+		<td> 15.5 </td>
+		<td>   8 </td>
+		<td>   318 </td>
+		<td> 150 </td>
+		<td> 2.76 </td>
+		<td>  3.52 </td>
+		<td> 16.87 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> <span class="caps">AMC</span> Javelin         </td>
+		<td> 15.2 </td>
+		<td>   8 </td>
+		<td>   304 </td>
+		<td> 150 </td>
+		<td> 3.15 </td>
+		<td> 3.435 </td>
+		<td>  17.3 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Camaro Z28          </td>
+		<td> 13.3 </td>
+		<td>   8 </td>
+		<td>   350 </td>
+		<td> 245 </td>
+		<td> 3.73 </td>
+		<td>  3.84 </td>
+		<td> 15.41 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Pontiac Firebird    </td>
+		<td> 19.2 </td>
+		<td>   8 </td>
+		<td>   400 </td>
+		<td> 175 </td>
+		<td> 3.08 </td>
+		<td> 3.845 </td>
+		<td> 17.05 </td>
+		<td>  0 </td>
+		<td>  0 </td>
+		<td>    3 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Fiat X1-9           </td>
+		<td> 27.3 </td>
+		<td>   4 </td>
+		<td>    79 </td>
+		<td>  66 </td>
+		<td> 4.08 </td>
+		<td> 1.935 </td>
+		<td>  18.9 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    1 </td>
+	</tr>
+	<tr>
+		<td> Porsche 914-2       </td>
+		<td>   26 </td>
+		<td>   4 </td>
+		<td> 120.3 </td>
+		<td>  91 </td>
+		<td> 4.43 </td>
+		<td>  2.14 </td>
+		<td>  16.7 </td>
+		<td>  0 </td>
+		<td>  1 </td>
+		<td>    5 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Lotus Europa        </td>
+		<td> 30.4 </td>
+		<td>   4 </td>
+		<td>  95.1 </td>
+		<td> 113 </td>
+		<td> 3.77 </td>
+		<td> 1.513 </td>
+		<td>  16.9 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    5 </td>
+		<td>    2 </td>
+	</tr>
+	<tr>
+		<td> Ford Pantera L      </td>
+		<td> 15.8 </td>
+		<td>   8 </td>
+		<td>   351 </td>
+		<td> 264 </td>
+		<td> 4.22 </td>
+		<td>  3.17 </td>
+		<td>  14.5 </td>
+		<td>  0 </td>
+		<td>  1 </td>
+		<td>    5 </td>
+		<td>    4 </td>
+	</tr>
+	<tr>
+		<td> Ferrari Dino        </td>
+		<td> 19.7 </td>
+		<td>   6 </td>
+		<td>   145 </td>
+		<td> 175 </td>
+		<td> 3.62 </td>
+		<td>  2.77 </td>
+		<td>  15.5 </td>
+		<td>  0 </td>
+		<td>  1 </td>
+		<td>    5 </td>
+		<td>    6 </td>
+	</tr>
+	<tr>
+		<td> Maserati Bora       </td>
+		<td>   15 </td>
+		<td>   8 </td>
+		<td>   301 </td>
+		<td> 335 </td>
+		<td> 3.54 </td>
+		<td>  3.57 </td>
+		<td>  14.6 </td>
+		<td>  0 </td>
+		<td>  1 </td>
+		<td>    5 </td>
+		<td>    8 </td>
+	</tr>
+	<tr>
+		<td> Volvo 142E          </td>
+		<td> 21.4 </td>
+		<td>   4 </td>
+		<td>   121 </td>
+		<td> 109 </td>
+		<td> 4.11 </td>
+		<td>  2.78 </td>
+		<td>  18.6 </td>
+		<td>  1 </td>
+		<td>  1 </td>
+		<td>    4 </td>
+		<td>    2 </td>
+	</tr>
+</table>
+<language><span class="caps">SQL</span></language>
+<figure class="highlight"><pre><code class="language-sql" data-lang="sql"><span></span><span class="lineno">1 </span><span class="n">sqlite</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">mtcars</span> <span class="k">limit</span> <span class="mi">2</span><span class="p">;</span>
+<span class="lineno">2 </span><span class="n">name</span><span class="p">,</span><span class="n">mpg</span><span class="p">,</span><span class="n">cyl</span><span class="p">,</span><span class="n">disp</span><span class="p">,</span><span class="n">hp</span><span class="p">,</span><span class="n">drat</span><span class="p">,</span><span class="n">wt</span><span class="p">,</span><span class="n">qsec</span><span class="p">,</span><span class="n">vs</span><span class="p">,</span><span class="n">am</span><span class="p">,</span><span class="n">gear</span><span class="p">,</span><span class="n">carb</span>
+<span class="lineno">3 </span><span class="ss">&quot;Mazda RX4&quot;</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">160</span><span class="p">,</span><span class="mi">110</span><span class="p">,</span><span class="mi">3</span><span class="p">.</span><span class="mi">9</span><span class="p">,</span><span class="mi">2</span><span class="p">.</span><span class="mi">62</span><span class="p">,</span><span class="mi">16</span><span class="p">.</span><span class="mi">46</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span>
+<span class="lineno">4 </span><span class="ss">&quot;Mazda RX4 Wag&quot;</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">160</span><span class="p">,</span><span class="mi">110</span><span class="p">,</span><span class="mi">3</span><span class="p">.</span><span class="mi">9</span><span class="p">,</span><span class="mi">2</span><span class="p">.</span><span class="mi">875</span><span class="p">,</span><span class="mi">17</span><span class="p">.</span><span class="mi">02</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span></code></pre></figure><p>In the example above, I select two rows from the table using the syntax <code>select from</code>. The keyword <code>limit</code> in sqlite specifies the number of rows to return. In other RMDBSs, we may need to use <code>top</code> instead.<br />
+It is straightforward to select on conditions with the <code>where</code> keyword.</p>
+<language><span class="caps">SQL</span></language>
+<figure class="highlight"><pre><code class="language-sql" data-lang="sql"><span></span><span class="lineno">1 </span><span class="n">sqlite</span><span class="o">&gt;</span> <span class="k">select</span> <span class="n">mpg</span><span class="p">,</span><span class="n">cyl</span> <span class="k">from</span> <span class="n">mtcars</span> <span class="k">where</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Mazda RX4 Wag&#39;</span><span class="p">;</span>
+<span class="lineno">2 </span><span class="n">mpg</span><span class="p">,</span><span class="n">cyl</span>
+<span class="lineno">3 </span><span class="mi">21</span><span class="p">,</span><span class="mi">6</span></code></pre></figure><p>We can definitely use more conditions with the <code>where</code> clause.</p>
+<language><span class="caps">SQL</span></language>
+<figure class="highlight"><pre><code class="language-sql" data-lang="sql"><span></span><span class="lineno"> 1 </span><span class="n">sqlite</span><span class="o">&gt;</span> <span class="p">.</span><span class="k">mode</span> <span class="k">column</span> <span class="c1">-- make the output aligned; and yes we use &#39;--&#39; to start comment in many SQL languages</span>
+<span class="lineno"> 2 </span><span class="n">sqlite</span><span class="o">&gt;</span> <span class="k">select</span> <span class="n">name</span><span class="p">,</span> <span class="n">mpg</span><span class="p">,</span> <span class="n">cyl</span><span class="p">,</span><span class="n">vs</span><span class="p">,</span><span class="n">am</span> <span class="k">from</span> <span class="n">mtcars</span> <span class="k">where</span> <span class="n">vs</span><span class="o">=</span><span class="mi">1</span> <span class="k">and</span> <span class="n">am</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span>
+<span class="lineno"> 3 </span><span class="n">name</span>        <span class="n">mpg</span>         <span class="n">cyl</span>         <span class="n">vs</span>          <span class="n">am</span>       
+<span class="lineno"> 4 </span><span class="c1">----------  ----------  ----------  ----------  ----------</span>
+<span class="lineno"> 5 </span><span class="n">Datsun</span> <span class="mi">710</span>  <span class="mi">22</span><span class="p">.</span><span class="mi">8</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>        
+<span class="lineno"> 6 </span><span class="n">Fiat</span> <span class="mi">128</span>    <span class="mi">32</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>        
+<span class="lineno"> 7 </span><span class="n">Honda</span> <span class="n">Civi</span>  <span class="mi">30</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>        
+<span class="lineno"> 8 </span><span class="n">Toyota</span> <span class="n">Cor</span>  <span class="mi">33</span><span class="p">.</span><span class="mi">9</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>        
+<span class="lineno"> 9 </span><span class="n">Fiat</span> <span class="n">X1</span><span class="o">-</span><span class="mi">9</span>   <span class="mi">27</span><span class="p">.</span><span class="mi">3</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>        
+<span class="lineno">10 </span><span class="n">Lotus</span> <span class="n">Euro</span>  <span class="mi">30</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>        
+<span class="lineno">11 </span><span class="n">Volvo</span> <span class="mi">142</span><span class="n">E</span>  <span class="mi">21</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">4</span>           <span class="mi">1</span>           <span class="mi">1</span>  </code></pre></figure><p>Staring at the example above, what are we doing? Actually, we are just accessing specific rows and columns from the table in database with <code>select from where</code>.<br />
+We can also do something a bit of more fancy, for example, to get the maximum, the minimum and the average of <code>mpg</code> for all vehicles grouped by the number of cylinders.</p>
+<language><span class="caps">SQL</span></language>
+<figure class="highlight"><pre><code class="language-sql" data-lang="sql"><span></span><span class="lineno">1 </span><span class="n">sqlite</span><span class="o">&gt;</span> <span class="k">select</span> <span class="n">cyl</span><span class="p">,</span> <span class="k">max</span><span class="p">(</span><span class="n">mpg</span><span class="p">)</span> <span class="k">as</span> <span class="k">max</span><span class="p">,</span> <span class="k">min</span><span class="p">(</span><span class="n">mpg</span><span class="p">)</span> <span class="k">as</span> <span class="k">min</span><span class="p">,</span> <span class="k">avg</span><span class="p">(</span><span class="n">mpg</span><span class="p">)</span> <span class="k">as</span> <span class="k">avg</span> <span class="k">from</span> <span class="n">mtcars</span> <span class="k">group</span> <span class="k">by</span> <span class="n">cyl</span> <span class="k">order</span> <span class="k">by</span> <span class="n">cyl</span><span class="p">;</span>
+<span class="lineno">2 </span><span class="n">cyl</span>         <span class="k">max</span>         <span class="k">min</span>         <span class="k">avg</span>             
+<span class="lineno">3 </span><span class="c1">----------  ----------  ----------  ----------------</span>
+<span class="lineno">4 </span><span class="mi">4</span>           <span class="mi">33</span><span class="p">.</span><span class="mi">9</span>        <span class="mi">21</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">26</span><span class="p">.</span><span class="mi">6636363636364</span>
+<span class="lineno">5 </span><span class="mi">6</span>           <span class="mi">21</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">17</span><span class="p">.</span><span class="mi">8</span>        <span class="mi">19</span><span class="p">.</span><span class="mi">7428571428571</span>
+<span class="lineno">6 </span><span class="mi">8</span>           <span class="mi">19</span><span class="p">.</span><span class="mi">2</span>        <span class="mi">10</span><span class="p">.</span><span class="mi">4</span>        <span class="mi">15</span><span class="p">.</span><span class="mi">1</span></code></pre></figure><p>In the above example, there are a few things worth noting. We use <code>as</code> to create an alias for a variable; we group the original rows by the number of cylinders with the keyword <code>group by</code>; and we sort the output rows with the keyword <code>order by</code>. <code>max, min</code> and <code>avg</code> are all built-in functions that we can use directly.</p>
+<p>It is also possible to have user-defined functions in <code>SQL</code> as what we usually do in other programming languages.</p>
+<p><code>SQL</code> is a very powerful tool for data analysis, but it works on <span class="caps">RMDBS</span> and generally we can&#8217;t apply R or Python functions to the database tables directly. Many practitioners in data science have to work with database at times but more often they need to work in a programming languages such as R or Python. We have introduced the data.frame in both R and Python in previous chapters. A data.frame is just like a database table that you may operate within the corresponding language. Usually a data.frame is stored in memory, but of course it can also be deserialized for storage in hard disks.</p>
+<p>With the data.frame-like objects, we could build up a better data processing pipeline by only reading the original data from the database and storing the final output to the database if necessary. Most of works we can do with data.frame-like objects may also be done in <span class="caps">RMBDS</span> with <code>SQL</code>. But they may require intense interactions with a database, which is not preferred  if they could be avoided.</p>
+<p>Now, let&#8217;s get started with <code>data.table</code> and <code>pandas</code>. In this book, I will use <code>data.table 1.12.0</code> and <code>pandas 0.24.0</code>.</p>
+<h2 id="start">Get started with data.table &amp; pandas</h2>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>data.table<span class="p">)</span>
+<span class="lineno">2 </span>data.table <span class="m">1.12.0</span>  Latest news<span class="o">:</span> r<span class="o">-</span>datatable.com</code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">__version__</span>
+<span class="lineno">3 </span><span class="s1">&#39;0.24.2&#39;</span></code></pre></figure></div>
+</div>
+<p>I have saved the mtcars data to a csv<sup class="footnote" id="fnr4"><a href="#fn4">4</a></sup> file (code/chapter3/mtcars.csv), which is loaded from R 3.5.1. Although the mtcars data is loaded into R environment by default, let&#8217;s load the data by reading the raw csv file for learning purpose.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">=</span>fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno">3 </span>                name  mpg cyl disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">4 </span><span class="m">1</span><span class="o">:</span>         Mazda RX4 <span class="m">21.0</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">5 </span><span class="m">2</span><span class="o">:</span>     Mazda RX4 Wag <span class="m">21.0</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">6 </span><span class="m">3</span><span class="o">:</span>        Datsun <span class="m">710</span> <span class="m">22.8</span>   <span class="m">4</span>  <span class="m">108</span>  <span class="m">93</span> <span class="m">3.85</span> <span class="m">2.320</span> <span class="m">18.61</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>
+<span class="lineno">7 </span><span class="m">4</span><span class="o">:</span>    Hornet <span class="m">4</span> Drive <span class="m">21.4</span>   <span class="m">6</span>  <span class="m">258</span> <span class="m">110</span> <span class="m">3.08</span> <span class="m">3.215</span> <span class="m">19.44</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno">8 </span><span class="m">5</span><span class="o">:</span> Hornet Sportabout <span class="m">18.7</span>   <span class="m">8</span>  <span class="m">360</span> <span class="m">175</span> <span class="m">3.15</span> <span class="m">3.440</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span>
+<span class="lineno">9 </span><span class="m">6</span><span class="o">:</span>           Valiant <span class="m">18.1</span>   <span class="m">6</span>  <span class="m">225</span> <span class="m">105</span> <span class="m">2.76</span> <span class="m">3.460</span> <span class="m">20.22</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="lineno"> 4 </span>                <span class="n">name</span>   <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="o">...</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>
+<span class="lineno"> 5 </span><span class="mi">0</span>          <span class="n">Mazda</span> <span class="n">RX4</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>  <span class="mf">16.46</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>
+<span class="lineno"> 6 </span><span class="mi">1</span>      <span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>
+<span class="lineno"> 7 </span><span class="mi">2</span>         <span class="n">Datsun</span> <span class="mi">710</span>  <span class="mf">22.8</span>    <span class="mi">4</span>  <span class="mf">108.0</span>   <span class="mi">93</span>  <span class="o">...</span>  <span class="mf">18.61</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">1</span>
+<span class="lineno"> 8 </span><span class="mi">3</span>     <span class="n">Hornet</span> <span class="mi">4</span> <span class="n">Drive</span>  <span class="mf">21.4</span>    <span class="mi">6</span>  <span class="mf">258.0</span>  <span class="mi">110</span>  <span class="o">...</span>  <span class="mf">19.44</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">3</span>     <span class="mi">1</span>
+<span class="lineno"> 9 </span><span class="mi">4</span>  <span class="n">Hornet</span> <span class="n">Sportabout</span>  <span class="mf">18.7</span>    <span class="mi">8</span>  <span class="mf">360.0</span>  <span class="mi">175</span>  <span class="o">...</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">3</span>     <span class="mi">2</span>
+<span class="lineno">10 </span>
+<span class="lineno">11 </span><span class="p">[</span><span class="mi">5</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">12</span> <span class="n">columns</span><span class="p">]</span></code></pre></figure><p>The type of <code>mtcars_dt</code> is <code>data.table</code>, not <code>data.frame</code>. Here we use the <code>fread</code> function from <code>data.table</code> to read a file and the output type is a <code>data.table</code> directly. Regarding reading csv in R, a very good package is <code>readr</code> for very large files, but the output has a <code>data.frame</code> type. In practice, it is very common to convert a <code>data.frame</code> to <code>data.table</code> with the function <code>as.data.table</code>.</p>
+<h2 id="indexing">Indexing &amp; selecting data</h2>
+<p>Before to introduce the indexing rules in <code>data.table</code> and <code>pandas</code>, it&#8217;s better to understand the <code>key</code> in <code>data.table</code> and the <code>index</code> in <code>pandas</code>.</p>
+<p>What is the <code>key</code> in a <code>data.table</code>? We have talked about <span class="caps">RMDBS</span> and \sqlinline{SQL</code> in the previous section. With \sqlinline{select from where</code> we can easily access specific rows satisfying certain conditions. When the database table is too large, a database \sqlinline{index</code> is used to improve the performance of data retrieval operations. Essentially, a database \sqlinline{index</code> is a data structure, and to maintain the data structure additional cost (for example, space) may be required. The reason to use <code>key</code> in <code>data.table</code> and <code>index</code> in <code>pandas</code> is very similar. Now let&#8217;s see how to set <code>key</code> and <code>index</code>.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> setkey<span class="p">(</span>mtcars_dt<span class="p">,</span> name<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> key<span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno"> 3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;name&quot;</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="m">5</span><span class="p">)</span>
+<span class="lineno"> 5 </span>                 name  mpg cyl disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno"> 6 </span><span class="m">1</span><span class="o">:</span>        AMC Javelin <span class="m">15.2</span>   <span class="m">8</span>  <span class="m">304</span> <span class="m">150</span> <span class="m">3.15</span> <span class="m">3.435</span> <span class="m">17.30</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span>
+<span class="lineno"> 7 </span><span class="m">2</span><span class="o">:</span> Cadillac Fleetwood <span class="m">10.4</span>   <span class="m">8</span>  <span class="m">472</span> <span class="m">205</span> <span class="m">2.93</span> <span class="m">5.250</span> <span class="m">17.98</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno"> 8 </span><span class="m">3</span><span class="o">:</span>         Camaro Z28 <span class="m">13.3</span>   <span class="m">8</span>  <span class="m">350</span> <span class="m">245</span> <span class="m">3.73</span> <span class="m">3.840</span> <span class="m">15.41</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno"> 9 </span><span class="m">4</span><span class="o">:</span>  Chrysler Imperial <span class="m">14.7</span>   <span class="m">8</span>  <span class="m">440</span> <span class="m">230</span> <span class="m">3.23</span> <span class="m">5.345</span> <span class="m">17.42</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno">10 </span><span class="m">5</span><span class="o">:</span>         Datsun <span class="m">710</span> <span class="m">22.8</span>   <span class="m">4</span>  <span class="m">108</span>  <span class="m">93</span> <span class="m">3.85</span> <span class="m">2.320</span> <span class="m">18.61</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span>
+<span class="lineno"> 3 </span><span class="s1">&#39;name&#39;</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="lineno"> 5 </span>                    <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="n">drat</span>  <span class="o">...</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>
+<span class="lineno"> 6 </span><span class="n">name</span>                                            <span class="o">...</span>   
+<span class="lineno"> 7 </span><span class="n">Mazda</span> <span class="n">RX4</span>          <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>  <span class="o">...</span>  <span class="mf">16.46</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>
+<span class="lineno"> 8 </span><span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>      <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>  <span class="o">...</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>
+<span class="lineno"> 9 </span><span class="n">Datsun</span> <span class="mi">710</span>         <span class="mf">22.8</span>    <span class="mi">4</span>  <span class="mf">108.0</span>   <span class="mi">93</span>  <span class="mf">3.85</span>  <span class="o">...</span>  <span class="mf">18.61</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">1</span>
+<span class="lineno">10 </span><span class="n">Hornet</span> <span class="mi">4</span> <span class="n">Drive</span>     <span class="mf">21.4</span>    <span class="mi">6</span>  <span class="mf">258.0</span>  <span class="mi">110</span>  <span class="mf">3.08</span>  <span class="o">...</span>  <span class="mf">19.44</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">3</span>     <span class="mi">1</span>
+<span class="lineno">11 </span><span class="n">Hornet</span> <span class="n">Sportabout</span>  <span class="mf">18.7</span>    <span class="mi">8</span>  <span class="mf">360.0</span>  <span class="mi">175</span>  <span class="mf">3.15</span>  <span class="o">...</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">3</span>     <span class="mi">2</span></code></pre></figure><p>There are quite a few things worth noting from the above code snippets. When we use the <code>setkey</code> function the quotes for the column name is optional. So <code>setkey(mtcars_dt, name)</code> is equivalent to <code>setkey(mtcars_dt, 'name')</code>. But in <code>pandas</code>, quotes are required. The effect of <code>setkey</code> is in place, which means no copies of the data made at all. But in <code>pandas</code>, by default <code>set_index</code> set the index on a copy of the data and the modified copy is returned. Thus, in order to make the effect in place, we have the set the argument <code>inplace=True</code> explicitly. Another difference is that <code>setkey</code> would sort the original data in place automatically but <code>set_index</code> does not. It&#8217;s also worth noting every <code>pandas</code> data.frame has an index; and by default it is <code>numpy.arange(n)</code> where <code>n</code> is the number of rows. But there is no default key in a <code>data.table</code>.</p>
+<p>In the above example, we only use a single column as the key/index. It is possible to use multiple columns as well.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> setkeyv<span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;gear&#39;</span><span class="p">))</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> key<span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;cyl&quot;</span>  <span class="s">&quot;gear&quot;</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span> <span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="s1">&#39;gear&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span>
+<span class="lineno">3 </span><span class="n">FrozenList</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="s1">&#39;gear&#39;</span><span class="p">])</span></code></pre></figure></div>
+</div>
+<p>To use multiple columns as the key in <code>data.table</code>, we use the function <code>setkeyv</code>. It is also interesting that we have to use <code>index.names</code> rather than <code>index.name</code> to get the multiple column names of the index (which is called MultiIndex) in <code>pandas</code>. There are duplicated combinations of (cyl, gear) in the data, which implies key or index could be duplicated.</p>
+<p>Once the key/index set, we can access rows with given the indices fast.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="s">&#39;Merc 230&#39;</span><span class="p">]</span>
+<span class="lineno"> 2 </span>       name  mpg cyl  disp hp drat   wt qsec vs am gear carb
+<span class="lineno"> 3 </span><span class="m">1</span><span class="o">:</span> Merc <span class="m">230</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">140.8</span> <span class="m">95</span> <span class="m">3.92</span> <span class="m">3.15</span> <span class="m">22.9</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">2</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;Merc 230&#39;</span><span class="p">,</span><span class="s">&#39;Camaro Z28&#39;</span><span class="p">)]</span> <span class="c1"># multiple values of a single index</span>
+<span class="lineno"> 5 </span>         name  mpg cyl  disp  hp drat   wt  qsec vs am gear carb
+<span class="lineno"> 6 </span><span class="m">1</span><span class="o">:</span>   Merc <span class="m">230</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">140.8</span>  <span class="m">95</span> <span class="m">3.92</span> <span class="m">3.15</span> <span class="m">22.90</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">2</span>
+<span class="lineno"> 7 </span><span class="m">2</span><span class="o">:</span> Camaro Z28 <span class="m">13.3</span>   <span class="m">8</span> <span class="m">350.0</span> <span class="m">245</span> <span class="m">3.73</span> <span class="m">3.84</span> <span class="m">15.41</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> setkeyv<span class="p">(</span>mtcars_dt<span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;gear&#39;</span><span class="p">))</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">6</span><span class="p">,</span><span class="m">4</span><span class="p">)]</span> <span class="c1"># work with key vector using .()</span>
+<span class="lineno">10 </span>            name  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">11 </span><span class="m">1</span><span class="o">:</span>     Mazda RX4 <span class="m">21.0</span>   <span class="m">6</span> <span class="m">160.0</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">12 </span><span class="m">2</span><span class="o">:</span> Mazda RX4 Wag <span class="m">21.0</span>   <span class="m">6</span> <span class="m">160.0</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">13 </span><span class="m">3</span><span class="o">:</span>      Merc <span class="m">280</span> <span class="m">19.2</span>   <span class="m">6</span> <span class="m">167.6</span> <span class="m">123</span> <span class="m">3.92</span> <span class="m">3.440</span> <span class="m">18.30</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">14 </span><span class="m">4</span><span class="o">:</span>     Merc <span class="m">280</span>C <span class="m">17.8</span>   <span class="m">6</span> <span class="m">167.6</span> <span class="m">123</span> <span class="m">3.92</span> <span class="m">3.440</span> <span class="m">18.90</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">6</span><span class="p">,</span><span class="m">8</span><span class="p">),</span><span class="kt">c</span><span class="p">(</span><span class="m">4</span><span class="p">,</span><span class="m">3</span><span class="p">))]</span> <span class="c1"># key vector with multiple values</span>
+<span class="lineno">16 </span>                   name  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">17 </span> <span class="m">1</span><span class="o">:</span>           Mazda RX4 <span class="m">21.0</span>   <span class="m">6</span> <span class="m">160.0</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">18 </span> <span class="m">2</span><span class="o">:</span>       Mazda RX4 Wag <span class="m">21.0</span>   <span class="m">6</span> <span class="m">160.0</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">19 </span> <span class="m">3</span><span class="o">:</span>            Merc <span class="m">280</span> <span class="m">19.2</span>   <span class="m">6</span> <span class="m">167.6</span> <span class="m">123</span> <span class="m">3.92</span> <span class="m">3.440</span> <span class="m">18.30</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">20 </span> <span class="m">4</span><span class="o">:</span>           Merc <span class="m">280</span>C <span class="m">17.8</span>   <span class="m">6</span> <span class="m">167.6</span> <span class="m">123</span> <span class="m">3.92</span> <span class="m">3.440</span> <span class="m">18.90</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">21 </span> <span class="m">5</span><span class="o">:</span>         AMC Javelin <span class="m">15.2</span>   <span class="m">8</span> <span class="m">304.0</span> <span class="m">150</span> <span class="m">3.15</span> <span class="m">3.435</span> <span class="m">17.30</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span>
+<span class="lineno">22 </span> <span class="m">6</span><span class="o">:</span>  Cadillac Fleetwood <span class="m">10.4</span>   <span class="m">8</span> <span class="m">472.0</span> <span class="m">205</span> <span class="m">2.93</span> <span class="m">5.250</span> <span class="m">17.98</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno">23 </span> <span class="m">7</span><span class="o">:</span>          Camaro Z28 <span class="m">13.3</span>   <span class="m">8</span> <span class="m">350.0</span> <span class="m">245</span> <span class="m">3.73</span> <span class="m">3.840</span> <span class="m">15.41</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno">24 </span> <span class="m">8</span><span class="o">:</span>   Chrysler Imperial <span class="m">14.7</span>   <span class="m">8</span> <span class="m">440.0</span> <span class="m">230</span> <span class="m">3.23</span> <span class="m">5.345</span> <span class="m">17.42</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno">25 </span> <span class="m">9</span><span class="o">:</span>    Dodge Challenger <span class="m">15.5</span>   <span class="m">8</span> <span class="m">318.0</span> <span class="m">150</span> <span class="m">2.76</span> <span class="m">3.520</span> <span class="m">16.87</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span>
+<span class="lineno">26 </span><span class="m">10</span><span class="o">:</span>          Duster <span class="m">360</span> <span class="m">14.3</span>   <span class="m">8</span> <span class="m">360.0</span> <span class="m">245</span> <span class="m">3.21</span> <span class="m">3.570</span> <span class="m">15.84</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno">27 </span><span class="m">11</span><span class="o">:</span>   Hornet Sportabout <span class="m">18.7</span>   <span class="m">8</span> <span class="m">360.0</span> <span class="m">175</span> <span class="m">3.15</span> <span class="m">3.440</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span>
+<span class="lineno">28 </span><span class="m">12</span><span class="o">:</span> Lincoln Continental <span class="m">10.4</span>   <span class="m">8</span> <span class="m">460.0</span> <span class="m">215</span> <span class="m">3.00</span> <span class="m">5.424</span> <span class="m">17.82</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">4</span>
+<span class="lineno">29 </span><span class="m">13</span><span class="o">:</span>          Merc <span class="m">450</span>SE <span class="m">16.4</span>   <span class="m">8</span> <span class="m">275.8</span> <span class="m">180</span> <span class="m">3.07</span> <span class="m">4.070</span> <span class="m">17.40</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">3</span>
+<span class="lineno">30 </span><span class="m">14</span><span class="o">:</span>          Merc <span class="m">450</span>SL <span class="m">17.3</span>   <span class="m">8</span> <span class="m">275.8</span> <span class="m">180</span> <span class="m">3.07</span> <span class="m">3.730</span> <span class="m">17.60</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">3</span>
+<span class="lineno">31 </span><span class="m">15</span><span class="o">:</span>         Merc <span class="m">450</span>SLC <span class="m">15.2</span>   <span class="m">8</span> <span class="m">275.8</span> <span class="m">180</span> <span class="m">3.07</span> <span class="m">3.780</span> <span class="m">18.00</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">3</span>
+<span class="lineno">32 </span><span class="m">16</span><span class="o">:</span>    Pontiac Firebird <span class="m">19.2</span>   <span class="m">8</span> <span class="m">400.0</span> <span class="m">175</span> <span class="m">3.08</span> <span class="m">3.845</span> <span class="m">17.05</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span></code></pre></figure><p>Here is a bit of explanation for the code above. We can simply use <code>[]</code> to access the rows with the specified key values if the key has a character type. But if the key has a numeric type, <code>list()</code> is required to enclose the key values. In <code>data.table</code>, <code>.()</code> is just an alias of <code>list()</code>, which means we would get the same results with <code>mtcars_dt[list(6,4)]</code>. Of course, we can use also do <code>mtcars_dt[.('Merc 230')]</code> which is equivalent to <code>mtcars_dt[.('Merc 230')]</code>.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;Merc 230&#39;</span><span class="p">]</span>
+<span class="lineno"> 2 </span><span class="n">mpg</span>      <span class="mf">22.80</span>
+<span class="lineno"> 3 </span><span class="n">cyl</span>       <span class="mf">4.00</span>
+<span class="lineno"> 4 </span><span class="n">disp</span>    <span class="mf">140.80</span>
+<span class="lineno"> 5 </span><span class="n">hp</span>       <span class="mf">95.00</span>
+<span class="lineno"> 6 </span><span class="n">drat</span>      <span class="mf">3.92</span>
+<span class="lineno"> 7 </span><span class="n">wt</span>        <span class="mf">3.15</span>
+<span class="lineno"> 8 </span><span class="n">qsec</span>     <span class="mf">22.90</span>
+<span class="lineno"> 9 </span><span class="n">vs</span>        <span class="mf">1.00</span>
+<span class="lineno">10 </span><span class="n">am</span>        <span class="mf">0.00</span>
+<span class="lineno">11 </span><span class="n">gear</span>      <span class="mf">4.00</span>
+<span class="lineno">12 </span><span class="n">carb</span>      <span class="mf">2.00</span>
+<span class="lineno">13 </span><span class="n">Name</span><span class="p">:</span> <span class="n">Merc</span> <span class="mi">230</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="s1">&#39;Merc 230&#39;</span><span class="p">,</span><span class="s1">&#39;Camaro Z28&#39;</span><span class="p">]]</span> <span class="c1"># multiple values of a single index</span>
+<span class="lineno">15 </span>             <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="n">drat</span>    <span class="n">wt</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>
+<span class="lineno">16 </span><span class="n">name</span>                                       
+<span class="lineno">17 </span><span class="n">Merc</span> <span class="mi">230</span>    <span class="mf">22.8</span>    <span class="mi">4</span>  <span class="mf">140.8</span>   <span class="mi">95</span>  <span class="mf">3.92</span>  <span class="mf">3.15</span>  <span class="mf">22.90</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">4</span>     <span class="mi">2</span>
+<span class="lineno">18 </span><span class="n">Camaro</span> <span class="n">Z28</span>  <span class="mf">13.3</span>    <span class="mi">8</span>  <span class="mf">350.0</span>  <span class="mi">245</span>  <span class="mf">3.73</span>  <span class="mf">3.84</span>  <span class="mf">15.41</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">3</span>     <span class="mi">4</span>
+<span class="lineno">19 </span>
+<span class="lineno">20 </span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span><span class="s1">&#39;gear&#39;</span><span class="p">],</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno">21 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">)]</span> <span class="c1"># work with MultiIndex using ()</span>
+<span class="lineno">22 </span>           <span class="n">mpg</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="n">drat</span>     <span class="n">wt</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">carb</span>
+<span class="lineno">23 </span><span class="n">cyl</span> <span class="n">gear</span>        
+<span class="lineno">24 </span><span class="mi">6</span>   <span class="mi">4</span>     <span class="mf">21.0</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>  <span class="mf">2.620</span>  <span class="mf">16.46</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>
+<span class="lineno">25 </span>    <span class="mi">4</span>     <span class="mf">21.0</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>  <span class="mf">2.875</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>
+<span class="lineno">26 </span>    <span class="mi">4</span>     <span class="mf">19.2</span>  <span class="mf">167.6</span>  <span class="mi">123</span>  <span class="mf">3.92</span>  <span class="mf">3.440</span>  <span class="mf">18.30</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">27 </span>    <span class="mi">4</span>     <span class="mf">17.8</span>  <span class="mf">167.6</span>  <span class="mi">123</span>  <span class="mf">3.92</span>  <span class="mf">3.440</span>  <span class="mf">18.90</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">28 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># you may notice that the name column disappeared; that would be explained later</span>
+<span class="lineno">29 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[(</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">),(</span><span class="mi">8</span><span class="p">,</span><span class="mi">3</span><span class="p">)]]</span> <span class="c1"># MultiIndex with multiple values</span>
+<span class="lineno">30 </span>           <span class="n">mpg</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="n">drat</span>     <span class="n">wt</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">carb</span>
+<span class="lineno">31 </span><span class="n">cyl</span> <span class="n">gear</span>     
+<span class="lineno">32 </span><span class="mi">6</span>   <span class="mi">4</span>     <span class="mf">21.0</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>  <span class="mf">2.620</span>  <span class="mf">16.46</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>
+<span class="lineno">33 </span>    <span class="mi">4</span>     <span class="mf">21.0</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>  <span class="mf">2.875</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>
+<span class="lineno">34 </span>    <span class="mi">4</span>     <span class="mf">19.2</span>  <span class="mf">167.6</span>  <span class="mi">123</span>  <span class="mf">3.92</span>  <span class="mf">3.440</span>  <span class="mf">18.30</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">35 </span>    <span class="mi">4</span>     <span class="mf">17.8</span>  <span class="mf">167.6</span>  <span class="mi">123</span>  <span class="mf">3.92</span>  <span class="mf">3.440</span>  <span class="mf">18.90</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">36 </span><span class="mi">8</span>   <span class="mi">3</span>     <span class="mf">18.7</span>  <span class="mf">360.0</span>  <span class="mi">175</span>  <span class="mf">3.15</span>  <span class="mf">3.440</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">2</span>
+<span class="lineno">37 </span>    <span class="mi">3</span>     <span class="mf">14.3</span>  <span class="mf">360.0</span>  <span class="mi">245</span>  <span class="mf">3.21</span>  <span class="mf">3.570</span>  <span class="mf">15.84</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">38 </span>    <span class="mi">3</span>     <span class="mf">16.4</span>  <span class="mf">275.8</span>  <span class="mi">180</span>  <span class="mf">3.07</span>  <span class="mf">4.070</span>  <span class="mf">17.40</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">3</span>
+<span class="lineno">39 </span>    <span class="mi">3</span>     <span class="mf">17.3</span>  <span class="mf">275.8</span>  <span class="mi">180</span>  <span class="mf">3.07</span>  <span class="mf">3.730</span>  <span class="mf">17.60</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">3</span>
+<span class="lineno">40 </span>    <span class="mi">3</span>     <span class="mf">15.2</span>  <span class="mf">275.8</span>  <span class="mi">180</span>  <span class="mf">3.07</span>  <span class="mf">3.780</span>  <span class="mf">18.00</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">3</span>
+<span class="lineno">41 </span>    <span class="mi">3</span>     <span class="mf">10.4</span>  <span class="mf">472.0</span>  <span class="mi">205</span>  <span class="mf">2.93</span>  <span class="mf">5.250</span>  <span class="mf">17.98</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">42 </span>    <span class="mi">3</span>     <span class="mf">10.4</span>  <span class="mf">460.0</span>  <span class="mi">215</span>  <span class="mf">3.00</span>  <span class="mf">5.424</span>  <span class="mf">17.82</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">43 </span>    <span class="mi">3</span>     <span class="mf">14.7</span>  <span class="mf">440.0</span>  <span class="mi">230</span>  <span class="mf">3.23</span>  <span class="mf">5.345</span>  <span class="mf">17.42</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">44 </span>    <span class="mi">3</span>     <span class="mf">15.5</span>  <span class="mf">318.0</span>  <span class="mi">150</span>  <span class="mf">2.76</span>  <span class="mf">3.520</span>  <span class="mf">16.87</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">2</span>
+<span class="lineno">45 </span>    <span class="mi">3</span>     <span class="mf">15.2</span>  <span class="mf">304.0</span>  <span class="mi">150</span>  <span class="mf">3.15</span>  <span class="mf">3.435</span>  <span class="mf">17.30</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">2</span>
+<span class="lineno">46 </span>    <span class="mi">3</span>     <span class="mf">13.3</span>  <span class="mf">350.0</span>  <span class="mi">245</span>  <span class="mf">3.73</span>  <span class="mf">3.840</span>  <span class="mf">15.41</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">4</span>
+<span class="lineno">47 </span>    <span class="mi">3</span>     <span class="mf">19.2</span>  <span class="mf">400.0</span>  <span class="mi">175</span>  <span class="mf">3.08</span>  <span class="mf">3.845</span>  <span class="mf">17.05</span>   <span class="mi">0</span>   <span class="mi">0</span>     <span class="mi">2</span></code></pre></figure><p>Compared to <code>data.table</code>, we need to use the <code>loc</code> method when accessing rows based on index. The <code>loc</code> method also takes boolean conditions.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">mpg</span><span class="o">&gt;</span><span class="mi">30</span><span class="p">]</span> <span class="c1"># select the vehicles with mpg&gt;30</span>
+<span class="lineno">2 </span>           <span class="n">mpg</span>  <span class="n">disp</span>   <span class="n">hp</span>  <span class="n">drat</span>     <span class="n">wt</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">carb</span>
+<span class="lineno">3 </span><span class="n">cyl</span> <span class="n">gear</span>     
+<span class="lineno">4 </span><span class="mi">4</span>   <span class="mi">4</span>     <span class="mf">32.4</span>  <span class="mf">78.7</span>   <span class="mi">66</span>  <span class="mf">4.08</span>  <span class="mf">2.200</span>  <span class="mf">19.47</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">1</span>
+<span class="lineno">5 </span>    <span class="mi">4</span>     <span class="mf">30.4</span>  <span class="mf">75.7</span>   <span class="mi">52</span>  <span class="mf">4.93</span>  <span class="mf">1.615</span>  <span class="mf">18.52</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">2</span>
+<span class="lineno">6 </span>    <span class="mi">4</span>     <span class="mf">33.9</span>  <span class="mf">71.1</span>   <span class="mi">65</span>  <span class="mf">4.22</span>  <span class="mf">1.835</span>  <span class="mf">19.90</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">1</span>
+<span class="lineno">7 </span>    <span class="mi">5</span>     <span class="mf">30.4</span>  <span class="mf">95.1</span>  <span class="mi">113</span>  <span class="mf">3.77</span>  <span class="mf">1.513</span>  <span class="mf">16.90</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">2</span></code></pre></figure><p>When using boolean conditions, <code>loc</code> could be ignored for convenience.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="p">[</span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">mpg</span><span class="o">&gt;</span><span class="mi">30</span><span class="p">]</span> <span class="c1"># ignore loc with boolean conditions</span>
+<span class="lineno">2 </span>           <span class="n">mpg</span>  <span class="n">disp</span>   <span class="n">hp</span>  <span class="n">drat</span>     <span class="n">wt</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">carb</span>
+<span class="lineno">3 </span><span class="n">cyl</span> <span class="n">gear</span>   
+<span class="lineno">4 </span><span class="mi">4</span>   <span class="mi">4</span>     <span class="mf">32.4</span>  <span class="mf">78.7</span>   <span class="mi">66</span>  <span class="mf">4.08</span>  <span class="mf">2.200</span>  <span class="mf">19.47</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">1</span>
+<span class="lineno">5 </span>    <span class="mi">4</span>     <span class="mf">30.4</span>  <span class="mf">75.7</span>   <span class="mi">52</span>  <span class="mf">4.93</span>  <span class="mf">1.615</span>  <span class="mf">18.52</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">2</span>
+<span class="lineno">6 </span>    <span class="mi">4</span>     <span class="mf">33.9</span>  <span class="mf">71.1</span>   <span class="mi">65</span>  <span class="mf">4.22</span>  <span class="mf">1.835</span>  <span class="mf">19.90</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">1</span>
+<span class="lineno">7 </span>    <span class="mi">5</span>     <span class="mf">30.4</span>  <span class="mf">95.1</span>  <span class="mi">113</span>  <span class="mf">3.77</span>  <span class="mf">1.513</span>  <span class="mf">16.90</span>   <span class="mi">1</span>   <span class="mi">1</span>     <span class="mi">2</span></code></pre></figure><p>If the key/index is not needed, we can remove the key or reset the index. For <code>data.table</code> we can set a new key to override the existing one which then becomes a column. But in <code>pandas</code>, <code>set_index</code> method removes the exiting index which also disappears from the data.frame.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> key<span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;cyl&quot;</span>  <span class="s">&quot;gear&quot;</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> setkey<span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="kc">NULL</span><span class="p">)</span> <span class="c1"># remove the existing key</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> key<span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno"> 5 </span><span class="kc">NULL</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> setkey<span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="s">&#39;gear&#39;</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> key<span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;gear&quot;</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> setkey<span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">)</span> <span class="c1"># override the existing key</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> key<span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;name&quot;</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span>
+<span class="lineno"> 2 </span><span class="n">FrozenList</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="s1">&#39;gear&#39;</span><span class="p">])</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># remove the existing index</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span>
+<span class="lineno"> 5 </span><span class="n">FrozenList</span><span class="p">([</span><span class="kc">None</span><span class="p">])</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;gear&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span>
+<span class="lineno"> 8 </span><span class="s1">&#39;gear&#39;</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">columns</span> <span class="c1"># list all columns</span>
+<span class="lineno">10 </span><span class="n">Index</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;mpg&#39;</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;hp&#39;</span><span class="p">,</span> <span class="s1">&#39;drat&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span> <span class="s1">&#39;qsec&#39;</span><span class="p">,</span> <span class="s1">&#39;vs&#39;</span><span class="p">,</span> <span class="s1">&#39;am&#39;</span><span class="p">,</span>
+<span class="lineno">11 </span>       <span class="s1">&#39;carb&#39;</span><span class="p">],</span>
+<span class="lineno">12 </span>      <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;object&#39;</span><span class="p">)</span>
+<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">columns</span> <span class="c1"># the name column disappears</span>
+<span class="lineno">15 </span><span class="n">Index</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="s1">&#39;mpg&#39;</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;hp&#39;</span><span class="p">,</span> <span class="s1">&#39;drat&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span> <span class="s1">&#39;qsec&#39;</span><span class="p">,</span> <span class="s1">&#39;vs&#39;</span><span class="p">,</span> <span class="s1">&#39;am&#39;</span><span class="p">,</span> <span class="s1">&#39;carb&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;object&#39;</span><span class="p">)</span></code></pre></figure><p>In Chapter 1, we introduced integer-based indexing for list/vector. It is also applicable to <code>data frame</code> and <code>data.table</code></p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">=</span>fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">6</span><span class="p">),]</span>
+<span class="lineno">3 </span>            name  mpg cyl disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">4 </span><span class="m">1</span><span class="o">:</span>     Mazda RX4 <span class="m">21.0</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">5 </span><span class="m">2</span><span class="o">:</span> Mazda RX4 Wag <span class="m">21.0</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">6 </span><span class="m">3</span><span class="o">:</span>       Valiant <span class="m">18.1</span>   <span class="m">6</span>  <span class="m">225</span> <span class="m">105</span> <span class="m">2.76</span> <span class="m">3.460</span> <span class="m">20.22</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">]]</span> <span class="c1"># again, indices in python are zero-based.</span>
+<span class="lineno">3 </span>            <span class="n">name</span>   <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="o">...</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>
+<span class="lineno">4 </span><span class="mi">0</span>      <span class="n">Mazda</span> <span class="n">RX4</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>  <span class="mf">16.46</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>
+<span class="lineno">5 </span><span class="mi">1</span>  <span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>
+<span class="lineno">6 </span><span class="mi">5</span>        <span class="n">Valiant</span>  <span class="mf">18.1</span>    <span class="mi">6</span>  <span class="mf">225.0</span>  <span class="mi">105</span>  <span class="o">...</span>  <span class="mf">20.22</span>   <span class="mi">1</span>   <span class="mi">0</span>     <span class="mi">3</span>     <span class="mi">1</span></code></pre></figure><p>So far we have seen how to access specific rows. What about columns? Accessing columns in <code>data.table</code> and <code>pandas</code> is quite straightforward. For <code>data.table</code>, we can use <code>\$</code> sign to access a single column or a vector to specify multiple columns inside <code>[]</code>. For data.frame in <code>pandas</code>, we can use <code>.</code> to access a single column or a list to specify multiple columns inside <code>[]</code>.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="o">$</span>mpg<span class="p">,</span><span class="m">5</span><span class="p">)</span> <span class="c1"># access a single column</span>
+<span class="lineno">2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">21.0</span> <span class="m">21.0</span> <span class="m">22.8</span> <span class="m">21.4</span> <span class="m">18.7</span><span class="p">}</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;mpg&#39;</span><span class="p">,</span> <span class="s">&#39;gear&#39;</span><span class="p">)]</span>
+<span class="lineno">4 </span>    mpg gear
+<span class="lineno">5 </span><span class="m">1</span><span class="o">:</span> <span class="m">21.0</span>    <span class="m">4</span>
+<span class="lineno">6 </span><span class="m">2</span><span class="o">:</span> <span class="m">21.0</span>    <span class="m">4</span>
+<span class="lineno">7 </span><span class="m">3</span><span class="o">:</span> <span class="m">22.8</span>    <span class="m">4</span>
+<span class="lineno">8 </span><span class="m">4</span><span class="o">:</span> <span class="m">21.4</span>    <span class="m">3</span>
+<span class="lineno">9 </span><span class="m">5</span><span class="o">:</span> <span class="m">18.7</span>    <span class="m">3</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span> <span class="p">]</span><span class="o">.</span><span class="n">mpg</span><span class="o">.</span><span class="n">values</span>
+<span class="lineno"> 2 </span><span class="n">array</span><span class="p">([</span><span class="mf">21.</span> <span class="p">,</span> <span class="mf">21.</span> <span class="p">,</span> <span class="mf">22.8</span><span class="p">,</span> <span class="mf">21.4</span><span class="p">,</span> <span class="mf">18.7</span><span class="p">])</span>
+<span class="lineno"> 3 </span><span class="n">Name</span><span class="p">:</span> <span class="n">mpg</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="p">[[</span><span class="s1">&#39;mpg&#39;</span><span class="p">,</span> <span class="s1">&#39;gear&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="lineno"> 5 </span>    <span class="n">mpg</span>  <span class="n">gear</span>
+<span class="lineno"> 6 </span><span class="mi">0</span>  <span class="mf">21.0</span>     <span class="mi">4</span>
+<span class="lineno"> 7 </span><span class="mi">1</span>  <span class="mf">21.0</span>     <span class="mi">4</span>
+<span class="lineno"> 8 </span><span class="mi">2</span>  <span class="mf">22.8</span>     <span class="mi">4</span>
+<span class="lineno"> 9 </span><span class="mi">3</span>  <span class="mf">21.4</span>     <span class="mi">3</span>
+<span class="lineno">10 </span><span class="mi">4</span>  <span class="mf">18.7</span>     <span class="mi">3</span></code></pre></figure></div>
+</div>
+<p>In addition to passing a vector to access multiple columns in <code>data.table</code>, we can also use the <code>.(variable_1,variable_2,...)</code>.</p>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span><span class="m">.</span><span class="p">(</span>mpg<span class="p">,</span>cyl<span class="p">,</span>hp<span class="p">)]</span> <span class="c1"># without quotes for variables</span>
+<span class="lineno">2 </span>    mpg cyl hp
+<span class="lineno">3 </span><span class="m">1</span><span class="o">:</span> <span class="m">21.5</span>   <span class="m">4</span> <span class="m">97</span>
+<span class="lineno">4 </span><span class="m">2</span><span class="o">:</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">93</span>
+<span class="lineno">5 </span><span class="m">3</span><span class="o">:</span> <span class="m">24.4</span>   <span class="m">4</span> <span class="m">62</span>
+<span class="lineno">6 </span><span class="m">4</span><span class="o">:</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">95</span>
+<span class="lineno">7 </span><span class="m">5</span><span class="o">:</span> <span class="m">32.4</span>   <span class="m">4</span> <span class="m">66</span></code></pre></figure><p>It is also possible to do integer-based columns slicing.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">6</span><span class="p">)]</span> <span class="c1"># the 2nd, the 5th and the 6th column</span>
+<span class="lineno">2 </span>    mpg  hp drat
+<span class="lineno">3 </span><span class="m">1</span><span class="o">:</span> <span class="m">21.0</span> <span class="m">110</span> <span class="m">3.90</span>
+<span class="lineno">4 </span><span class="m">2</span><span class="o">:</span> <span class="m">21.0</span> <span class="m">110</span> <span class="m">3.90</span>
+<span class="lineno">5 </span><span class="m">3</span><span class="o">:</span> <span class="m">22.8</span>  <span class="m">93</span> <span class="m">3.85</span>
+<span class="lineno">6 </span><span class="m">4</span><span class="o">:</span> <span class="m">21.4</span> <span class="m">110</span> <span class="m">3.08</span>
+<span class="lineno">7 </span><span class="m">5</span><span class="o">:</span> <span class="m">18.7</span> <span class="m">175</span> <span class="m">3.15</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]]</span> <span class="c1"># the 2nd, the 5th and the 6th column</span>
+<span class="lineno">2 </span>    <span class="n">mpg</span>   <span class="n">hp</span>  <span class="n">drat</span>
+<span class="lineno">3 </span><span class="mi">0</span>  <span class="mf">21.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>
+<span class="lineno">4 </span><span class="mi">1</span>  <span class="mf">21.0</span>  <span class="mi">110</span>  <span class="mf">3.90</span>
+<span class="lineno">5 </span><span class="mi">2</span>  <span class="mf">22.8</span>   <span class="mi">93</span>  <span class="mf">3.85</span>
+<span class="lineno">6 </span><span class="mi">3</span>  <span class="mf">21.4</span>  <span class="mi">110</span>  <span class="mf">3.08</span>
+<span class="lineno">7 </span><span class="mi">4</span>  <span class="mf">18.7</span>  <span class="mi">175</span>  <span class="mf">3.15</span></code></pre></figure></div>
+</div>
+<p>To access specific rows and specific columns, there are two strategies:</p>
+<ul>
+	<li>select rows and then select columns in a chain;</li>
+	<li>select rows and columns simultaneously.</li>
+</ul>
+<p>Let&#8217;s see some examples.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">=</span>fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> setkey<span class="p">(</span>mtcars_dt<span class="p">,</span><span class="s">&#39;gear&#39;</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">6</span><span class="p">),</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;mpg&#39;</span><span class="p">,</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;hp&#39;</span><span class="p">)]</span> <span class="c1"># use strategy 2;</span>
+<span class="lineno"> 4 </span>    mpg cyl  hp
+<span class="lineno"> 5 </span><span class="m">1</span><span class="o">:</span> <span class="m">21.4</span>   <span class="m">6</span> <span class="m">110</span>
+<span class="lineno"> 6 </span><span class="m">2</span><span class="o">:</span> <span class="m">18.1</span>   <span class="m">6</span> <span class="m">105</span>
+<span class="lineno"> 7 </span><span class="m">3</span><span class="o">:</span> <span class="m">21.0</span>   <span class="m">6</span> <span class="m">110</span>
+<span class="lineno"> 8 </span><span class="m">4</span><span class="o">:</span> <span class="m">21.0</span>   <span class="m">6</span> <span class="m">110</span>
+<span class="lineno"> 9 </span><span class="m">5</span><span class="o">:</span> <span class="m">19.2</span>   <span class="m">6</span> <span class="m">123</span>
+<span class="lineno">10 </span><span class="m">6</span><span class="o">:</span> <span class="m">17.8</span>   <span class="m">6</span> <span class="m">123</span>
+<span class="lineno">11 </span><span class="m">7</span><span class="o">:</span> <span class="m">19.7</span>   <span class="m">6</span> <span class="m">175</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">6</span><span class="p">)][,</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;mpg&#39;</span><span class="p">,</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;hp&#39;</span><span class="p">)]</span> <span class="c1"># use strategy 1;</span>
+<span class="lineno">13 </span>    mpg cyl  hp
+<span class="lineno">14 </span><span class="m">1</span><span class="o">:</span> <span class="m">21.4</span>   <span class="m">6</span> <span class="m">110</span>
+<span class="lineno">15 </span><span class="m">2</span><span class="o">:</span> <span class="m">18.1</span>   <span class="m">6</span> <span class="m">105</span>
+<span class="lineno">16 </span><span class="m">3</span><span class="o">:</span> <span class="m">21.0</span>   <span class="m">6</span> <span class="m">110</span>
+<span class="lineno">17 </span><span class="m">4</span><span class="o">:</span> <span class="m">21.0</span>   <span class="m">6</span> <span class="m">110</span>
+<span class="lineno">18 </span><span class="m">5</span><span class="o">:</span> <span class="m">19.2</span>   <span class="m">6</span> <span class="m">123</span>
+<span class="lineno">19 </span><span class="m">6</span><span class="o">:</span> <span class="m">17.8</span>   <span class="m">6</span> <span class="m">123</span>
+<span class="lineno">20 </span><span class="m">7</span><span class="o">:</span> <span class="m">19.7</span>   <span class="m">6</span> <span class="m">175</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">6</span><span class="p">,[</span><span class="s1">&#39;mpg&#39;</span><span class="p">,</span><span class="s1">&#39;hp&#39;</span><span class="p">]]</span> <span class="c1"># use strategy 2; we can&#39;t list the index as a normal column; while a key in data.table is still a normal column</span>
+<span class="lineno"> 4 </span>      <span class="n">mpg</span>   <span class="n">hp</span>
+<span class="lineno"> 5 </span><span class="n">cyl</span>           
+<span class="lineno"> 6 </span><span class="mi">6</span>    <span class="mf">21.0</span>  <span class="mi">110</span>
+<span class="lineno"> 7 </span><span class="mi">6</span>    <span class="mf">21.0</span>  <span class="mi">110</span>
+<span class="lineno"> 8 </span><span class="mi">6</span>    <span class="mf">21.4</span>  <span class="mi">110</span>
+<span class="lineno"> 9 </span><span class="mi">6</span>    <span class="mf">18.1</span>  <span class="mi">105</span>
+<span class="lineno">10 </span><span class="mi">6</span>    <span class="mf">19.2</span>  <span class="mi">123</span>
+<span class="lineno">11 </span><span class="mi">6</span>    <span class="mf">17.8</span>  <span class="mi">123</span>
+<span class="lineno">12 </span><span class="mi">6</span>    <span class="mf">19.7</span>  <span class="mi">175</span>
+<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">6</span><span class="p">][[</span><span class="s1">&#39;mpg&#39;</span><span class="p">,</span><span class="s1">&#39;hp&#39;</span><span class="p">]]</span> <span class="c1"># us strategy 1</span>
+<span class="lineno">14 </span>      <span class="n">mpg</span>   <span class="n">hp</span>
+<span class="lineno">15 </span><span class="n">cyl</span>           
+<span class="lineno">16 </span><span class="mi">6</span>    <span class="mf">21.0</span>  <span class="mi">110</span>
+<span class="lineno">17 </span><span class="mi">6</span>    <span class="mf">21.0</span>  <span class="mi">110</span>
+<span class="lineno">18 </span><span class="mi">6</span>    <span class="mf">21.4</span>  <span class="mi">110</span>
+<span class="lineno">19 </span><span class="mi">6</span>    <span class="mf">18.1</span>  <span class="mi">105</span>
+<span class="lineno">20 </span><span class="mi">6</span>    <span class="mf">19.2</span>  <span class="mi">123</span>
+<span class="lineno">21 </span><span class="mi">6</span>    <span class="mf">17.8</span>  <span class="mi">123</span>
+<span class="lineno">22 </span><span class="mi">6</span>    <span class="mf">19.7</span>  <span class="mi">175</span></code></pre></figure><p>As we have seen, using the <code>setkey</code> function for <code>data.table</code> sorts the <code>data.table</code> automatically. However, sorting is not always desired. In <code>data.table</code>, there is another function <code>setindex/setindexv</code> which has similar effects to <code>setkey/setkeyv</code> but doesn&#8217;t sort the <code>data.table</code>. In addition, one <code>data.table</code> could have multiple indices, but it cannot have multiple keys.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> setindex<span class="p">(</span>mtcars_dt<span class="p">,</span><span class="s">&#39;cyl&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span><span class="m">5</span><span class="p">)</span> <span class="c1"># not sorted by the index</span>
+<span class="lineno"> 3 </span>                name  mpg cyl disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno"> 4 </span><span class="m">1</span><span class="o">:</span>         Mazda RX4 <span class="m">21.0</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno"> 5 </span><span class="m">2</span><span class="o">:</span>     Mazda RX4 Wag <span class="m">21.0</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno"> 6 </span><span class="m">3</span><span class="o">:</span>        Datsun <span class="m">710</span> <span class="m">22.8</span>   <span class="m">4</span>  <span class="m">108</span>  <span class="m">93</span> <span class="m">3.85</span> <span class="m">2.320</span> <span class="m">18.61</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>
+<span class="lineno"> 7 </span><span class="m">4</span><span class="o">:</span>    Hornet <span class="m">4</span> Drive <span class="m">21.4</span>   <span class="m">6</span>  <span class="m">258</span> <span class="m">110</span> <span class="m">3.08</span> <span class="m">3.215</span> <span class="m">19.44</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno"> 8 </span><span class="m">5</span><span class="o">:</span> Hornet Sportabout <span class="m">18.7</span>   <span class="m">8</span>  <span class="m">360</span> <span class="m">175</span> <span class="m">3.15</span> <span class="m">3.440</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">2</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">6</span><span class="p">),</span> on<span class="o">=</span><span class="s">&#39;cyl&#39;</span><span class="p">]</span> <span class="c1"># we use on to specify the index</span>
+<span class="lineno">10 </span>             name  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">11 </span><span class="m">1</span><span class="o">:</span>      Mazda RX4 <span class="m">21.0</span>   <span class="m">6</span> <span class="m">160.0</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">12 </span><span class="m">2</span><span class="o">:</span>  Mazda RX4 Wag <span class="m">21.0</span>   <span class="m">6</span> <span class="m">160.0</span> <span class="m">110</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">13 </span><span class="m">3</span><span class="o">:</span> Hornet <span class="m">4</span> Drive <span class="m">21.4</span>   <span class="m">6</span> <span class="m">258.0</span> <span class="m">110</span> <span class="m">3.08</span> <span class="m">3.215</span> <span class="m">19.44</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno">14 </span><span class="m">4</span><span class="o">:</span>        Valiant <span class="m">18.1</span>   <span class="m">6</span> <span class="m">225.0</span> <span class="m">105</span> <span class="m">2.76</span> <span class="m">3.460</span> <span class="m">20.22</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno">15 </span><span class="m">5</span><span class="o">:</span>       Merc <span class="m">280</span> <span class="m">19.2</span>   <span class="m">6</span> <span class="m">167.6</span> <span class="m">123</span> <span class="m">3.92</span> <span class="m">3.440</span> <span class="m">18.30</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">16 </span><span class="m">6</span><span class="o">:</span>      Merc <span class="m">280</span>C <span class="m">17.8</span>   <span class="m">6</span> <span class="m">167.6</span> <span class="m">123</span> <span class="m">3.92</span> <span class="m">3.440</span> <span class="m">18.90</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">4</span>
+<span class="lineno">17 </span><span class="m">7</span><span class="o">:</span>   Ferrari Dino <span class="m">19.7</span>   <span class="m">6</span> <span class="m">145.0</span> <span class="m">175</span> <span class="m">3.62</span> <span class="m">2.770</span> <span class="m">15.50</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">5</span>    <span class="m">6</span>
+<span class="lineno">18 </span><span class="o">&gt;</span> setindexv<span class="p">(</span>mtcars_dt<span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;gear&#39;</span><span class="p">))</span>
+<span class="lineno">19 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">6</span><span class="p">,</span><span class="m">3</span><span class="p">),</span>on<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;gear&#39;</span><span class="p">)]</span>
+<span class="lineno">20 </span>             name  mpg cyl disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">21 </span><span class="m">1</span><span class="o">:</span> Hornet <span class="m">4</span> Drive <span class="m">21.4</span>   <span class="m">6</span>  <span class="m">258</span> <span class="m">110</span> <span class="m">3.08</span> <span class="m">3.215</span> <span class="m">19.44</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno">22 </span><span class="m">2</span><span class="o">:</span>        Valiant <span class="m">18.1</span>   <span class="m">6</span>  <span class="m">225</span> <span class="m">105</span> <span class="m">2.76</span> <span class="m">3.460</span> <span class="m">20.22</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno">23 </span>
+<span class="lineno">24 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">4</span><span class="p">),</span>on<span class="o">=</span><span class="s">&#39;cyl&#39;</span><span class="p">]</span> <span class="c1"># the index &#39;cyl&#39; still works after set c(&#39;cyl&#39;,&#39;gear&#39;) as indexv</span>
+<span class="lineno">25 </span>              name  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+<span class="lineno">26 </span> <span class="m">1</span><span class="o">:</span>     Datsun <span class="m">710</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">108.0</span>  <span class="m">93</span> <span class="m">3.85</span> <span class="m">2.320</span> <span class="m">18.61</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>
+<span class="lineno">27 </span> <span class="m">2</span><span class="o">:</span>      Merc <span class="m">240</span>D <span class="m">24.4</span>   <span class="m">4</span> <span class="m">146.7</span>  <span class="m">62</span> <span class="m">3.69</span> <span class="m">3.190</span> <span class="m">20.00</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">2</span>
+<span class="lineno">28 </span> <span class="m">3</span><span class="o">:</span>       Merc <span class="m">230</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">140.8</span>  <span class="m">95</span> <span class="m">3.92</span> <span class="m">3.150</span> <span class="m">22.90</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">2</span>
+<span class="lineno">29 </span> <span class="m">4</span><span class="o">:</span>       Fiat <span class="m">128</span> <span class="m">32.4</span>   <span class="m">4</span>  <span class="m">78.7</span>  <span class="m">66</span> <span class="m">4.08</span> <span class="m">2.200</span> <span class="m">19.47</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>
+<span class="lineno">30 </span> <span class="m">5</span><span class="o">:</span>    Honda Civic <span class="m">30.4</span>   <span class="m">4</span>  <span class="m">75.7</span>  <span class="m">52</span> <span class="m">4.93</span> <span class="m">1.615</span> <span class="m">18.52</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">2</span>
+<span class="lineno">31 </span> <span class="m">6</span><span class="o">:</span> Toyota Corolla <span class="m">33.9</span>   <span class="m">4</span>  <span class="m">71.1</span>  <span class="m">65</span> <span class="m">4.22</span> <span class="m">1.835</span> <span class="m">19.90</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>
+<span class="lineno">32 </span> <span class="m">7</span><span class="o">:</span>  Toyota Corona <span class="m">21.5</span>   <span class="m">4</span> <span class="m">120.1</span>  <span class="m">97</span> <span class="m">3.70</span> <span class="m">2.465</span> <span class="m">20.01</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">3</span>    <span class="m">1</span>
+<span class="lineno">33 </span> <span class="m">8</span><span class="o">:</span>      Fiat X1<span class="m">-9</span> <span class="m">27.3</span>   <span class="m">4</span>  <span class="m">79.0</span>  <span class="m">66</span> <span class="m">4.08</span> <span class="m">1.935</span> <span class="m">18.90</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>
+<span class="lineno">34 </span> <span class="m">9</span><span class="o">:</span>  Porsche <span class="m">914-2</span> <span class="m">26.0</span>   <span class="m">4</span> <span class="m">120.3</span>  <span class="m">91</span> <span class="m">4.43</span> <span class="m">2.140</span> <span class="m">16.70</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">5</span>    <span class="m">2</span>
+<span class="lineno">35 </span><span class="m">10</span><span class="o">:</span>   Lotus Europa <span class="m">30.4</span>   <span class="m">4</span>  <span class="m">95.1</span> <span class="m">113</span> <span class="m">3.77</span> <span class="m">1.513</span> <span class="m">16.90</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">5</span>    <span class="m">2</span>
+<span class="lineno">36 </span><span class="m">11</span><span class="o">:</span>     Volvo <span class="m">142</span>E <span class="m">21.4</span>   <span class="m">4</span> <span class="m">121.0</span> <span class="m">109</span> <span class="m">4.11</span> <span class="m">2.780</span> <span class="m">18.60</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">2</span></code></pre></figure><h2 id="add">Add/Remove/Update</h2>
+<p>First, let&#8217;s see how to delete a single column.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt <span class="o">=</span> fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="s">&#39;cyl&#39;</span> <span class="o">%in%</span> <span class="kp">colnames</span><span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno"> 3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="kc">TRUE</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> mtcars_dt<span class="o">$</span>cyl <span class="o">=</span> <span class="kc">NULL</span> <span class="c1"># method 1</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="s">&#39;cyl&#39;</span> <span class="o">%in%</span> <span class="kp">colnames</span><span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno"> 6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="kc">FALSE</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> mtcars_dt <span class="o">=</span> fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span>cyl<span class="o">:=</span><span class="kc">NULL</span><span class="p">]</span> <span class="c1"># method 2</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="s">&#39;cyl&#39;</span> <span class="o">%in%</span> <span class="kp">colnames</span><span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno">10 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="kc">FALSE</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;cyl&#39;</span> <span class="ow">in</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">columns</span>
+<span class="lineno">3 </span><span class="kc">True</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cyl&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;cyl&#39;</span> <span class="ow">in</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">columns</span>
+<span class="lineno">6 </span><span class="kc">False</span></code></pre></figure></div>
+</div>
+<p>The <code>:=</code> operator in <code>data.table</code> can be used to add/remove/update columns, by reference. Thus, when we use <code>:=</code> no copies of the data is created. Getting familiar with this operator is critical to master <code>data.table</code>.<br />
+Next, let&#8217;s see how to delete multiple columns at the same time.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt <span class="o">=</span> fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span> <span class="kt">c</span><span class="p">(</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;hp&#39;</span><span class="p">)</span><span class="o">:=</span><span class="kc">NULL</span><span class="p">]</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kt">c</span><span class="p">(</span><span class="s">&#39;cyl&#39;</span><span class="p">,</span><span class="s">&#39;hp&#39;</span><span class="p">)</span> <span class="o">%in%</span> <span class="kp">colnames</span><span class="p">(</span>mtcars_dt<span class="p">)</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="kc">FALSE</span> <span class="kc">FALSE</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span><span class="s1">&#39;hp&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="n">e</span> <span class="ow">in</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span><span class="s1">&#39;hp&#39;</span><span class="p">]]</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span></code></pre></figure></div>
+</div>
+<p>The interesting fact of the code above is that in R the <code>\%in\%</code> function is vectorized, but the <code>in</code> function in Python is not.</p>
+<p>Adding a single column to an existing <code>data.table</code> or <code>DataFrame</code> is as straightforward as removing.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">$</span>new_col<span class="o">=</span><span class="m">1</span> <span class="c1"># method 1</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="m">2</span><span class="p">)</span> 
+<span class="lineno"> 3 </span>                name  mpg disp drat    wt  qsec vs am gear carb new_col
+<span class="lineno"> 4 </span><span class="m">1</span><span class="o">:</span>         Mazda RX4 <span class="m">21.0</span>  <span class="m">160</span> <span class="m">3.90</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>       <span class="m">1</span>
+<span class="lineno"> 5 </span><span class="m">2</span><span class="o">:</span>     Mazda RX4 Wag <span class="m">21.0</span>  <span class="m">160</span> <span class="m">3.90</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>       <span class="m">1</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> mtcars_dt<span class="o">$</span>new_col<span class="o">=</span><span class="kc">NULL</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span>new_col<span class="o">:=</span><span class="m">1</span><span class="p">]</span> <span class="c1"># method 2</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 9 </span>            name mpg disp drat    wt  qsec vs am gear carb new_col
+<span class="lineno">10 </span><span class="m">1</span><span class="o">:</span>     Mazda RX4  <span class="m">21</span>  <span class="m">160</span>  <span class="m">3.9</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>       <span class="m">1</span>
+<span class="lineno">11 </span><span class="m">2</span><span class="o">:</span> Mazda RX4 Wag  <span class="m">21</span>  <span class="m">160</span>  <span class="m">3.9</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>       <span class="m">1</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="p">[</span><span class="s1">&#39;new_col&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">3 </span>            <span class="n">name</span>   <span class="n">mpg</span>   <span class="n">disp</span>  <span class="n">drat</span>     <span class="n">wt</span>   <span class="n">qsec</span>  <span class="n">vs</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>  <span class="n">new_col</span>
+<span class="lineno">4 </span><span class="mi">0</span>      <span class="n">Mazda</span> <span class="n">RX4</span>  <span class="mf">21.0</span>  <span class="mf">160.0</span>   <span class="mf">3.9</span>  <span class="mf">2.620</span>  <span class="mf">16.46</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>        <span class="mi">1</span>
+<span class="lineno">5 </span><span class="mi">1</span>  <span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>  <span class="mf">21.0</span>  <span class="mf">160.0</span>   <span class="mf">3.9</span>  <span class="mf">2.875</span>  <span class="mf">17.02</span>   <span class="mi">0</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>        <span class="mi">1</span></code></pre></figure><p>Adding multiple columns is a bit of tricky compared with adding a single column.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">=</span>fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="sb">`:=`</span><span class="p">(</span>nc1<span class="o">=</span><span class="m">1</span><span class="p">,</span>nc2<span class="o">=</span><span class="m">2</span><span class="p">)]</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">4 </span>            name mpg cyl disp  hp drat    wt  qsec vs am gear carb nc1 nc2
+<span class="lineno">5 </span><span class="m">1</span><span class="o">:</span>     Mazda RX4  <span class="m">21</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span>  <span class="m">3.9</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>   <span class="m">1</span>   <span class="m">2</span>
+<span class="lineno">6 </span><span class="m">2</span><span class="o">:</span> Mazda RX4 Wag  <span class="m">21</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span>  <span class="m">3.9</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>   <span class="m">1</span>   <span class="m">2</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;nc1&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;nc2&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">})</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">3 </span>            <span class="n">name</span>   <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="o">...</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>  <span class="n">nc1</span>  <span class="n">nc2</span>
+<span class="lineno">4 </span><span class="mi">0</span>      <span class="n">Mazda</span> <span class="n">RX4</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>    <span class="mi">1</span>    <span class="mi">2</span>
+<span class="lineno">5 </span><span class="mi">1</span>  <span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>    <span class="mi">1</span>    <span class="mi">2</span>
+<span class="lineno">6 </span>
+<span class="lineno">7 </span><span class="p">[</span><span class="mi">2</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">14</span> <span class="n">columns</span><span class="p">]</span></code></pre></figure><p>In the R code, we use <code>`:=`</code> to create multiple columns. In the Python code, we put the new columns into a dictionary and use the assign function with the dictionary unpacking operator <code>**</code>. To learn the dictionary unpacking operator, please refer to official document<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>. The <code>assign</code> method of a <code>DataFrame</code> doesn&#8217;t have <code>inplace</code> argument so we need to assign the modified <code>DataFrame</code> to the original one explicitly.</p>
+<p>Now let&#8217;s see how to update values. We can update the entire column or just the column on specific rows.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">=</span>fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="sb">`:=`</span><span class="p">(</span>nc1<span class="o">=</span><span class="m">1</span><span class="p">,</span>nc2<span class="o">=</span><span class="m">2</span><span class="p">)]</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span>nc1<span class="o">:=</span><span class="m">10</span><span class="p">]</span> <span class="c1"># update the entire column c1</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 5 </span>            name mpg cyl disp  hp drat    wt  qsec vs am gear carb nc1 nc2
+<span class="lineno"> 6 </span><span class="m">1</span><span class="o">:</span>     Mazda RX4  <span class="m">21</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span>  <span class="m">3.9</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>  <span class="m">10</span>   <span class="m">2</span>
+<span class="lineno"> 7 </span><span class="m">2</span><span class="o">:</span> Mazda RX4 Wag  <span class="m">21</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span>  <span class="m">3.9</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>  <span class="m">10</span>   <span class="m">2</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span>cyl<span class="o">==</span><span class="m">6</span><span class="p">,</span>nc1<span class="o">:=</span><span class="m">3</span><span class="p">]</span> <span class="c1"># update the nc1 for rows with cyl=6</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">10 </span>            name mpg cyl disp  hp drat    wt  qsec vs am gear carb nc1 nc2
+<span class="lineno">11 </span><span class="m">1</span><span class="o">:</span>     Mazda RX4  <span class="m">21</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span>  <span class="m">3.9</span> <span class="m">2.620</span> <span class="m">16.46</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>   <span class="m">3</span>   <span class="m">2</span>
+<span class="lineno">12 </span><span class="m">2</span><span class="o">:</span> Mazda RX4 Wag  <span class="m">21</span>   <span class="m">6</span>  <span class="m">160</span> <span class="m">110</span>  <span class="m">3.9</span> <span class="m">2.875</span> <span class="m">17.02</span>  <span class="m">0</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">4</span>   <span class="m">3</span>   <span class="m">2</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;nc1&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;nc2&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">})</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="p">[</span><span class="s1">&#39;nc1&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">10</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno"> 5 </span>            <span class="n">name</span>   <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="o">...</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>  <span class="n">nc1</span>  <span class="n">nc2</span>
+<span class="lineno"> 6 </span><span class="mi">0</span>      <span class="n">Mazda</span> <span class="n">RX4</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>   <span class="mi">10</span>    <span class="mi">2</span>
+<span class="lineno"> 7 </span><span class="mi">1</span>  <span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>   <span class="mi">10</span>    <span class="mi">2</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span><span class="p">[</span><span class="mi">2</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">14</span> <span class="n">columns</span><span class="p">]</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">cyl</span><span class="o">==</span><span class="mi">6</span><span class="p">,</span><span class="s1">&#39;nc1&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">3</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">12 </span>            <span class="n">name</span>   <span class="n">mpg</span>  <span class="n">cyl</span>   <span class="n">disp</span>   <span class="n">hp</span>  <span class="o">...</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>  <span class="n">nc1</span>  <span class="n">nc2</span>
+<span class="lineno">13 </span><span class="mi">0</span>      <span class="n">Mazda</span> <span class="n">RX4</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>    <span class="mi">3</span>    <span class="mi">2</span>
+<span class="lineno">14 </span><span class="mi">1</span>  <span class="n">Mazda</span> <span class="n">RX4</span> <span class="n">Wag</span>  <span class="mf">21.0</span>    <span class="mi">6</span>  <span class="mf">160.0</span>  <span class="mi">110</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">4</span>    <span class="mi">3</span>    <span class="mi">2</span>
+<span class="lineno">15 </span>
+<span class="lineno">16 </span><span class="p">[</span><span class="mi">2</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">14</span> <span class="n">columns</span><span class="p">]</span></code></pre></figure><p>We can also combine the technique of rows indexing with column update.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="o">=</span>fread<span class="p">(</span><span class="s">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> setkey<span class="p">(</span>mtcars_dt<span class="p">,</span><span class="s">&#39;cyl&#39;</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="sb">`:=`</span><span class="p">(</span>nc1<span class="o">=</span><span class="m">1</span><span class="p">,</span>nc2<span class="o">=</span><span class="m">2</span><span class="p">)]</span>
+<span class="lineno">4 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[</span><span class="m">.</span><span class="p">(</span><span class="m">4</span><span class="p">),</span>nc2<span class="o">:=</span><span class="m">4</span><span class="p">]</span> <span class="c1"># change nc2 for rows with cyl=4</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> <span class="kp">head</span><span class="p">(</span>mtcars_dt<span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">6 </span>         name  mpg cyl  disp hp drat   wt  qsec vs am gear carb nc1 nc2
+<span class="lineno">7 </span><span class="m">1</span><span class="o">:</span> Datsun <span class="m">710</span> <span class="m">22.8</span>   <span class="m">4</span> <span class="m">108.0</span> <span class="m">93</span> <span class="m">3.85</span> <span class="m">2.32</span> <span class="m">18.61</span>  <span class="m">1</span>  <span class="m">1</span>    <span class="m">4</span>    <span class="m">1</span>   <span class="m">1</span>   <span class="m">4</span>
+<span class="lineno">8 </span><span class="m">2</span><span class="o">:</span>  Merc <span class="m">240</span>D <span class="m">24.4</span>   <span class="m">4</span> <span class="m">146.7</span> <span class="m">62</span> <span class="m">3.69</span> <span class="m">3.19</span> <span class="m">20.00</span>  <span class="m">1</span>  <span class="m">0</span>    <span class="m">4</span>    <span class="m">2</span>   <span class="m">1</span>   <span class="m">4</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;mtcars.csv&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">=</span><span class="n">mtcars_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;nc1&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;nc2&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">})</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;nc2&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">4</span> <span class="c1"># change nc2 for rows with cyl=4</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">6 </span>           <span class="n">name</span>   <span class="n">mpg</span>   <span class="n">disp</span>  <span class="n">hp</span>  <span class="n">drat</span>  <span class="o">...</span>  <span class="n">am</span>  <span class="n">gear</span>  <span class="n">carb</span>  <span class="n">nc1</span>  <span class="n">nc2</span>
+<span class="lineno">7 </span><span class="n">cyl</span>                                     <span class="o">...</span>        
+<span class="lineno">8 </span><span class="mi">4</span>    <span class="n">Datsun</span> <span class="mi">710</span>  <span class="mf">22.8</span>  <span class="mf">108.0</span>  <span class="mi">93</span>  <span class="mf">3.85</span>  <span class="o">...</span>   <span class="mi">1</span>     <span class="mi">4</span>     <span class="mi">1</span>    <span class="mi">1</span>    <span class="mi">4</span>
+<span class="lineno">9 </span><span class="mi">4</span>     <span class="n">Merc</span> <span class="mi">240</span><span class="n">D</span>  <span class="mf">24.4</span>  <span class="mf">146.7</span>  <span class="mi">62</span>  <span class="mf">3.69</span>  <span class="o">...</span>   <span class="mi">0</span>     <span class="mi">4</span>     <span class="mi">2</span>    <span class="mi">1</span>    <span class="mi">4</span></code></pre></figure><p>In addition to <code>:=</code>, we can also use <code>set</code> function to modify values in a <code>data.table</code>. When used properly, the performance gain could be significant. Let&#8217;s a fictional use case.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> arr<span class="o">=</span><span class="kt">array</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="m">1000</span><span class="p">,</span><span class="m">1000</span><span class="p">))</span> <span class="c1"># create a big array</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> dt<span class="o">=</span>data.table<span class="p">(</span>arr<span class="p">)</span> <span class="c1"># create a data.table based on the array</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kp">system.time</span><span class="p">(</span><span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">nrow</span><span class="p">(</span>arr<span class="p">))</span> arr<span class="p">[</span>i<span class="p">,</span><span class="m">1L</span><span class="p">]</span> <span class="o">=</span> i<span class="p">)</span> <span class="c1"># modify the array</span>
+<span class="lineno"> 4 </span>   user  system elapsed 
+<span class="lineno"> 5 </span>  <span class="m">0.003</span>   <span class="m">0.000</span>   <span class="m">0.003</span> 
+<span class="lineno"> 6 </span><span class="o">&gt;</span> <span class="kp">system.time</span><span class="p">(</span><span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">nrow</span><span class="p">(</span>arr<span class="p">))</span> dt<span class="p">[</span>i<span class="p">,</span>V1<span class="o">:=</span>i<span class="p">])</span> <span class="c1"># use := for data.table</span>
+<span class="lineno"> 7 </span>   user  system elapsed 
+<span class="lineno"> 8 </span>  <span class="m">1.499</span>   <span class="m">0.017</span>   <span class="m">0.383</span> 
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kp">system.time</span><span class="p">(</span><span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">nrow</span><span class="p">(</span>arr<span class="p">))</span> set<span class="p">(</span>dt<span class="p">,</span>i<span class="p">,</span><span class="m">2L</span><span class="p">,</span>i<span class="p">))</span> <span class="c1"># use set for data.table</span>
+<span class="lineno">10 </span>   user  system elapsed 
+<span class="lineno">11 </span>  <span class="m">0.003</span>   <span class="m">0.000</span>   <span class="m">0.003</span> </code></pre></figure><p>We see that updating the values with the <code>set</code> function in this example is as fast as updating the values in an array.</p>
+<h2 id="groupby">Group by</h2>
+<p>At the beginning of this Chapter, we have seen an example with <code>group by</code> in <span class="caps">SQL</span> query. <code>group by</code> is a very powerful operation, and it is also available in <code>data.table</code> and <code>pandas</code>. Let&#8217;s try to get the average mpg grouped by cyl.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="kp">mean</span><span class="p">(</span>mpg<span class="p">),</span>by<span class="o">=</span>cyl<span class="p">]</span>
+<span class="lineno"> 2 </span>   cyl       V1
+<span class="lineno"> 3 </span><span class="m">1</span><span class="o">:</span>   <span class="m">6</span> <span class="m">19.74286</span>
+<span class="lineno"> 4 </span><span class="m">2</span><span class="o">:</span>   <span class="m">4</span> <span class="m">26.66364</span>
+<span class="lineno"> 5 </span><span class="m">3</span><span class="o">:</span>   <span class="m">8</span> <span class="m">15.10000</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> <span class="c1"># it works well but it&#39;s better to give it a name</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="m">.</span><span class="p">(</span>mean_mpg<span class="o">=</span><span class="kp">mean</span><span class="p">(</span>mpg<span class="p">)),</span> by<span class="o">=</span>cyl<span class="p">]</span> <span class="c1"># with the .() or list()</span>
+<span class="lineno"> 8 </span>   cyl mean_mpg
+<span class="lineno"> 9 </span><span class="m">1</span><span class="o">:</span>   <span class="m">6</span> <span class="m">19.74286</span>
+<span class="lineno">10 </span><span class="m">2</span><span class="o">:</span>   <span class="m">4</span> <span class="m">26.66364</span>
+<span class="lineno">11 </span><span class="m">3</span><span class="o">:</span>   <span class="m">8</span> <span class="m">15.10000</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;cyl&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mpg</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="lineno"> 2 </span><span class="n">cyl</span>
+<span class="lineno"> 3 </span><span class="mi">4</span>    <span class="mf">26.663636</span>
+<span class="lineno"> 4 </span><span class="mi">6</span>    <span class="mf">19.742857</span>
+<span class="lineno"> 5 </span><span class="mi">8</span>    <span class="mf">15.100000</span>
+<span class="lineno"> 6 </span><span class="n">Name</span><span class="p">:</span> <span class="n">mpg</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;cyl&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mpg</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mpg&#39;</span><span class="p">:</span><span class="s1">&#39;mean_mpg&#39;</span><span class="p">})</span>
+<span class="lineno"> 8 </span>   <span class="n">cyl</span>   <span class="n">mean_mpg</span>
+<span class="lineno"> 9 </span><span class="mi">0</span>    <span class="mi">4</span>  <span class="mf">26.663636</span>
+<span class="lineno">10 </span><span class="mi">1</span>    <span class="mi">6</span>  <span class="mf">19.742857</span>
+<span class="lineno">11 </span><span class="mi">2</span>    <span class="mi">8</span>  <span class="mf">15.100000</span></code></pre></figure><p><code>Group by</code> also works on multiple columns.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="m">.</span><span class="p">(</span>mean_mpg<span class="o">=</span><span class="kp">mean</span><span class="p">(</span>mpg<span class="p">)),</span> by<span class="o">=</span><span class="m">.</span><span class="p">(</span>cyl<span class="p">,</span>gear<span class="p">)]</span> <span class="c1"># by=c(&#39;cyl&#39;,&#39;gear&#39;) also works</span>
+<span class="lineno"> 2 </span>   cyl gear mean_mpg
+<span class="lineno"> 3 </span><span class="m">1</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">4</span>   <span class="m">19.750</span>
+<span class="lineno"> 4 </span><span class="m">2</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">4</span>   <span class="m">26.925</span>
+<span class="lineno"> 5 </span><span class="m">3</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">3</span>   <span class="m">19.750</span>
+<span class="lineno"> 6 </span><span class="m">4</span><span class="o">:</span>   <span class="m">8</span>    <span class="m">3</span>   <span class="m">15.050</span>
+<span class="lineno"> 7 </span><span class="m">5</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">3</span>   <span class="m">21.500</span>
+<span class="lineno"> 8 </span><span class="m">6</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">5</span>   <span class="m">28.200</span>
+<span class="lineno"> 9 </span><span class="m">7</span><span class="o">:</span>   <span class="m">8</span>    <span class="m">5</span>   <span class="m">15.400</span>
+<span class="lineno">10 </span><span class="m">8</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">5</span>   <span class="m">19.700</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span><span class="s1">&#39;gear&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">mpg</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mpg&#39;</span><span class="p">:</span><span class="s1">&#39;mean_mpg&#39;</span><span class="p">})</span>
+<span class="lineno"> 2 </span>   <span class="n">cyl</span>  <span class="n">gear</span>  <span class="n">mean_mpg</span>
+<span class="lineno"> 3 </span><span class="mi">0</span>    <span class="mi">4</span>     <span class="mi">3</span>    <span class="mf">21.500</span>
+<span class="lineno"> 4 </span><span class="mi">1</span>    <span class="mi">4</span>     <span class="mi">4</span>    <span class="mf">26.925</span>
+<span class="lineno"> 5 </span><span class="mi">2</span>    <span class="mi">4</span>     <span class="mi">5</span>    <span class="mf">28.200</span>
+<span class="lineno"> 6 </span><span class="mi">3</span>    <span class="mi">6</span>     <span class="mi">3</span>    <span class="mf">19.750</span>
+<span class="lineno"> 7 </span><span class="mi">4</span>    <span class="mi">6</span>     <span class="mi">4</span>    <span class="mf">19.750</span>
+<span class="lineno"> 8 </span><span class="mi">5</span>    <span class="mi">6</span>     <span class="mi">5</span>    <span class="mf">19.700</span>
+<span class="lineno"> 9 </span><span class="mi">6</span>    <span class="mi">8</span>     <span class="mi">3</span>    <span class="mf">15.050</span>
+<span class="lineno">10 </span><span class="mi">7</span>    <span class="mi">8</span>     <span class="mi">5</span>    <span class="mf">15.400</span></code></pre></figure><p>We can also create multiple columns with <code>group by</code>. My feeling is <code>data.table</code> is more expressive.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="m">.</span><span class="p">(</span>mean_mpg<span class="o">=</span><span class="kp">mean</span><span class="p">(</span>mpg<span class="p">),</span>max_hp<span class="o">=</span><span class="kp">max</span><span class="p">(</span>hp<span class="p">)),</span>by<span class="o">=</span><span class="m">.</span><span class="p">(</span>cyl<span class="p">,</span>gear<span class="p">)]</span>
+<span class="lineno"> 2 </span>   cyl gear mean_mpg max_hp
+<span class="lineno"> 3 </span><span class="m">1</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">4</span>   <span class="m">19.750</span>    <span class="m">123</span>
+<span class="lineno"> 4 </span><span class="m">2</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">4</span>   <span class="m">26.925</span>    <span class="m">109</span>
+<span class="lineno"> 5 </span><span class="m">3</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">3</span>   <span class="m">19.750</span>    <span class="m">110</span>
+<span class="lineno"> 6 </span><span class="m">4</span><span class="o">:</span>   <span class="m">8</span>    <span class="m">3</span>   <span class="m">15.050</span>    <span class="m">245</span>
+<span class="lineno"> 7 </span><span class="m">5</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">3</span>   <span class="m">21.500</span>     <span class="m">97</span>
+<span class="lineno"> 8 </span><span class="m">6</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">5</span>   <span class="m">28.200</span>    <span class="m">113</span>
+<span class="lineno"> 9 </span><span class="m">7</span><span class="o">:</span>   <span class="m">8</span>    <span class="m">5</span>   <span class="m">15.400</span>    <span class="m">335</span>
+<span class="lineno">10 </span><span class="m">8</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">5</span>   <span class="m">19.700</span>    <span class="m">175</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mtcars_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;cyl&#39;</span><span class="p">,</span><span class="s1">&#39;gear&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span><span class="s1">&#39;mean_mpg&#39;</span><span class="p">:</span><span class="n">e</span><span class="o">.</span><span class="n">mpg</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="s1">&#39;max_hp&#39;</span><span class="p">:</span><span class="n">e</span><span class="o">.</span><span class="n">hp</span><span class="o">.</span><span class="n">max</span><span class="p">()}))</span>
+<span class="lineno"> 2 </span>          <span class="n">mean_mpg</span>  <span class="n">max_hp</span>
+<span class="lineno"> 3 </span><span class="n">cyl</span> <span class="n">gear</span>                  
+<span class="lineno"> 4 </span><span class="mi">4</span>   <span class="mi">3</span>       <span class="mf">21.500</span>    <span class="mf">97.0</span>
+<span class="lineno"> 5 </span>    <span class="mi">4</span>       <span class="mf">26.925</span>   <span class="mf">109.0</span>
+<span class="lineno"> 6 </span>    <span class="mi">5</span>       <span class="mf">28.200</span>   <span class="mf">113.0</span>
+<span class="lineno"> 7 </span><span class="mi">6</span>   <span class="mi">3</span>       <span class="mf">19.750</span>   <span class="mf">110.0</span>
+<span class="lineno"> 8 </span>    <span class="mi">4</span>       <span class="mf">19.750</span>   <span class="mf">123.0</span>
+<span class="lineno"> 9 </span>    <span class="mi">5</span>       <span class="mf">19.700</span>   <span class="mf">175.0</span>
+<span class="lineno">10 </span><span class="mi">8</span>   <span class="mi">3</span>       <span class="mf">15.050</span>   <span class="mf">245.0</span>
+<span class="lineno">11 </span>    <span class="mi">5</span>       <span class="mf">15.400</span>   <span class="mf">335.0</span></code></pre></figure><p>In <code>data.table</code>, there is also a keyword called <code>keyby</code> which enables <code>group by</code> and <code>sort</code> operations together.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="m">.</span><span class="p">(</span>mean_mpg<span class="o">=</span><span class="kp">mean</span><span class="p">(</span>mpg<span class="p">),</span>max_hp<span class="o">=</span><span class="kp">max</span><span class="p">(</span>hp<span class="p">)),</span>keyby<span class="o">=</span><span class="m">.</span><span class="p">(</span>cyl<span class="p">,</span>gear<span class="p">)]</span>
+<span class="lineno"> 2 </span>   cyl gear mean_mpg max_hp
+<span class="lineno"> 3 </span><span class="m">1</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">3</span>   <span class="m">21.500</span>     <span class="m">97</span>
+<span class="lineno"> 4 </span><span class="m">2</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">4</span>   <span class="m">26.925</span>    <span class="m">109</span>
+<span class="lineno"> 5 </span><span class="m">3</span><span class="o">:</span>   <span class="m">4</span>    <span class="m">5</span>   <span class="m">28.200</span>    <span class="m">113</span>
+<span class="lineno"> 6 </span><span class="m">4</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">3</span>   <span class="m">19.750</span>    <span class="m">110</span>
+<span class="lineno"> 7 </span><span class="m">5</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">4</span>   <span class="m">19.750</span>    <span class="m">123</span>
+<span class="lineno"> 8 </span><span class="m">6</span><span class="o">:</span>   <span class="m">6</span>    <span class="m">5</span>   <span class="m">19.700</span>    <span class="m">175</span>
+<span class="lineno"> 9 </span><span class="m">7</span><span class="o">:</span>   <span class="m">8</span>    <span class="m">3</span>   <span class="m">15.050</span>    <span class="m">245</span>
+<span class="lineno">10 </span><span class="m">8</span><span class="o">:</span>   <span class="m">8</span>    <span class="m">5</span>   <span class="m">15.400</span>    <span class="m">335</span></code></pre></figure><p>It is even possible to add expressions after the <code>by</code> keyword.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> mtcars_dt<span class="p">[,</span><span class="m">.</span><span class="p">(</span>mean_mpg<span class="o">=</span><span class="kp">mean</span><span class="p">(</span>mpg<span class="p">),</span>max_hp<span class="o">=</span><span class="kp">max</span><span class="p">(</span>hp<span class="p">)),</span>by<span class="o">=</span><span class="m">.</span><span class="p">(</span>cyl<span class="o">==</span><span class="m">8</span><span class="p">,</span>gear<span class="o">==</span><span class="m">4</span><span class="p">)]</span>
+<span class="lineno">2 </span>     cyl  gear mean_mpg max_hp
+<span class="lineno">3 </span><span class="m">1</span><span class="o">:</span> <span class="kc">FALSE</span>  <span class="kc">TRUE</span> <span class="m">24.53333</span>    <span class="m">123</span>
+<span class="lineno">4 </span><span class="m">2</span><span class="o">:</span> <span class="kc">FALSE</span> <span class="kc">FALSE</span> <span class="m">22.85000</span>    <span class="m">175</span>
+<span class="lineno">5 </span><span class="m">3</span><span class="o">:</span>  <span class="kc">TRUE</span> <span class="kc">FALSE</span> <span class="m">15.10000</span>    <span class="m">335</span></code></pre></figure><h2 id="join">Join</h2>
+<p><code>Join</code><sup class="footnote" id="fnr6"><a href="#fn6">6</a></sup> combines columns from one or more tables for RMDBs. We also have the <code>Join</code> operation available in <code>data.table</code> and <code>pandas</code>. We only talk about 3 different types of joins here, .i.e., inner join, left join, and right join. Left join and right join are also referred as outer join.</p>
+<figure class="text-center">
+<img src="figures/join.png" alt="Inner join, left (outer) join and right (outer) join" style="display: block;margin: auto;" width="70%">
+        <figcaption class="centerfigcaption">Inner join, left (outer) join and right (outer) join</figcaption>
+</figure>
+<p>Let&#8217;s make two tables to join.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> department_dt<span class="o">=</span>data.table<span class="p">(</span>department_id<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">),</span> department_name<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">&quot;Engineering&quot;</span><span class="p">,</span><span class="s">&quot;Operations&quot;</span><span class="p">,</span><span class="s">&quot;Sales&quot;</span><span class="p">))</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> department_dt
+<span class="lineno"> 3 </span>   department_id department_name
+<span class="lineno"> 4 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>     Engineering
+<span class="lineno"> 5 </span><span class="m">2</span><span class="o">:</span>             <span class="m">2</span>      Operations
+<span class="lineno"> 6 </span><span class="m">3</span><span class="o">:</span>             <span class="m">3</span>           Sales
+<span class="lineno"> 7 </span><span class="o">&gt;</span> employee_dt<span class="o">=</span>data.table<span class="p">(</span>employee_id<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">6</span><span class="p">),</span> department_id<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">4</span><span class="p">))</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> employee_dt
+<span class="lineno"> 9 </span>   employee_id department_id
+<span class="lineno">10 </span><span class="m">1</span><span class="o">:</span>           <span class="m">1</span>             <span class="m">1</span>
+<span class="lineno">11 </span><span class="m">2</span><span class="o">:</span>           <span class="m">2</span>             <span class="m">2</span>
+<span class="lineno">12 </span><span class="m">3</span><span class="o">:</span>           <span class="m">3</span>             <span class="m">2</span>
+<span class="lineno">13 </span><span class="m">4</span><span class="o">:</span>           <span class="m">4</span>             <span class="m">3</span>
+<span class="lineno">14 </span><span class="m">5</span><span class="o">:</span>           <span class="m">5</span>             <span class="m">1</span>
+<span class="lineno">15 </span><span class="m">6</span><span class="o">:</span>           <span class="m">6</span>             <span class="m">4</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">department_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;department_id&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;department_name&#39;</span><span class="p">:[</span><span class="s2">&quot;Engineering&quot;</span><span class="p">,</span><span class="s2">&quot;Operations&quot;</span><span class="p">,</span><span class="s2">&quot;Sales&quot;</span><span class="p">]})</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">department_df</span>
+<span class="lineno"> 3 </span>   <span class="n">department_id</span> <span class="n">department_name</span>
+<span class="lineno"> 4 </span><span class="mi">0</span>              <span class="mi">1</span>     <span class="n">Engineering</span>
+<span class="lineno"> 5 </span><span class="mi">1</span>              <span class="mi">2</span>      <span class="n">Operations</span>
+<span class="lineno"> 6 </span><span class="mi">2</span>              <span class="mi">3</span>           <span class="n">Sales</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">employee_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;employee_id&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="s1">&#39;department_id&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">]})</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">employee_df</span>
+<span class="lineno"> 9 </span>   <span class="n">employee_id</span>  <span class="n">department_id</span>
+<span class="lineno">10 </span><span class="mi">0</span>            <span class="mi">1</span>              <span class="mi">1</span>
+<span class="lineno">11 </span><span class="mi">1</span>            <span class="mi">2</span>              <span class="mi">2</span>
+<span class="lineno">12 </span><span class="mi">2</span>            <span class="mi">3</span>              <span class="mi">2</span>
+<span class="lineno">13 </span><span class="mi">3</span>            <span class="mi">4</span>              <span class="mi">3</span>
+<span class="lineno">14 </span><span class="mi">4</span>            <span class="mi">5</span>              <span class="mi">1</span>
+<span class="lineno">15 </span><span class="mi">5</span>            <span class="mi">6</span>              <span class="mi">4</span></code></pre></figure><p>We can join tables with or without the help of index/key. In general, joining on index/key is more fast. Thus, I recommend always to set key/index for join operations.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> setkey<span class="p">(</span>employee_dt<span class="p">,</span><span class="s">&#39;department_id&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> setkey<span class="p">(</span>department_dt<span class="p">,</span><span class="s">&#39;department_id&#39;</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> department_dt<span class="p">[</span>employee_dt<span class="p">]</span> <span class="c1"># employee_dt left join department_dt</span>
+<span class="lineno"> 4 </span>   department_id department_name employee_id
+<span class="lineno"> 5 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>     Engineering           <span class="m">1</span>
+<span class="lineno"> 6 </span><span class="m">2</span><span class="o">:</span>             <span class="m">1</span>     Engineering           <span class="m">5</span>
+<span class="lineno"> 7 </span><span class="m">3</span><span class="o">:</span>             <span class="m">2</span>      Operations           <span class="m">2</span>
+<span class="lineno"> 8 </span><span class="m">4</span><span class="o">:</span>             <span class="m">2</span>      Operations           <span class="m">3</span>
+<span class="lineno"> 9 </span><span class="m">5</span><span class="o">:</span>             <span class="m">3</span>           Sales           <span class="m">4</span>
+<span class="lineno">10 </span><span class="m">6</span><span class="o">:</span>             <span class="m">4</span>            <span class="o">&lt;</span><span class="kc">NA</span><span class="o">&gt;</span>           <span class="m">6</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> department_dt<span class="p">[</span>employee_dt<span class="p">,</span>nomatch<span class="o">=</span><span class="m">0</span><span class="p">]</span> <span class="c1"># employee_dt left join department_dt</span>
+<span class="lineno">12 </span>   department_id department_name employee_id
+<span class="lineno">13 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>     Engineering           <span class="m">1</span>
+<span class="lineno">14 </span><span class="m">2</span><span class="o">:</span>             <span class="m">1</span>     Engineering           <span class="m">5</span>
+<span class="lineno">15 </span><span class="m">3</span><span class="o">:</span>             <span class="m">2</span>      Operations           <span class="m">2</span>
+<span class="lineno">16 </span><span class="m">4</span><span class="o">:</span>             <span class="m">2</span>      Operations           <span class="m">3</span>
+<span class="lineno">17 </span><span class="m">5</span><span class="o">:</span>             <span class="m">3</span>           Sales           <span class="m">4</span>
+<span class="lineno">18 </span><span class="o">&gt;</span> employee_dt<span class="p">[</span>department_dt<span class="p">]</span> <span class="c1"># employee_dt right join department_dt</span>
+<span class="lineno">19 </span>   employee_id department_id department_name
+<span class="lineno">20 </span><span class="m">1</span><span class="o">:</span>           <span class="m">1</span>             <span class="m">1</span>     Engineering
+<span class="lineno">21 </span><span class="m">2</span><span class="o">:</span>           <span class="m">5</span>             <span class="m">1</span>     Engineering
+<span class="lineno">22 </span><span class="m">3</span><span class="o">:</span>           <span class="m">2</span>             <span class="m">2</span>      Operations
+<span class="lineno">23 </span><span class="m">4</span><span class="o">:</span>           <span class="m">3</span>             <span class="m">2</span>      Operations
+<span class="lineno">24 </span><span class="m">5</span><span class="o">:</span>           <span class="m">4</span>             <span class="m">3</span>           Sales</code></pre></figure><p>To join <code>data.table</code> A and B, the syntax <code>A[B]</code> and <code>B[A]</code> only work when the keys of A and B are set. The function <code>merge</code> from <code>data.table</code> package works with or without key.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="c1"># merge function works with keys</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">merge</span><span class="p">(</span>employee_dt<span class="p">,</span>department_dt<span class="p">,</span>all.x<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span>all.y<span class="o">=</span><span class="kc">FALSE</span><span class="p">)</span> <span class="c1"># inner join</span>
+<span class="lineno"> 3 </span>   department_id employee_id department_name
+<span class="lineno"> 4 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">1</span>     Engineering
+<span class="lineno"> 5 </span><span class="m">2</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">5</span>     Engineering
+<span class="lineno"> 6 </span><span class="m">3</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">2</span>      Operations
+<span class="lineno"> 7 </span><span class="m">4</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">3</span>      Operations
+<span class="lineno"> 8 </span><span class="m">5</span><span class="o">:</span>             <span class="m">3</span>           <span class="m">4</span>           Sales
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kp">merge</span><span class="p">(</span>employee_dt<span class="p">,</span> department_dt<span class="p">,</span> all.x<span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span> all.y<span class="o">=</span><span class="kc">FALSE</span><span class="p">)</span> <span class="c1"># employee_dt left join department_dt</span>
+<span class="lineno">10 </span>   department_id employee_id department_name
+<span class="lineno">11 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">1</span>     Engineering
+<span class="lineno">12 </span><span class="m">2</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">5</span>     Engineering
+<span class="lineno">13 </span><span class="m">3</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">2</span>      Operations
+<span class="lineno">14 </span><span class="m">4</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">3</span>      Operations
+<span class="lineno">15 </span><span class="m">5</span><span class="o">:</span>             <span class="m">3</span>           <span class="m">4</span>           Sales
+<span class="lineno">16 </span><span class="m">6</span><span class="o">:</span>             <span class="m">4</span>           <span class="m">6</span>            <span class="o">&lt;</span><span class="kc">NA</span><span class="o">&gt;</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> <span class="kp">merge</span><span class="p">(</span>employee_dt<span class="p">,</span> department_dt<span class="p">,</span>all.x<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span>all.y<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span> <span class="c1"># employee_dt right join department_dt</span>
+<span class="lineno">18 </span>   department_id employee_id department_name
+<span class="lineno">19 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">1</span>     Engineering
+<span class="lineno">20 </span><span class="m">2</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">5</span>     Engineering
+<span class="lineno">21 </span><span class="m">3</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">2</span>      Operations
+<span class="lineno">22 </span><span class="m">4</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">3</span>      Operations
+<span class="lineno">23 </span><span class="m">5</span><span class="o">:</span>             <span class="m">3</span>           <span class="m">4</span>           Sales
+<span class="lineno">24 </span><span class="o">&gt;</span> <span class="c1"># merge function works without keys</span>
+<span class="lineno">25 </span><span class="o">&gt;</span> setkey<span class="p">(</span>employee_dt<span class="p">,</span><span class="kc">NULL</span><span class="p">)</span>
+<span class="lineno">26 </span><span class="o">&gt;</span> setkey<span class="p">(</span>department_dt<span class="p">,</span><span class="kc">NULL</span><span class="p">)</span>
+<span class="lineno">27 </span><span class="o">&gt;</span> department_dt<span class="p">[</span>employee_dt<span class="p">]</span>
+<span class="lineno">28 </span>Error <span class="kr">in</span> <span class="sb">`[.data.table`</span><span class="p">(</span>department_dt<span class="p">,</span> employee_dt<span class="p">)</span> <span class="o">:</span> 
+<span class="lineno">29 </span>  When i is a data.table <span class="p">(</span>or <span class="kt">character</span> <span class="kt">vector</span><span class="p">),</span> the columns to join by must be specified either using <span class="s">&#39;on=&#39;</span> argument <span class="p">(</span>see <span class="o">?</span>data.table<span class="p">)</span> or by keying x <span class="p">(</span>i.e. sorted<span class="p">,</span> and<span class="p">,</span> marked as sorted<span class="p">,</span> see <span class="o">?</span>setkey<span class="p">)</span><span class="m">.</span> Keyed joins might have further speed benefits on very large data due to x being sorted <span class="kr">in</span> RAM.
+<span class="lineno">30 </span>
+<span class="lineno">31 </span><span class="o">&gt;</span> <span class="kp">merge</span><span class="p">(</span>employee_dt<span class="p">,</span>department_dt<span class="p">,</span> all.x<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span> all.y<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span> by.x<span class="o">=</span><span class="s">&#39;department_id&#39;</span><span class="p">,</span>by.y<span class="o">=</span><span class="s">&#39;department_id&#39;</span><span class="p">)</span>
+<span class="lineno">32 </span>   department_id employee_id department_name
+<span class="lineno">33 </span><span class="m">1</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">1</span>     Engineering
+<span class="lineno">34 </span><span class="m">2</span><span class="o">:</span>             <span class="m">1</span>           <span class="m">5</span>     Engineering
+<span class="lineno">35 </span><span class="m">3</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">2</span>      Operations
+<span class="lineno">36 </span><span class="m">4</span><span class="o">:</span>             <span class="m">2</span>           <span class="m">3</span>      Operations
+<span class="lineno">37 </span><span class="m">5</span><span class="o">:</span>             <span class="m">3</span>           <span class="m">4</span>           Sales</code></pre></figure><p>The join operations for \rinline{data.table} are summarized in table below.</p>
+<figcaption class="centerfigcaption">Syntax of join in datat.table</figcaption>
+<table>
+	<tr>
+		<td>      <strong>type</strong>      </td>
+		<td>               <strong>syntax 1</strong>              </td>
+		<td>                <strong>syntax 2</strong>               </td>
+	</tr>
+	<tr>
+		<td> A inner join B </td>
+		<td> A[B, nomatch=0] or B[A, nomatch=0] </td>
+		<td> merge(A, B, all.x=<span class="caps">FALSE</span>, all.y=<span class="caps">FALSE</span>) </td>
+	</tr>
+	<tr>
+		<td> A left join B  </td>
+		<td>                                B[A] </td>
+		<td>  merge(A, B, all.x=<span class="caps">TRUE</span>, all.y=<span class="caps">FALSE</span>) </td>
+	</tr>
+	<tr>
+		<td> B right join A </td>
+		<td> A[B]                                </td>
+		<td> merge(A, B, all.x=<span class="caps">FALSE</span>, all.y=<span class="caps">TRUE</span>)  </td>
+	</tr>
+</table>
+<p>In <code>pandas</code>, there are also different ways to join <code>DataFrame</code>. Let&#8217;s just focus on the basic method with the <code>merge</code> function (other methods may also be based on this function).</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">department_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;department_id&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">employee_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;department_id&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">employee_df</span><span class="p">,</span> <span class="n">department_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># inner join on index</span>
+<span class="lineno"> 4 </span>               <span class="n">employee_id</span> <span class="n">department_name</span>
+<span class="lineno"> 5 </span><span class="n">department_id</span>                             
+<span class="lineno"> 6 </span><span class="mi">1</span>                        <span class="mi">1</span>     <span class="n">Engineering</span>
+<span class="lineno"> 7 </span><span class="mi">1</span>                        <span class="mi">5</span>     <span class="n">Engineering</span>
+<span class="lineno"> 8 </span><span class="mi">2</span>                        <span class="mi">2</span>      <span class="n">Operations</span>
+<span class="lineno"> 9 </span><span class="mi">2</span>                        <span class="mi">3</span>      <span class="n">Operations</span>
+<span class="lineno">10 </span><span class="mi">3</span>                        <span class="mi">4</span>           <span class="n">Sales</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">employee_df</span><span class="p">,</span> <span class="n">department_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># left join on index</span>
+<span class="lineno">12 </span>               <span class="n">employee_id</span> <span class="n">department_name</span>
+<span class="lineno">13 </span><span class="n">department_id</span>                             
+<span class="lineno">14 </span><span class="mi">1</span>                        <span class="mi">1</span>     <span class="n">Engineering</span>
+<span class="lineno">15 </span><span class="mi">1</span>                        <span class="mi">5</span>     <span class="n">Engineering</span>
+<span class="lineno">16 </span><span class="mi">2</span>                        <span class="mi">2</span>      <span class="n">Operations</span>
+<span class="lineno">17 </span><span class="mi">2</span>                        <span class="mi">3</span>      <span class="n">Operations</span>
+<span class="lineno">18 </span><span class="mi">3</span>                        <span class="mi">4</span>           <span class="n">Sales</span>
+<span class="lineno">19 </span><span class="mi">4</span>                        <span class="mi">6</span>             <span class="n">NaN</span>
+<span class="lineno">20 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">employee_df</span><span class="p">,</span> <span class="n">department_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># right join on index</span>
+<span class="lineno">21 </span>               <span class="n">employee_id</span> <span class="n">department_name</span>
+<span class="lineno">22 </span><span class="n">department_id</span>                             
+<span class="lineno">23 </span><span class="mi">1</span>                        <span class="mi">1</span>     <span class="n">Engineering</span>
+<span class="lineno">24 </span><span class="mi">1</span>                        <span class="mi">5</span>     <span class="n">Engineering</span>
+<span class="lineno">25 </span><span class="mi">2</span>                        <span class="mi">2</span>      <span class="n">Operations</span>
+<span class="lineno">26 </span><span class="mi">2</span>                        <span class="mi">3</span>      <span class="n">Operations</span>
+<span class="lineno">27 </span><span class="mi">3</span>                        <span class="mi">4</span>           <span class="n">Sales</span>
+<span class="lineno">28 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">employee_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="lineno">29 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">department_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="lineno">30 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">employee_df</span><span class="p">,</span> <span class="n">department_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;department_id&#39;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;department_id&#39;</span><span class="p">)</span> <span class="c1"># join with columns directly (not on index)</span>
+<span class="lineno">31 </span>               <span class="n">employee_id</span> <span class="n">department_name</span>
+<span class="lineno">32 </span><span class="n">department_id</span>                             
+<span class="lineno">33 </span><span class="mi">1</span>                        <span class="mi">1</span>     <span class="n">Engineering</span>
+<span class="lineno">34 </span><span class="mi">1</span>                        <span class="mi">5</span>     <span class="n">Engineering</span>
+<span class="lineno">35 </span><span class="mi">2</span>                        <span class="mi">2</span>      <span class="n">Operations</span>
+<span class="lineno">36 </span><span class="mi">2</span>                        <span class="mi">3</span>      <span class="n">Operations</span>
+<span class="lineno">37 </span><span class="mi">3</span>                        <span class="mi">4</span>           <span class="n">Sales</span></code></pre></figure><p>We have learned the very basics of <code>data.table</code> and <code>pandas</code>. In fact, there are lots of other useful features in both tools which are not covered in this chapter. For example, the <code>.I/.N</code> symbol in <code>data.table</code>, and the <code>stack/unstack</code> method in <code>pandas</code>.</p>
+<hr />
+<p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> https://arrow.apache.org</p>
+<p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://github.com/modin-project/modin</p>
+<p class="footnote" id="fn3"><a href="#fnr3"><sup>3</sup></a> https://en.wikipedia.org/wiki/<span class="caps">SQL</span></p>
+<p class="footnote" id="fn4"><a href="#fnr4"><sup>4</sup></a> https://en.wikipedia.org/wiki/Comma-separated_values</p>
+<p class="footnote" id="fn5"><a href="#fnr5"><sup>5</sup></a> https://www.python.org/dev/peps/pep-0448</p>
+<p class="footnote" id="fn6"><a href="#fnr6"><sup>6</sup></a> https://en.wikipedia.org/wiki/Join_(<span class="caps">SQL</span>)</p>
+    </div> <!-- /container-fluid -->
+    <!-- Footer -->
+<div id="footer">
+  <div class="inner">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span16">
+          <p style="text-align:center">
+              &copy; 2019 Anotherbookondatascience.com, all rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+<script
+  type="text/javascript"
+  charset="utf-8"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+>
+</script>
+<script
+  type="text/javascript"
+  charset="utf-8"
+  src="https://vincenttam.github.io/javascripts/MathJaxLocal.js"
+>
+</script>
+
+  </body>
+</html>
