@@ -448,9 +448,9 @@ Doing the same benchmarking in Python is a bit of complicated.</p>
 <span class="lineno">16 </span>    <span class="n">binary_search</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10000</span><span class="p">))</span>
 <span class="lineno">17 </span>
 <span class="lineno">18 </span><span class="c1"># for-loop solution</span>
-<span class="lineno">19 </span><span class="nb">print</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s1">&#39;test_for_loop(1000)&#39;</span><span class="p">,</span><span class="n">setup</span><span class="o">=</span><span class="s1">&#39;from __main__ import test_for_loop&#39;</span><span class="p">,</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="lineno">19 </span><span class="nb">print</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s1">&#39;test_for_loop(1000)&#39;</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;from __main__ import test_for_loop&#39;</span><span class="p">,</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 <span class="lineno">20 </span><span class="c1"># binary_search solution</span>
-<span class="lineno">21 </span><span class="nb">print</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s1">&#39;test_bs(1000)&#39;</span><span class="p">,</span><span class="n">setup</span><span class="o">=</span><span class="s1">&#39;from __main__ import test_bs&#39;</span><span class="p">,</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></code></pre></figure></p>
+<span class="lineno">21 </span><span class="nb">print</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="s1">&#39;test_bs(1000)&#39;</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;from __main__ import test_bs&#39;</span><span class="p">,</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></code></pre></figure></p>
 <p>The most interesting part of the Python code above is <code>from __main__ import</code>. Let&#8217;s ignore it for now, and we would revisit it later.</p>
 <p>Below is the benchmarking result in Python (the unit is second).</p>
 <language>Python</language>
@@ -507,9 +507,9 @@ Doing the same benchmarking in Python is a bit of complicated.</p>
 <span class="lineno">12 </span>  <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
 <span class="lineno">13 </span> 
 <span class="lineno">14 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;for loop&quot;</span><span class="p">)</span>
-<span class="lineno">15 </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;rnorm_for_loop(100)&quot;,setup=&quot;from __main__ import rnorm_for_loop&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;rnorm_for_loop(100)&quot;, setup=&quot;from __main__ import rnorm_for_loop&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno">16 </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;vectorized&quot;</span><span class="p">)</span>
-<span class="lineno">17 </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;rnorm_vec(100)&quot;,setup=&quot;from __main__ import rnorm_vec&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span></code></pre></figure><p>Please note that in this Python example we are using the <code>random</code> submodule of <code>numpy</code> module instead of the built-in <code>random</code> module since <code>random</code> module doesn&#8217;t provide the vectorized version of random number generation function. Running the Python code results in the following result on my local machine.</p>
+<span class="lineno">17 </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;rnorm_vec(100)&quot;, setup=&quot;from __main__ import rnorm_vec&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span></code></pre></figure><p>Please note that in this Python example we are using the <code>random</code> submodule of <code>numpy</code> module instead of the built-in <code>random</code> module since <code>random</code> module doesn&#8217;t provide the vectorized version of random number generation function. Running the Python code results in the following result on my local machine.</p>
 <p>Also, the <code>timeit.timeit</code> measures the total time to run the main statements <code>number</code> times, but not the average time per run.</p>
 <language>Python</language>
 <figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter2</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">vectorization_1</span><span class="o">.</span><span class="n">py</span> 
@@ -785,13 +785,13 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <span class="lineno">13 </span>  <span class="m">0.180</span>   <span class="m">0.031</span>   <span class="m">0.214</span> </code></pre></figure><language>Python</language>
 <figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">timeit</span>
 <span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pi</span> <span class="k">import</span> <span class="n">pi_naive</span><span class="p">,</span> <span class="n">pi_parallel</span><span class="p">,</span> <span class="n">pi_vectorized</span>
-<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;naive - {timeit.timeit(&quot;pi_naive(1000000)&quot;,setup=&quot;from __main__ import pi_naive&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;naive - {timeit.timeit(&quot;pi_naive(1000000)&quot;, setup=&quot;from __main__ import pi_naive&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno"> 4 </span><span class="n">pi</span><span class="p">:</span> <span class="mf">3.141056</span>
 <span class="lineno"> 5 </span><span class="n">naive</span> <span class="o">-</span> <span class="mf">4.363822</span> <span class="n">seconds</span>
-<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;parallel - {timeit.timeit(&quot;pi_parallel(1000000)&quot;,setup=&quot;from __main__ import pi_parallel&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;parallel - {timeit.timeit(&quot;pi_parallel(1000000)&quot;, setup=&quot;from __main__ import pi_parallel&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno"> 7 </span><span class="n">pi</span><span class="p">:</span> <span class="mf">3.141032</span>
 <span class="lineno"> 8 </span><span class="n">parallel</span> <span class="o">-</span> <span class="mf">2.204697</span> <span class="n">seconds</span>
-<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;vectorized - {timeit.timeit(&quot;pi_vectorized(1000000)&quot;,setup=&quot;from __main__ import pi_vectorized&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;vectorized - {timeit.timeit(&quot;pi_vectorized(1000000)&quot;, setup=&quot;from __main__ import pi_vectorized&quot;,number=1):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno">10 </span><span class="n">pi</span><span class="p">:</span> <span class="mf">3.139936</span>
 <span class="lineno">11 </span><span class="n">vectorized</span> <span class="o">-</span> <span class="mf">0.148950</span> <span class="n">seconds</span></code></pre></figure><p>We see the winner in this example is vectorization, and the parallel solution is better than the naive solution. However, when the problem cannot be vectorized we may use parallelization to achieve better performance.</p>
 <h2 id="scope">Scope of variables</h2>
@@ -1104,11 +1104,11 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">Fibonacci</span> <span class="k">import</span> <span class="n">Fibonacci_static</span><span class="p">,</span> <span class="n">Fibonacci</span>
 <span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">Fibonacci_native</span> <span class="k">import</span> <span class="n">Fibonacci_native</span>
 <span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">timeit</span>
-<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_native(20)&quot;,setup=&quot;from __main__ import Fibonacci_native&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_native(20)&quot;, setup=&quot;from __main__ import Fibonacci_native&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno"> 8 </span><span class="mf">1.927359</span> <span class="n">seconds</span>
-<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci(20)&quot;,setup=&quot;from __main__ import Fibonacci&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci(20)&quot;, setup=&quot;from __main__ import Fibonacci&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno">10 </span><span class="mf">0.316726</span> <span class="n">seconds</span>
-<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_static(20)&quot;,setup=&quot;from __main__ import Fibonacci_static&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_static(20)&quot;, setup=&quot;from __main__ import Fibonacci_static&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno">12 </span><span class="mf">0.012741</span> <span class="n">seconds</span></code></pre></figure><p>The results show the static typed implementation is the fastest, and the native implementation in pure Python is the slowest. Again the time measured by <code>timeit.timeit</code> is the total time to run the main statement 1000 times. The average time per run of <code>Fibonacci_static</code> function is close to the average time per run of <code>Fibonacci</code> in R.</p>
 <h2 id="miscellaneous">Miscellaneous</h2>
 <p>We have introduced the basics of R/Python programming so far. There are much more to learn to become an advanced user of R/Python. For example, the appropriate usages of <code>iterator, generator, decorator</code> could improve both the conciseness and readability of your Python code. The <code>generator</code><sup class="footnote" id="fnr24"><a href="#fn24">24</a></sup> is commonly seen in machine learning programs to prepare training/testing samples. <code>decorator</code> is a kind of syntactic sugar to allow the modification of a function&#8217;s behavior in a simple way. In R there are no built-in <code>iterator, generator, decorator</code>, but you may find some third-party libraries to mimic these features; or you may try to implement your own.</p>
@@ -1162,23 +1162,23 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config({
     tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      inlineMath: [ ['$','$'] ],
       processEscapes: true
-    }
+    },
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+    Macros: {
+        sb: "_"
+          } }
   });
 </script>
+
 <script
   type="text/javascript"
   charset="utf-8"
   src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 >
 </script>
-<script
-  type="text/javascript"
-  charset="utf-8"
-  src="https://vincenttam.github.io/javascripts/MathJaxLocal.js"
->
-</script>
+
 
   </body>
 </html>

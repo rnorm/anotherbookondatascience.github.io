@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Another Book on Data Science - Predictive Modeling in Practice (under development)</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="bootstrap-1.1.0.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="small-screens.css">
+    <link rel="stylesheet" href="vs.css">
+    <link rel="stylesheet" href="code.css">
+    <link rel="stylesheet" href="application.css">
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-142297640-1', 'anotherbookondatascience.com');
+      ga('send', 'pageview');
+
+    </script>
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container-fluid fixed">
+          <h3><a href="index.html">Predictive Modeling in Practice (under development)</a></h3>
+          <ul class="nav secondary-nav">
+            
+              <li><a href="chapter5.html">&laquo;Previous</a></li>
+            
+            
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid" style="padding-top: 60px;">
+      <p>Sections in this Chapter:</p>
+<ul>
+	<li><a href="#samples">Population &amp; random samples</a></li>
+	<li><a href="#approximator">Universal approximation &amp; overfitting</a></li>
+</ul>
+<h2 id="samples">Population &amp; random samples</h2>
+<p>A population is a complete set of elements of interest for a specific problem. It is usually defined by the researcher of the problem. A population can be either finite or infinite. For example, if we define the set of real numbers as our population, it is infinite. But if we are only interested in the integers between 1 and 100, then we get a finite population.</p>
+<p>A random sample is a set of elements selected from a population. The size of a random sample could be larger than the population since an element can be taken multiple times.<br />
+Why do we care random samples? Because we are interested in the population from which the random sample is taken, and the random sample could help to make inference on the population.</p>
+<p>In predictive modeling, each element in the population has a set of attributes which are usually called features or covariates, as well as a label. For example, a bank may use the mortgage applicant&#8217;s personal information (<span class="caps">FICO</span> score, years of employment, debt to income ratio, etc.) as the covariates, and the status of the mortgage (default, or paid off) as the label. A predictive model can be used to predict the final status of the mortgage for a new applicant, and such kind of models are classification models. When a mortgage is in default status, the applicant may have already made payments partially. Thus, a model to predict the amount of loss for the bank is also useful, and such kind of models are regression models.</p>
+<p>But why do we need a predictive model? If we know the labels of the entire population, nothing is needed to learn. All what we need is a database table or a dictionary (HashMap) for lookup. The issue is that many problems in the real world don&#8217;t allow us to have the labels of the entire population. And thus, we need to learn or infer based on the random sample collected from the unknown population.</p>
+<h2 id="approximator">Universal approximation &amp; overfitting</h2>
+<h3>Universal approximation</h3>
+<p>The Universal approximation theorem says that a single hidden layer neural network can approximate any continuous functions ($\mathbf{R}^n\rightarrow\mathbf{R}$) with sufficient number of neurons under mild assumptions on the activation function (for example, the sigmoid activation function)<sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup>. There are also other universal approximators, such as the decision trees.</p>
+<p>Not all machine learning models can approximate universally, for example, the linear regression without polynomial items. If we have the data from the entire population, we may fit the population with a universal approximator. But as we have discussed earlier, when the entire population is available there is no need to fit a machine learning model for prediction. But if only a random sample is available, is a universal approximator still the best choice? It depends.</p>
+<h3>Overfitting &amp; cross-validation</h3>
+<p>One of the risks of fitting a random sample with a predictive model is overfitting (see the figure below). Using universal approximators as the predictive model may even amplify such risk.</p>
+<figure class="text-center">
+<img src="figures/overfit.png" alt="A random sample from a population that follows a linear model (the dashed line) is overfit by the solid curve." style="display: block;margin: auto;" width="50%">
+        <figcaption class="centerfigcaption">A random sample from a population that follows a linear model (the dashed line) is overfit by the solid curve.</figcaption>
+</figure>
+<p>To mediate the risk of overfitting, we usually use cross-validation to assess how accurately a predictive model is able to predict for unseen data. The following steps specifies how to perform a cross-validation.</p>
+<ul>
+	<li>divide the training data into $k$ partitions randomly</li>
+	<li>for $i=1,&#8230;,k$<br />
+- train a model using all partitions except partition $i$<br />
+- record the prediction accuracy of the trained model on partition $i$</li>
+	<li>calculate the average prediction accuracy.</li>
+</ul>
+<figure class="text-center">
+<img src="figures/cv.png" alt="$k$ fold cross-validation." style="display: block;margin: auto;" width="50%">
+        <figcaption class="centerfigcaption">$k$ fold cross-validation.</figcaption>
+</figure>
+<p>Cross-validation can also be considered as a metaheuristic algorithm since it is not problem-specific because it doesn&#8217;t matter what type of predictive models we use.</p>
+<p>There are some ready-to-use tools in R and Python modules for cross-validation. But for pedagogical purpose, let&#8217;s do it step by step. We do the cross validation using the Lasso regression we build in previous Chapter on the Boston dataset.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">source</span><span class="p">(</span><span class="s">&#39;../chapter5/lasso.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span>
+<span class="lineno"> 3 </span><span class="kn">library</span><span class="p">(</span>caret<span class="p">)</span>
+<span class="lineno"> 4 </span><span class="kn">library</span><span class="p">(</span>MASS<span class="p">)</span>
+<span class="lineno"> 5 </span><span class="kn">library</span><span class="p">(</span>Metrics<span class="p">)</span> <span class="c1"># we use the rmse function from this package</span>
+<span class="lineno"> 6 </span>k <span class="o">=</span> <span class="m">5</span>
+<span class="lineno"> 7 </span>
+<span class="lineno"> 8 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="c1"># if we set returnTrain = TRUE, we get the indices for train partition</span>
+<span class="lineno">10 </span>test_indices <span class="o">=</span> createFolds<span class="p">(</span>Boston<span class="o">$</span>medv<span class="p">,</span> k <span class="o">=</span> k<span class="p">,</span> <span class="kt">list</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> returnTrain <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+<span class="lineno">11 </span>scores <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="kc">NA</span><span class="p">,</span> k<span class="p">)</span>
+<span class="lineno">12 </span>
+<span class="lineno">13 </span><span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>k<span class="p">){</span>
+<span class="lineno">14 </span>  lr <span class="o">=</span> Lasso<span class="o">$</span>new<span class="p">(</span><span class="m">200</span><span class="p">)</span>
+<span class="lineno">15 </span>  <span class="c1"># we exclude the indices for test partition and train the model</span>
+<span class="lineno">16 </span>  lr<span class="o">$</span>fit<span class="p">(</span><span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">[</span><span class="o">-</span>test_indices<span class="p">[[</span>i<span class="p">]],</span> <span class="o">-</span><span class="kp">ncol</span><span class="p">(</span>Boston<span class="p">)]),</span> Boston<span class="o">$</span>medv<span class="p">[</span><span class="o">-</span>test_indices<span class="p">[[</span>i<span class="p">]]],</span> <span class="m">100</span><span class="p">)</span>
+<span class="lineno">17 </span>  y_hat <span class="o">=</span> lr<span class="o">$</span>predict<span class="p">(</span><span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">[</span>test_indices<span class="p">[[</span>i<span class="p">]],</span> <span class="o">-</span><span class="kp">ncol</span><span class="p">(</span>Boston<span class="p">)]))</span>
+<span class="lineno">18 </span>  scores<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> rmse<span class="p">(</span>Boston<span class="o">$</span>medv<span class="p">[</span>test_indices<span class="p">[[</span>i<span class="p">]]],</span> y_hat<span class="p">)</span>
+<span class="lineno">19 </span><span class="p">}</span>
+<span class="lineno">20 </span><span class="kp">print</span><span class="p">(</span><span class="kp">mean</span><span class="p">(</span>scores<span class="p">))</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="lineno"> 2 </span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
+<span class="lineno"> 3 </span>
+<span class="lineno"> 4 </span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span>
+<span class="lineno"> 5 </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">load_boston</span>
+<span class="lineno"> 6 </span><span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">KFold</span>
+<span class="lineno"> 7 </span><span class="kn">from</span> <span class="nn">chapter5.lasso</span> <span class="k">import</span> <span class="n">Lasso</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span>
+<span class="lineno">10 </span><span class="n">boston</span> <span class="o">=</span> <span class="n">load_boston</span><span class="p">()</span>
+<span class="lineno">11 </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">boston</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boston</span><span class="o">.</span><span class="n">target</span>
+<span class="lineno">12 </span>
+<span class="lineno">13 </span><span class="c1"># create the partitions with k=5</span>
+<span class="lineno">14 </span><span class="n">k</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="lineno">15 </span><span class="n">kf</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="c1"># create a placeholder for the rmse on each test partition</span>
+<span class="lineno">17 </span><span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="lineno">18 </span>
+<span class="lineno">19 </span><span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span> <span class="ow">in</span> <span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+<span class="lineno">20 </span>    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">train_index</span><span class="p">],</span> <span class="n">X</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span>
+<span class="lineno">21 </span>    <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">train_index</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span>
+<span class="lineno">22 </span>    <span class="c1"># let&#39;s train the model on the train partitions</span>
+<span class="lineno">23 </span>    <span class="n">lr</span> <span class="o">=</span> <span class="n">Lasso</span><span class="p">(</span><span class="mf">200.0</span><span class="p">)</span>
+<span class="lineno">24 </span>    <span class="n">lr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="lineno">25 </span>    <span class="c1"># now test on the test partition</span>
+<span class="lineno">26 </span>    <span class="n">y_hat</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="lineno">27 </span>    <span class="c1"># we calculate the root of mean squared error (rmse)</span>
+<span class="lineno">28 </span>    <span class="n">rmse</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+<span class="lineno">29 </span>    <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rmse</span><span class="p">)</span>
+<span class="lineno">30 </span>
+<span class="lineno">31 </span><span class="c1"># average rmse from 5-fold cross-validation</span>
+<span class="lineno">32 </span><span class="nb">print</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span><span class="o">/</span><span class="n">k</span><span class="p">)</span></code></pre></figure><p>Run the code snippets, we have the $5$-fold cross-validation accuracy as follows.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>chapter6 <span class="o">$</span>r <span class="o">-</span>f cv.R
+<span class="lineno">2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4.978324</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter6</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">cv</span><span class="o">.</span><span class="n">py</span>
+<span class="lineno">2 </span><span class="mf">5.702339699398128</span></code></pre></figure></div>
+</div>
+<p>We add the line <code>sys.path.append("..")</code> in the Python code, otherwise it would throw an error because of the <code>import</code> mechanism<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>.</p>
+<h3>Evaluation metrics</h3>
+<p>In the example above, we measure the root of mean squared error (<span class="caps">RMSE</span>) as the accuracy of the linear regression model. There are various metrics to evaluate the accuracy of predictive models.</p>
+<ul>
+	<li>Metrics for regression</li>
+</ul>
+<p>For regression models, <span class="caps">RMSE</span>, mean absolute error (<span class="caps">MAE</span>)<sup class="footnote" id="fnr3"><a href="#fn3">3</a></sup> and mean absolute percentage error (<span class="caps">MAPE</span>)<sup class="footnote" id="fnr4"><a href="#fn4">4</a></sup> are some of the commonly-used evaluation metrics. You may have heard of the coefficient of determination ($R^2$ or adjusted $R^{2}$) in Statistics. But from predictive modeling perspective, $R^{2}$ is not a metric that evaluates the predictive power of the model since its calculation is based on the training data. But what we are actually interested in is the model performance on the unseen data. In Statistics, goodness of fit is a term to describe how good a model fits the observations, and $R^{2}$ is one of these measures for goodness of fit. In predictive modeling, we care more about the error of the model on the unseen data, which is called generalization error. But of course, it is possible to calculate the counterpart of $R^{2}$ on testing data.</p>
+<figcaption class="centerfigcaption">Some metrics for regression models</figcaption>
+<table>
+	<tr>
+		<td> <strong>metric</strong> </td>
+		<td> <strong>formula</strong> </td>
+	</tr>
+	<tr>
+		<td> <span class="caps">RMSE</span>   </td>
+		<td>  $\sqrt{\frac  {\sum_{i=1}^{n} {(\hat{y}_{i}-y})^{2}} n}$     </td>
+	</tr>
+	<tr>
+		<td> <span class="caps">MAE</span>    </td>
+		<td>$ \frac  {\sum_{i=1}^{n} {\lvert \hat{y}_{i} &#8211; y \rvert}} {n} $        </td>
+	</tr>
+	<tr>
+		<td> <span class="caps">MAPE</span>   </td>
+		<td> $ \frac {1} n \sum_{i=1}^{n} \lvert{\frac {\hat{y}_{i}-y_{i}} {y_{i}}\rvert}$        </td>
+	</tr>
+</table>
+<ul>
+	<li>Metrics for classification</li>
+</ul>
+<p>The most intuitive metric for classification models is the accuracy, which is the percentage of corrected classified instances. To calculate the accuracy, we need to label each instance to classify. Recall the logistic regression we introduced in Chapter 5, the direct output of a logistic regression are probabilities rather than labels. In that case, we need to convert the probability output to the label for accuracy calculation. For example, consider a classification problem, where the possible labels of each instance is $0$, $1$, $2$ and $3$. If the predictive probabilities of each label are $0.2$, $0.25$, $0.5$, $0.05$ for label $0$, $1$, $2$ and $3$ respectively, then the predictive label is $2$ since its corresponding probability is the largest.</p>
+<p>But actually we don&#8217;t always care the labels of an instance. For example, a classification model for mortgage default built in a bank may only be used to calculate the expected monetary loss. Another example is the recommendation system that predicts the probabilities which are used for ranking of items. In that case, the model performance could be evaluated by <code>logloss</code>, <code>AUC</code>, etc. using the output probabilities directly. We have seen in Chapter 5 the loss function of logistic regression is the log-likelihood function.</p>
+<p>Actually, <code>logloss</code> is just the average evaluated log-likelihood on the testing data, and thus it can also be used for classification models with more than 2 classes (labels) because likelihood function is not restricted to Bernoulli distribution (extended Bernoulli distribution is called categorical distribution<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>). Another name of <code>logloss</code> is <code>cross-entropy loss</code>.</p>
+<p>In practice, <code>AUC</code> (Area Under the <span class="caps">ROC</span> Curve) is a very popular evaluation metric for binary-class classification problems. <span class="caps">AUC</span> is bounded between 0 and 1. A perfect model leads to an <span class="caps">AUC</span> equal to 1. If a model&#8217;s predictions are $100\%$ wrong, the resulted <span class="caps">AUC</span> is equal to 0. But if we know a binary-class classification model always results in $100\%$ wrong predictions, we can instead use $1-\hat{y}$ as the corrected prediction and as a result we will get a perfect model and the <span class="caps">AUC</span> based on the corrected prediction becomes 1. Actually, a model using completely random guess as the prediction leads to an <span class="caps">AUC</span> equal to 0.5. Thus, in practice the evaluated <span class="caps">AUC</span> is usually between 0.5 and 1.</p>
+<p>There are also many other metrics, such as recalls, precisions, and F1 score<sup class="footnote" id="fnr6"><a href="#fn6">6</a></sup>.</p>
+<p>The selection of evaluation metrics in predictive modeling is important but also subjective. Sometimes we may also need to define a customized evaluation metric.</p>
+<p>Many evaluation metrics can be found from the R package <code>Metrics</code> and the Python module <code>sklearn.metrics</code>.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="c1"># regression metrics</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> y <span class="o">=</span> rnorm<span class="p">(</span>n <span class="o">=</span> <span class="m">10</span><span class="p">,</span> mean <span class="o">=</span> <span class="m">10</span><span class="p">,</span> sd <span class="o">=</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> y
+<span class="lineno"> 5 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">12.741917</span>  <span class="m">8.870604</span> <span class="m">10.726257</span> <span class="m">11.265725</span> <span class="m">10.808537</span>  <span class="m">9.787751</span>
+<span class="lineno"> 6 </span> <span class="p">[</span><span class="m">7</span><span class="p">]</span> <span class="m">13.023044</span>  <span class="m">9.810682</span> <span class="m">14.036847</span>  <span class="m">9.874572</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="c1"># we use random numbers as the predictions</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> y_hat <span class="o">=</span> rnorm<span class="p">(</span>n <span class="o">=</span> <span class="m">10</span><span class="p">,</span> mean <span class="o">=</span> <span class="m">10.5</span><span class="p">,</span> sd <span class="o">=</span> <span class="m">2.2</span><span class="p">)</span> 
+<span class="lineno"> 9 </span><span class="o">&gt;</span> y_hat
+<span class="lineno">10 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">13.370713</span> <span class="m">15.530620</span>  <span class="m">7.444506</span>  <span class="m">9.886665</span> <span class="m">10.206693</span> <span class="m">11.899091</span>
+<span class="lineno">11 </span> <span class="p">[</span><span class="m">7</span><span class="p">]</span>  <span class="m">9.874644</span>  <span class="m">4.655798</span>  <span class="m">5.130973</span> <span class="m">13.404249</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> 
+<span class="lineno">13 </span><span class="o">&gt;</span> rmse<span class="p">(</span>actual <span class="o">=</span> y<span class="p">,</span> predicted <span class="o">=</span> y_hat<span class="p">)</span>
+<span class="lineno">14 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4.364646</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> mae<span class="p">(</span>actual <span class="o">=</span> y<span class="p">,</span> predicted <span class="o">=</span> y_hat<span class="p">)</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">3.540164</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> mape<span class="p">(</span>actual <span class="o">=</span> y<span class="p">,</span> predicted <span class="o">=</span> y_hat<span class="p">)</span>
+<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.3259014</span>
+<span class="lineno">19 </span><span class="o">&gt;</span> <span class="c1"># classification metrics</span>
+<span class="lineno">20 </span><span class="o">&gt;</span> y <span class="o">=</span> rbinom<span class="p">(</span>n <span class="o">=</span> <span class="m">10</span><span class="p">,</span> size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> prob<span class="o">=</span><span class="m">0.25</span><span class="p">)</span>
+<span class="lineno">21 </span><span class="o">&gt;</span> y
+<span class="lineno">22 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0</span> <span class="m">0</span> <span class="m">0</span> <span class="m">1</span> <span class="m">0</span> <span class="m">1</span> <span class="m">1</span> <span class="m">0</span> <span class="m">1</span> <span class="m">0</span>
+<span class="lineno">23 </span><span class="o">&gt;</span> y_hat <span class="o">=</span> runif<span class="p">(</span><span class="m">10</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+<span class="lineno">24 </span><span class="o">&gt;</span> logLoss<span class="p">(</span>y<span class="p">,</span> y_hat<span class="p">)</span>
+<span class="lineno">25 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.4553994</span>
+<span class="lineno">26 </span><span class="o">&gt;</span> auc<span class="p">(</span>y<span class="p">,</span> y_hat<span class="p">)</span>
+<span class="lineno">27 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.8333333</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> 
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span><span class="p">,</span> <span class="n">mean_absolute_error</span><span class="p">,</span> <span class="n">log_loss</span><span class="p">,</span> <span class="n">roc_auc_score</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># regression metrics</span>
+<span class="lineno"> 5 </span><span class="o">...</span> 
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">10.5</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="c1"># rmse</span>
+<span class="lineno"> 9 </span><span class="mf">3.0668667318485165</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="c1"># mae</span>
+<span class="lineno">11 </span><span class="mf">2.1355703394788237</span>
+<span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># let&#39;s define mape since it&#39;s not available</span>
+<span class="lineno">13 </span><span class="o">...</span> 
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">mape</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">):</span> <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="o">-</span><span class="n">y_hat</span><span class="p">)</span><span class="o">/</span><span class="n">y_hat</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="o">...</span>
+<span class="lineno">16 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mape</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+<span class="lineno">17 </span><span class="mf">0.292059554974094</span>
+<span class="lineno">18 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># classification metrics</span>
+<span class="lineno">19 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="lineno">20 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="lineno">21 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+<span class="lineno">22 </span><span class="mf">0.47071363776285635</span>
+<span class="lineno">23 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span> <span class="c1"># auc</span>
+<span class="lineno">24 </span><span class="mf">0.8095238095238095</span></code></pre></figure></div>
+</div>
+<h3>Feature engineering &amp; embedding</h3>
+<p>According to the explanation of feature engineering<sup class="footnote" id="fnr7"><a href="#fn7">7</a></sup> on wikipedia, feature engineering is the process to use domain knowledge to create new features based on existing features. In reality, it is not rare to see feature engineering leads to better prediction accuracy. And sometimes I use feature engineering too. But I think feature engineering should be less and less useful in the future as the machine learning algorithms become more and more intelligent.</p>
+<p>Let&#8217;s consider three features $x_{1},x_{2}$ and $x_{3}$ and assume the actual model is specified as $y=f(x_{1},g(x_{2}, x_{3}))$. After all, $y$ is still a function of $x_{1},x_{2}$ and $x_{3}$, and we can write it as $y=h(x_{1},x_{2}, x_{3})$. Thus, even without creating the new feature $x_{4}=g(x_{2}, x_{3})$ explicitly, a universal approximator should be able to learn (i.e., approximate) the function $h$ from the data ideally. This idea is also supported by the Kolmogorov–Arnold representation theorem<sup class="footnote" id="fnr8"><a href="#fn8">8</a></sup> which says any continuous real-valued multivariate functions can be written as a finite composition of continuous functions of a single variable.</p>
+<p>$$<br />
+\begin{equation}<br />
+f(x\sb{1},&#8230;,x\sb{m})=\sum_{q=0}^{2m} {\Phi\sb{q}\big(\sum_{p=1} ^{m} \phi_{q,p} (x_{p})}\big) .<br />
+\label{eq:ka}<br />
+\end{equation}<br />
+$$</p>
+<p>As of today, since the machine learning algorithms are not that intelligent, it is worth trying feature engineering especially when domain knowledge is available.</p>
+<p>If you are familiar with dimension reduction, embedding can be considered as something similar. Dimension reduction aims reducing the dimension of $\boldsymbol{X}$. It sounds interesting and promising if we can transform the high-dimensional dataset into a a low-dimensional dataset and feed the dataset in a low dimension space to the machine learning model. However, I don&#8217;t think this is a good idea in general because it is not guaranteed the low-dimensional predictors still keep all the information related to the response variable. Actually, many machine learning models is capable to handle the high-dimensional predictors directly.</p>
+<p>Embedding also transform the features into a new space, which usually has a lower dimension. But generally embedding is not done by the traditional dimension reduction techniques (for example, principal component analysis). In natural language process, a word can be embedded into a vector space by word2vec<sup class="footnote" id="fnr9"><a href="#fn9">9</a></sup> (or other techniques). When an instance is associated with an image, we may consider to use autoencoder<sup class="footnote" id="fnr10"><a href="#fn10">10</a></sup> to encode/embed the image into a space with lower dimension, which is usually achieved by (deep) neural networks.</p>
+<h3>Collinearity</h3>
+<p>Collinearity is one of the cliches in machine learning. For non-linear models, collinearity is usually not a problem. For linear models, I recommend reading this discussion<sup class="footnote" id="fnr11"><a href="#fn11">11</a></sup> to see when it is not a problem.</p>
+<h3>Feature selection &amp; parameter tuning</h3>
+<p>We have seen how the Lasso solutions of linear models can be used for feature selection in Chapter 5. What about non-linear models? There are some model-specific techniques for feature selection. Also, there is a metaheuristic approach to select features &#8211; cross-validation. Specifically, we can try different combinations of the features and use cross-validation to select the set of features which results in the best cross-validation evaluation metric. However, the major problem of this approach is its efficiency. When the number of features is too large, it is impossible to try all different combinations with limited computational resources. Thus, it is better to use the model-specific feature selection techniques in practice.</p>
+<p>To tune model parameters, such as the $\lambda$ in Lasso, we can also use cross-validation. But again, the efficiency is our major concern.</p>
+<p>Can we have feature selection and parameter tuning done automatically? Actually, automated machine learning has been a hot research topic in both academia and industry.</p>
+<hr />
+<p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> Andrew R Barron. Universal approximation bounds for superpositions of a sigmoidal function. <span class="caps">IEEE</span> Transactions on Information theory, 39(3):930–945, 1993.</p>
+<p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://docs.python.org/3/reference/import.html</p>
+<p class="footnote" id="fn3"><a href="#fnr3"><sup>3</sup></a> https://en.wikipedia.org/wiki/Mean_absolute_error</p>
+<p class="footnote" id="fn4"><a href="#fnr4"><sup>4</sup></a> https://en.wikipedia.org/wiki/Mean_absolute_percentage_error</p>
+<p class="footnote" id="fn5"><a href="#fnr5"><sup>5</sup></a> https://en.wikipedia.org/wiki/Categorical_distribution</p>
+<p class="footnote" id="fn6"><a href="#fnr6"><sup>6</sup></a> https://en.wikipedia.org/wiki/Precision_and_recall</p>
+<p class="footnote" id="fn7"><a href="#fnr7"><sup>7</sup></a> https://en.wikipedia.org/wiki/Feature_engineering</p>
+<p class="footnote" id="fn8"><a href="#fnr8"><sup>8</sup></a> https://en.wikipedia.org/wiki/Kolmogorov-Arnold_representation_theorem</p>
+<p class="footnote" id="fn9"><a href="#fnr9"><sup>9</sup></a> Tomas Mikolov,Kai Chen,Greg Corrado,and Jeffrey Dean.Efficientestimationofwordrepresentations in vector space. arXiv preprint arXiv:1301.3781, 2013.</p>
+<p class="footnote" id="fn10"><a href="#fnr10"><sup>10</sup></a> https://en.wikipedia.org/wiki/Autoencoder</p>
+<p class="footnote" id="fn11"><a href="#fnr11"><sup>11</sup></a> https://statisticalhorizons.com/multicollinearity</p>
+    </div> <!-- /container-fluid -->
+    <!-- Footer -->
+<div id="footer">
+  <div class="inner">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span16">
+          <p style="text-align:center">
+              &copy; 2019 Anotherbookondatascience.com, all rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'] ],
+      processEscapes: true
+    },
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+    Macros: {
+        sb: "_"
+          } }
+  });
+</script>
+
+<script
+  type="text/javascript"
+  charset="utf-8"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+>
+</script>
+
+
+  </body>
+</html>
