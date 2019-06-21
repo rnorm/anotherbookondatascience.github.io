@@ -961,7 +961,7 @@ Considering the importance of vectorization in scientific programming, let&#8217
 	<li>returned from a function.</li>
 </ul>
 <p>The essential idea behind the <code>recursive_assign</code> function is a depth-first search (<span class="caps">DFS</span>), which is a fundamental graph traversing algorithm<sup class="footnote" id="fnr20"><a href="#fn20">20</a></sup>. In the context of the <code>recursive_assign</code> function, we use <span class="caps">DFS</span> to traverse the parse tree of the <code>left</code> argument created by calling <code>substitute(left)</code>.</p>
-<h2 id="Evaluation">Evaluation strategy</h2>
+<h2 id="evaluation">Evaluation strategy</h2>
 <p>R is a lazy programming language since it uses lazy evaluation by default<sup class="footnote" id="fnr21"><a href="#fn21">21</a></sup>. Lazy evaluation strategy delays the evaluation of an expression until its value is needed. When an expression in R is evaluated, it follows an outermost reduction order in general. But Python is not a lazy programming language and the expression in Python follows an innermost reduction order.</p>
 <p>The code snippets below illustrate the innermost reduction vs. outermost reduction.</p>
 <div class="codewrapper">
@@ -1085,7 +1085,7 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <language>R</language>
 <figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>microbenchmark<span class="p">)</span>
 <span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>Rcpp<span class="p">)</span>
-<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;Fibonacci_native}.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&quot;Fibonacci_native.R&quot;</span><span class="p">)</span>
 <span class="lineno"> 4 </span><span class="o">&gt;</span> sourceCpp<span class="p">(</span><span class="s">&#39;Fibonacci.cpp&#39;</span><span class="p">)</span>
 <span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="c1"># the native implementation in R</span>
 <span class="lineno"> 6 </span><span class="o">&gt;</span> microbenchmark<span class="p">(</span>Fibonacci_native<span class="p">(</span><span class="m">20</span><span class="p">),</span> times<span class="o">=</span><span class="m">1000</span><span class="p">)</span>
