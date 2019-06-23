@@ -695,13 +695,14 @@ subject\quad  to\quad  &amp; g_i(\boldsymbol{x})\leq{\boldsymbol{b}_i};i=1,&#823
 $$<br />
 where $g_{i}$ is the inequality constraint and $h_{i}$ is the equality constraint, both of which could be linear or nonlinear. A constrained optimization problem may or may not be convex. Although there are some tools existing in R/Python for constrained optimization, they may fail if you just throw the problem into the tools. Thus, it is better to have a tailored treatment for the problem. In general, that requires understanding the basic theories for constrained optimization problems, such as the Lagrangian, and the Karush-Kuhn-Tucker (<span class="caps">KKT</span>) conditions<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>.</p>
 <h3>Quadratic programming</h3>
-<p>Quadratic programming (QP)<sup class="footnote" id="fnr20"><a href="#fn20">20</a></sup> is also commonly seen in machine learning. For example, the optimization problems in vanilla linear regression, ridge linear regression and Lasso solution of linear regression all fall into the QP category. To see why the Lasso solution of linear regression is also QP, let&#8217;s convert the optimization problem from the unconstrained form \eqref{eq:5_lasso} to the constrained form \eqref{eq:5_lasso_1} similar to the ridge regression.</p>
+<p>Quadratic programming (QP)<sup class="footnote" id="fnr20"><a href="#fn20">20</a></sup> is also commonly seen in machine learning. For example, the optimization problems in vanilla linear regression, ridge linear regression and Lasso solution of linear regression all fall into the QP category. To see why the Lasso solution of linear regression is also QP, let&#8217;s convert the optimization problem from the unconstrained form \eqref{eq:5_lasso} to the constrained form \eqref{eq:5_lasso11} similar to the ridge regression.</p>
 <p>$$<br />
-\begin{equation}\label{eq:5_lasso11}<br />
+\begin{equation}<br />
 \begin{split}<br />
 \min_{\boldsymbol{\hat\beta}}&amp; \quad \boldsymbol{e}&#8217;\boldsymbol{e}\\<br />
 subject\quad  to\quad  &amp;  \lambda \sum_{i=1}^p {|\boldsymbol{\beta}_i|}\leq t.<br />
 \end{split}<br />
+\label{eq:5_lasso11}<br />
 \end{equation}<br />
 $$</p>
 <p>The $||$ operator in the constraint in \eqref{eq:5_lasso_1} can be eliminated by expanding the constraint to $2^p$ linear constraints.</p>
