@@ -41,3 +41,5 @@
 .highlight .s1 { color: #a31515 } /* Literal.String.Single */
 .highlight .ss { color: #a31515 } /* Literal.String.Symbol */
 .highlight .lineno{color:#b2bec3;font-size: 6px;}
+.highlight pre{border: 0; font-family: SFMono-Regular, Menlo, Monaco, Consolas, liberation mono, courier new, monospace;}
+.highlight code{font-family: SFMono-Regular, Menlo, Monaco, Consolas, liberation mono, courier new, monospace;}
