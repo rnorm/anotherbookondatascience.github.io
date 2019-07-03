@@ -61,6 +61,7 @@
 	<li><a href="#scope">Scope of variables</a></li>
 	<li><a href="#evaluation">Evaluation strategy</a></li>
 	<li><a href="#cpp">Speed up with C/C++ in R/Python</a></li>
+	<li><a href="#fp">A first impression of functional programming</a></li>
 	<li><a href="#miscellaneous">Miscellaneous</a></li>
 </ul>
 <h2 id="script">Write &amp; run scripts</h2>
@@ -1110,10 +1111,126 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <span class="lineno">10 </span><span class="mf">0.316726</span> <span class="n">seconds</span>
 <span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{timeit.timeit(&quot;Fibonacci_static(20)&quot;, setup=&quot;from __main__ import Fibonacci_static&quot;,number=1000):.6f} seconds&#39;</span><span class="p">)</span>
 <span class="lineno">12 </span><span class="mf">0.012741</span> <span class="n">seconds</span></code></pre></figure><p>The results show the static typed implementation is the fastest, and the native implementation in pure Python is the slowest. Again the time measured by <code>timeit.timeit</code> is the total time to run the main statement 1000 times. The average time per run of <code>Fibonacci_static</code> function is close to the average time per run of <code>Fibonacci</code> in R.</p>
+<h2 id="fp">A first impression of functional programming</h2>
+<p>Functional (programming) languages define programs as mathematical functions and treat them as first-class<sup class="footnote" id="fnr24"><a href="#fn24">24</a></sup>. In pure functional programming, a function takes input and returns output without making any side effect. A side effect means a state variable outside the function is modified. For example, printing the value of a variable inside a function is a side effect.</p>
+<p>Both R and Python are not purely functional languages per se, although R behaves more functional than Python<sup class="footnote" id="fnr25"><a href="#fn25">25</a></sup>. If you wonder why the <code>return</code> function could be ignored to return a value in an R function, now you get the explanation &#8211; a function should return the output automatically from a FP perspective.</p>
+<p>I don&#8217;t think it makes any sense to debate on if we should choose <span class="caps">OOP</span> or FP using R/Python. And both languages support multiple programming paradigms (FP, <span class="caps">OOP</span> etc.). If you want to do purist FP, neither R nor Python would be the best choice. For example, purist FP should avoid loop because loop always involves an iteration counter whose value changes over iterations, which is obviously a side effect. Thus, recursion is very important in FP. But tail recursion optimization is not supported in R and Python although it can be implemented via trampoline<sup class="footnote" id="fnr26"><a href="#fn26">26</a></sup>.</p>
+<p>Let&#8217;s introduce a few tools that could help to get a first impression of FP in R and Python.</p>
+<h3>Anonymous function</h3>
+<p>We have seen anonymous functions before. Anonymous functions are commonly used in FP. To recap, let&#8217;s see how to define a useless anonymous function.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> x<span class="o">*</span>x
+<span class="lineno">2 </span><span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> x<span class="o">*</span>x</code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
+<span class="lineno">2 </span><span class="o">&lt;</span><span class="n">function</span> <span class="o">&lt;</span><span class="k">lambda</span><span class="o">&gt;</span> <span class="n">at</span> <span class="mh">0x1033d5510</span><span class="o">&gt;</span></code></pre></figure></div>
+</div>
+<p>Usually, we define anonymous functions because we want to pass them to other functions. And thus, the functions defined above are useless as they are not passed to any other function and after the definition they are deleted automatically from the memory.</p>
+<p>Of course, we can assign names to the anonymous functions &#8211; but what is the point to name anonymous functions?</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> f1 <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> x<span class="o">*</span>x
+<span class="lineno">2 </span><span class="o">&gt;</span> f1
+<span class="lineno">3 </span><span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> x<span class="o">*</span>x</code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">f1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">f1</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="mi">4</span></code></pre></figure></div>
+</div>
+<h3>Map</h3>
+<p>Map could be used to avoid loops. The first argument to map is a function.</p>
+<p>In R, we use <code>Map</code> which is shipped with base R; and in Python we use <code>map</code> which is also a built-in function.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">Map</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> x<span class="o">*</span>x<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">))</span>
+<span class="lineno"> 2 </span><span class="p">[[</span><span class="m">1</span><span class="p">]]</span>
+<span class="lineno"> 3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno"> 4 </span>
+<span class="lineno"> 5 </span><span class="p">[[</span><span class="m">2</span><span class="p">]]</span>
+<span class="lineno"> 6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4</span>
+<span class="lineno"> 7 </span>
+<span class="lineno"> 8 </span><span class="p">[[</span><span class="m">3</span><span class="p">]]</span>
+<span class="lineno"> 9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">9</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="kp">Map</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> x<span class="o">*</span>y<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">4</span><span class="o">:</span><span class="m">6</span><span class="p">))</span>
+<span class="lineno">11 </span><span class="p">[[</span><span class="m">1</span><span class="p">]]</span>
+<span class="lineno">12 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">4</span>
+<span class="lineno">13 </span>
+<span class="lineno">14 </span><span class="p">[[</span><span class="m">2</span><span class="p">]]</span>
+<span class="lineno">15 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">10</span>
+<span class="lineno">16 </span>
+<span class="lineno">17 </span><span class="p">[[</span><span class="m">3</span><span class="p">]]</span>
+<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">18</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="lineno">2 </span><span class="o">&lt;</span><span class="nb">map</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x1033e3160</span><span class="o">&gt;</span>
+<span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]))</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">]</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]))</span>
+<span class="lineno">6 </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">18</span><span class="p">]</span></code></pre></figure></div>
+</div>
+<p>There are a few things to note from the code snippets above. First, the returned value from <code>Map</code> in R is a list rather than a vector. That is because <code>Map</code> is just a wrapper of <code>mapply</code> function in R, and the <code>SIMPLIFY</code> argument is set to <code>FALSE</code>. If we want to get a vector value returned, just use <code>mapply</code> instead.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kp">mapply</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> x<span class="o">*</span>y<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">4</span><span class="o">:</span><span class="m">6</span><span class="p">),</span> SIMPLIFY<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span>  <span class="m">4</span> <span class="m">10</span> <span class="m">18</span></code></pre></figure><p>The returned value from <code>map</code> in Python is a <code>map</code> object which is an iterator. The <code>generator</code> function we have seen before is also an iterator. To use an iterator, we could convert it to a list, or get the next value using the <code>next</code> function, or just use a for loop.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># use next on an iterator</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">o</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="mi">4</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">next</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="mi">10</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">o</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># use for loop on an iterator</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">o</span><span class="p">:</span><span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="o">...</span> 
+<span class="lineno">11 </span><span class="mi">4</span>
+<span class="lineno">12 </span><span class="mi">10</span>
+<span class="lineno">13 </span><span class="mi">18</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># convert an iterator to a list</span>
+<span class="lineno">15 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">o</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="lineno">16 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+<span class="lineno">17 </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">18</span><span class="p">]</span></code></pre></figure><h3>Filter</h3>
+<p>Similar to <code>map</code>, the first argument to <code>Filter</code> in R and <code>filter</code> in Python is also a function. This function is used to get the elements which satisfy a certain condition specified in the first argument. For example, we can use it to get the even numbers.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kp">Filter</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> x<span class="o">%%</span><span class="m">2</span><span class="o">==</span><span class="m">0</span><span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="o">:</span><span class="m">10</span><span class="p">))</span>
+<span class="lineno">2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span>  <span class="m">0</span>  <span class="m">2</span>  <span class="m">4</span>  <span class="m">6</span>  <span class="m">8</span> <span class="m">10</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">%</span><span class="mi">2</span><span class="o">==</span><span class="mi">0</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">)))</span>
+<span class="lineno">2 </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span></code></pre></figure></div>
+</div>
+<h3>Reduce</h3>
+<p><code>Reduce</code> behaves a bit different from <code>Map</code> and <code>Filter</code>. The first argument is a function with exactly two arguments. The second argument is a sequence, on each element of which the first function argument will be applied from left to right. And there is one optional argument called initializer. When the initializer is provided, it would be used as the first argument of the function argument of <code>Reduce</code>. The examples below depict how it works.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kp">Reduce</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> x<span class="m">+2</span><span class="o">*</span>y<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">))</span>
+<span class="lineno">2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">11</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kp">Reduce</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> x<span class="m">+2</span><span class="o">*</span>y<span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">),</span> <span class="m">1</span><span class="p">)</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">13</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span><span class="n">x</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="lineno">3 </span><span class="mi">11</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span><span class="n">x</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="mi">13</span></code></pre></figure></div>
+</div>
+<p>Please note that in order to use <code>reduce</code> in Python, we have to <code>import</code> it from the <code>functools</code> module.</p>
+<p>Utilizing these functions flexibly may help to make the code more concise, at the cost of readability.</p>
 <h2 id="miscellaneous">Miscellaneous</h2>
-<p>We have introduced the basics of R/Python programming so far. There are much more to learn to become an advanced user of R/Python. For example, the appropriate usages of <code>iterator, generator, decorator</code> could improve both the conciseness and readability of your Python code. The <code>generator</code><sup class="footnote" id="fnr24"><a href="#fn24">24</a></sup> is commonly seen in machine learning programs to prepare training/testing samples. <code>decorator</code> is a kind of syntactic sugar to allow the modification of a function&#8217;s behavior in a simple way. In R there are no built-in <code>iterator, generator, decorator</code>, but you may find some third-party libraries to mimic these features; or you may try to implement your own.</p>
-<p>One advantage of Python over R is that there are some built-in modules containing high-performance data structures or commonly-used algorithms implemented efficiently. For example, I enjoy using the <code>deque</code> structure in the Python <code>collections</code> module<sup class="footnote" id="fnr25"><a href="#fn25">25</a></sup>, but there is no built-in counterpart in R. We have written our own binary search algorithm earlier in this Chapter, which can also be replaced by the functions in the built-in module <code>bisect</code><sup class="footnote" id="fnr26"><a href="#fn26">26</a></sup> in Python.</p>
-<p>Another important aspect of programming is testing. Unit testing is a typical software testing method that is commonly adopted in practice. In R there are two third-party packages <code>testthat</code> and <code>RUnit</code>. In Python, the built-in <code>unittest</code> is quite powerful. Also, the third-party module <code>pytest</code><sup class="footnote" id="fnr27"><a href="#fn27">27</a></sup> is very popular.</p>
+<p>We have introduced the basics of R/Python programming so far. There are much more to learn to become an advanced user of R/Python. For example, the appropriate usages of <code>iterator, generator, decorator</code> could improve both the conciseness and readability of your Python code. The <code>generator</code><sup class="footnote" id="fnr27"><a href="#fn27">27</a></sup> is commonly seen in machine learning programs to prepare training/testing samples. <code>decorator</code> is a kind of syntactic sugar to allow the modification of a function&#8217;s behavior in a simple way. In R there are no built-in <code>iterator, generator, decorator</code>, but you may find some third-party libraries to mimic these features; or you may try to implement your own.</p>
+<p>One advantage of Python over R is that there are some built-in modules containing high-performance data structures or commonly-used algorithms implemented efficiently. For example, I enjoy using the <code>deque</code> structure in the Python <code>collections</code> module<sup class="footnote" id="fnr28"><a href="#fn28">28</a></sup>, but there is no built-in counterpart in R. We have written our own binary search algorithm earlier in this Chapter, which can also be replaced by the functions in the built-in module <code>bisect</code><sup class="footnote" id="fnr29"><a href="#fn29">29</a></sup> in Python.</p>
+<p>Another important aspect of programming is testing. Unit testing is a typical software testing method that is commonly adopted in practice. In R there are two third-party packages <code>testthat</code> and <code>RUnit</code>. In Python, the built-in <code>unittest</code> is quite powerful. Also, the third-party module <code>pytest</code><sup class="footnote" id="fnr30"><a href="#fn30">30</a></sup> is very popular.</p>
 <hr />
 <p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> https://www.rstudio.com/products/rstudio</p>
 <p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://code.visualstudio.com/</p>
@@ -1138,10 +1255,13 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <p class="footnote" id="fn21"><a href="#fnr21"><sup>21</sup></a> Floréal Morandat, Brandon Hill, Leo Osvald, and Jan Vitek. Evaluating the design of the r language. In European Conference on Object-Oriented Programming, pages 104–131. Springer, 2012.</p>
 <p class="footnote" id="fn22"><a href="#fnr22"><sup>22</sup></a> https://www.python.org/dev/peps/pep-0255</p>
 <p class="footnote" id="fn23"><a href="#fnr23"><sup>23</sup></a> https://en.wikipedia.org/wiki/Cython</p>
-<p class="footnote" id="fn24"><a href="#fnr24"><sup>24</sup></a> https://docs.python.org/3/howto/functional.html</p>
-<p class="footnote" id="fn25"><a href="#fnr25"><sup>25</sup></a> https://docs.python.org/3/library/collections.html</p>
-<p class="footnote" id="fn26"><a href="#fnr26"><sup>26</sup></a> https://docs.python.org/3.7/library/bisect.html</p>
-<p class="footnote" id="fn27"><a href="#fnr27"><sup>27</sup></a> https://docs.pytest.org/en/latest</p>
+<p class="footnote" id="fn24"><a href="#fnr24"><sup>24</sup></a> https://en.wikipedia.org/wiki/List_of_programming_languages_by_type#Functional_languages</p>
+<p class="footnote" id="fn25"><a href="#fnr25"><sup>25</sup></a> John M Chambers et al. Object-oriented programming, functional programming and r. Statistical Science, 29(2):167–180, 2014.</p>
+<p class="footnote" id="fn26"><a href="#fnr26"><sup>26</sup></a> https://en.wikipedia.org/wiki/Tail_call#Through_trampolining</p>
+<p class="footnote" id="fn27"><a href="#fnr27"><sup>27</sup></a> https://docs.python.org/3/howto/functional.html</p>
+<p class="footnote" id="fn28"><a href="#fnr28"><sup>28</sup></a> https://docs.python.org/3/library/collections.html</p>
+<p class="footnote" id="fn29"><a href="#fnr29"><sup>29</sup></a> https://docs.python.org/3.7/library/bisect.html</p>
+<p class="footnote" id="fn30"><a href="#fnr30"><sup>30</sup></a> https://docs.pytest.org/en/latest</p>
     </div> <!-- /container-fluid -->
     <!-- Footer -->
 <div id="footer">
