@@ -53,6 +53,7 @@
 <ul>
 	<li><a href="#samples">Population &amp; random samples</a></li>
 	<li><a href="#approximator">Universal approximation &amp; overfitting</a></li>
+	<li><a href="#gbm">Gradient boosting machine</a></li>
 </ul>
 <h2 id="samples">Population &amp; random samples</h2>
 <p>A population is a complete set of elements of interest for a specific problem. It is usually defined by the researcher of the problem. A population can be either finite or infinite. For example, if we define the set of real numbers as our population, it is infinite. But if we are only interested in the integers between 1 and 100, then we get a finite population.</p>
@@ -258,6 +259,660 @@ $$</p>
 <p>We have seen how the Lasso solutions of linear models can be used for feature selection in Chapter 5. What about non-linear models? There are some model-specific techniques for feature selection. Also, there is a metaheuristic approach to select features &#8211; cross-validation. Specifically, we can try different combinations of the features and use cross-validation to select the set of features which results in the best cross-validation evaluation metric. However, the major problem of this approach is its efficiency. When the number of features is too large, it is impossible to try all different combinations with limited computational resources. Thus, it is better to use the model-specific feature selection techniques in practice.</p>
 <p>To tune model parameters, such as the $\lambda$ in Lasso, we can also use cross-validation. But again, the efficiency is our major concern.</p>
 <p>Can we have feature selection and parameter tuning done automatically? Actually, automated machine learning has been a hot research topic in both academia and industry.</p>
+<h2 id="gbm">Gradient boosting machine</h2>
+<h3>Decision tree</h3>
+<p>A decision tree consists of a bunch of nodes. In a decision tree there is a node with no parent nodes, which is called root node. The node without any children is called leaf node.</p>
+<figure class="text-center">
+<img src="figures/tree1.png" alt="A single decision tree." style="display: block;margin: auto;" width="50%">
+        <figcaption class="centerfigcaption">A single decision tree.</figcaption>
+</figure>
+<p>The length (number of nodes) of the longest path from the root node to a leaf node is called the depth of the tree. For example, the depth of the tree above is 4. Each leaf node has a label. In regression tasks, the label is a real number, and in classification tasks the label could could be a real number which is used to get the class indirectly (for example, fed into a sigmoid function to get the probability), or an integer representing the predicted class directly.</p>
+<p>Each node except the leaves in a decision tree is associated with a splitting rule. These splitting rules determine to which leaf an instance belongs. A rule is just a function taking a feature as input and returns true or false as output. For example, a rule on the root could be $x_{1}&lt;0$ and if it is true, we go to the left node otherwise go to the right node. Once we arrive at a leaf, we can get the predicted value based on the label of the leaf.</p>
+<p>To get a closer look, let&#8217;s try to implement a binary tree structure for regression tasks in R/Python from scratch.</p>
+<p>Let&#8217;s implement the binary tree as a recursive data structure, which is composed partially of similar instances of the same data structure. More specifically, a binary tree can be decomposed into three components, i.e., its root node, the left subtree under the root, and the right subtree of the root. To define a binary (decision) tree, we only need to define these three components. And to define the left and right subtrees, this decomposition is applied recursively until the leaves.</p>
+<p>Now we have the big picture how to define a binary tree. However, to make the binary tree a decision tree, we also need to define the <br />
+splitting rules. For simplicity, we assume there is no missing value in our data and all variables are numeric. Then a splitting rule of a node is composed of two components, i.e., the variable to split on, and the corresponding breakpoint for splitting.</p>
+<p>There is one more component we need to define in a decision tree, that is, the predict method which takes an instance as input and returns the prediction.</p>
+<p>Now we are ready to define our binary decision tree.</p>
+<language>R</language>
+<p>chapter6/tree.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>R6<span class="p">)</span>
+<span class="lineno"> 2 </span>Tree <span class="o">=</span> R6Class<span class="p">(</span>
+<span class="lineno"> 3 </span>  <span class="s">&quot;Tree&quot;</span><span class="p">,</span>
+<span class="lineno"> 4 </span>  public <span class="o">=</span> <span class="kt">list</span><span class="p">(</span>
+<span class="lineno"> 5 </span>    left <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno"> 6 </span>    right <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno"> 7 </span>    variable_id <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno"> 8 </span>    break_point <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno"> 9 </span>    val <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
+<span class="lineno">10 </span>    initialize <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>left<span class="p">,</span> right<span class="p">,</span> variable_id<span class="p">,</span> break_point<span class="p">,</span> val<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">11 </span>      self<span class="o">$</span>left <span class="o">=</span> left
+<span class="lineno">12 </span>      self<span class="o">$</span>right <span class="o">=</span> right
+<span class="lineno">13 </span>      self<span class="o">$</span>variable_id <span class="o">=</span> variable_id
+<span class="lineno">14 </span>      self<span class="o">$</span>break_point <span class="o">=</span> break_point
+<span class="lineno">15 </span>      self<span class="o">$</span>val <span class="o">=</span> val
+<span class="lineno">16 </span>    <span class="p">},</span>
+<span class="lineno">17 </span>    is_leaf <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="lineno">18 </span>      <span class="kp">is.null</span><span class="p">(</span>self<span class="o">$</span>left<span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="kp">is.null</span><span class="p">(</span>self<span class="o">$</span>right<span class="p">)</span>
+<span class="lineno">19 </span>    <span class="p">},</span>
+<span class="lineno">20 </span>    depth <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="lineno">21 </span>      <span class="kr">if</span> <span class="p">(</span>self<span class="o">$</span>is_leaf<span class="p">())</span> <span class="p">{</span>
+<span class="lineno">22 </span>        <span class="m">1</span>
+<span class="lineno">23 </span>      <span class="p">}</span> <span class="kr">else</span> <span class="kr">if</span> <span class="p">(</span><span class="kp">is.null</span><span class="p">(</span>self<span class="o">$</span>left<span class="p">))</span> <span class="p">{</span>
+<span class="lineno">24 </span>        <span class="m">1</span> <span class="o">+</span> self<span class="o">$</span>right<span class="o">$</span>depth<span class="p">()</span>
+<span class="lineno">25 </span>      <span class="p">}</span> <span class="kr">else</span> <span class="kr">if</span> <span class="p">(</span><span class="kp">is.null</span><span class="p">(</span>self<span class="o">$</span>right<span class="p">))</span> <span class="p">{</span>
+<span class="lineno">26 </span>        <span class="m">1</span> <span class="o">+</span> self<span class="o">$</span>left<span class="o">$</span>depth<span class="p">()</span>
+<span class="lineno">27 </span>      <span class="p">}</span> <span class="kp">else</span><span class="p">{</span>
+<span class="lineno">28 </span>        <span class="m">1</span> <span class="o">+</span> <span class="kp">max</span><span class="p">(</span>self<span class="o">$</span>left<span class="o">$</span>depth<span class="p">(),</span> self<span class="o">$</span>right<span class="o">$</span>depth<span class="p">())</span>
+<span class="lineno">29 </span>      <span class="p">}</span>
+<span class="lineno">30 </span>    <span class="p">},</span>
+<span class="lineno">31 </span>    predict_single <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">32 </span>      <span class="c1"># if x is a vector</span>
+<span class="lineno">33 </span>      <span class="kr">if</span> <span class="p">(</span>self<span class="o">$</span>is_leaf<span class="p">())</span> <span class="p">{</span>
+<span class="lineno">34 </span>        self<span class="o">$</span>val
+<span class="lineno">35 </span>      <span class="p">}</span> <span class="kp">else</span><span class="p">{</span>
+<span class="lineno">36 </span>        <span class="kr">if</span> <span class="p">(</span>x<span class="p">[</span>self<span class="o">$</span>variable_id<span class="p">]</span> <span class="o">&lt;</span> self<span class="o">$</span>break_point<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">37 </span>          self<span class="o">$</span>left<span class="o">$</span>predict_single<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">38 </span>        <span class="p">}</span> <span class="kp">else</span><span class="p">{</span>
+<span class="lineno">39 </span>          self<span class="o">$</span>right<span class="o">$</span>predict_single<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">40 </span>        <span class="p">}</span>
+<span class="lineno">41 </span>      <span class="p">}</span>
+<span class="lineno">42 </span>    <span class="p">},</span>
+<span class="lineno">43 </span>    predict <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">44 </span>      <span class="c1"># if x is an array</span>
+<span class="lineno">45 </span>      preds <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0.0</span><span class="p">,</span> <span class="kp">nrow</span><span class="p">(</span>x<span class="p">))</span>
+<span class="lineno">46 </span>      <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span><span class="kp">nrow</span><span class="p">(</span>x<span class="p">))</span> <span class="p">{</span>
+<span class="lineno">47 </span>        preds<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> self<span class="o">$</span>predict_single<span class="p">(</span>x<span class="p">[</span>i<span class="p">,</span> <span class="p">])</span>
+<span class="lineno">48 </span>      <span class="p">}</span>
+<span class="lineno">49 </span>      preds
+<span class="lineno">50 </span>    <span class="p">},</span>
+<span class="lineno">51 </span>    print <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="lineno">52 </span>      <span class="c1"># we can call print(tree), similar to the magic method in Python</span>
+<span class="lineno">53 </span>      <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;variable_id:&quot;</span><span class="p">,</span> self<span class="o">$</span>variable_id<span class="p">,</span> <span class="s">&quot;\n&quot;</span><span class="p">)</span>
+<span class="lineno">54 </span>      <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;break at:&quot;</span><span class="p">,</span> self<span class="o">$</span>break_point<span class="p">,</span> <span class="s">&quot;\n&quot;</span><span class="p">)</span>
+<span class="lineno">55 </span>      <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;is_leaf:&quot;</span><span class="p">,</span> self<span class="o">$</span>is_leaf<span class="p">(),</span> <span class="s">&quot;\n&quot;</span><span class="p">)</span>
+<span class="lineno">56 </span>      <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;val:&quot;</span><span class="p">,</span> self<span class="o">$</span>val<span class="p">,</span> <span class="s">&quot;\n&quot;</span><span class="p">)</span>
+<span class="lineno">57 </span>      <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;depth:&quot;</span><span class="p">,</span> self<span class="o">$</span>depth<span class="p">(),</span> <span class="s">&quot;\n&quot;</span><span class="p">)</span>
+<span class="lineno">58 </span>      <span class="kp">invisible</span><span class="p">(</span>self<span class="p">)</span>
+<span class="lineno">59 </span>    <span class="p">}</span>
+<span class="lineno">60 </span>  <span class="p">)</span>
+<span class="lineno">61 </span><span class="p">)</span></code></pre></figure></p>
+<language>Python</language>
+<p>chapter6/tree.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="k">class</span> <span class="nc">Tree</span><span class="p">:</span>
+<span class="lineno"> 2 </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">variable_id</span><span class="p">,</span> <span class="n">break_point</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+<span class="lineno"> 3 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+<span class="lineno"> 4 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+<span class="lineno"> 5 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">variable_id</span> <span class="o">=</span> <span class="n">variable_id</span>
+<span class="lineno"> 6 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">break_point</span> <span class="o">=</span> <span class="n">break_point</span>
+<span class="lineno"> 7 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">val</span>
+<span class="lineno"> 8 </span>
+<span class="lineno"> 9 </span>    <span class="nd">@property</span>
+<span class="lineno">10 </span>    <span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="lineno">11 </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="lineno">12 </span>
+<span class="lineno">13 </span>    <span class="k">def</span> <span class="nf">_predict_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="lineno">14 </span>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+<span class="lineno">15 </span>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span>
+<span class="lineno">16 </span>        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_id</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">break_point</span><span class="p">:</span>
+<span class="lineno">17 </span>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">_predict_single</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">18 </span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">19 </span>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">_predict_single</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">20 </span>
+<span class="lineno">21 </span>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="lineno">22 </span>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_predict_single</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+<span class="lineno">23 </span>
+<span class="lineno">24 </span>    <span class="nd">@property</span>
+<span class="lineno">25 </span>    <span class="k">def</span> <span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="lineno">26 </span>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+<span class="lineno">27 </span>            <span class="k">return</span> <span class="mi">1</span>
+<span class="lineno">28 </span>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="lineno">29 </span>            <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">depth</span>
+<span class="lineno">30 </span>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="lineno">31 </span>            <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">depth</span>
+<span class="lineno">32 </span>        <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">depth</span><span class="p">)</span>
+<span class="lineno">33 </span>
+<span class="lineno">34 </span>    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="lineno">35 </span>        <span class="k">return</span> <span class="s2">&quot;variable_id: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">break_at: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">val: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">is_leaf: </span><span class="si">{3}</span><span class="se">\n</span><span class="s2">height: </span><span class="si">{4}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+<span class="lineno">36 </span>            <span class="bp">self</span><span class="o">.</span><span class="n">variable_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">break_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">)</span></code></pre></figure></p>
+<p>You may have noticed the usage <code>@property</code> in our Python implementation. It is one of builtin decorators in Python. We won&#8217;t talk too much of decorators. Basically, adding this decorator makes the method <code>depth</code> behave like a property, in the sense that we can call <code>self.depth</code> instead of <code>self.depth()</code> to get the depth.</p>
+<p>In the R implementation, the <code>invisible(self)</code> is returned in the print method which seems strange. It is an issue<sup class="footnote" id="fnr12"><a href="#fn12">12</a></sup> of <code>R6</code> class due to the <code>S3</code> dispatch mechanism which is not introduced in this book.</p>
+<p>The above implementation doesn&#8217;t involve the training or fitting of the decision tree. In this book, we wouldn&#8217;t talk about how to fit a traditional decision tree model due to its limited usage in the context of modern machine learning. Let&#8217;s see how to use the decision tree structures we defined above by creating a pseudo decision tree illustrated below.</p>
+<figure class="text-center">
+<img src="figures/tree2.png" alt="" style="display: block;margin: auto;" width="75%">
+        <figcaption class="centerfigcaption"></figcaption>
+</figure>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;tree.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> node_2 <span class="o">=</span> Tree<span class="o">$</span>new<span class="p">(</span><span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="m">0.6</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> node_3 <span class="o">=</span> Tree<span class="o">$</span>new<span class="p">(</span><span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="m">2.4</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> node_4 <span class="o">=</span> Tree<span class="o">$</span>new<span class="p">(</span><span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">,</span> <span class="m">4.5</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> node_1 <span class="o">=</span> Tree<span class="o">$</span>new<span class="p">(</span>node_3<span class="p">,</span> node_4<span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">10.5</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> node_0 <span class="o">=</span> Tree<span class="o">$</span>new<span class="p">(</span>node_1<span class="p">,</span> node_2<span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3.2</span><span class="p">,</span> <span class="kc">NULL</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>node_0<span class="p">)</span>
+<span class="lineno"> 8 </span>variable_id<span class="o">:</span> <span class="m">2</span> 
+<span class="lineno"> 9 </span><span class="kr">break</span> at<span class="o">:</span> <span class="m">3.2</span> 
+<span class="lineno">10 </span>is_leaf<span class="o">:</span> <span class="kc">FALSE</span> 
+<span class="lineno">11 </span>val<span class="o">:</span> 
+<span class="lineno">12 </span>depth<span class="o">:</span> <span class="m">3</span> 
+<span class="lineno">13 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>node_4<span class="p">)</span>
+<span class="lineno">14 </span>variable_id<span class="o">:</span> 
+<span class="lineno">15 </span><span class="kr">break</span> at<span class="o">:</span> 
+<span class="lineno">16 </span>is_leaf<span class="o">:</span> <span class="kc">TRUE</span> 
+<span class="lineno">17 </span>val<span class="o">:</span> <span class="m">4.5</span> 
+<span class="lineno">18 </span>depth<span class="o">:</span> <span class="m">1</span> 
+<span class="lineno">19 </span><span class="o">&gt;</span> x <span class="o">=</span> <span class="kt">array</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">10</span><span class="p">,</span> <span class="m">0.5</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">))</span>
+<span class="lineno">20 </span><span class="o">&gt;</span> node_0<span class="o">$</span>predict<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">21 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2.4</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">tree</span> <span class="k">import</span> <span class="n">Tree</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">node_2</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">node_3</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">node_4</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">node_1</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">node_3</span><span class="p">,</span> <span class="n">node_4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">10.5</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">node_0</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">node_1</span><span class="p">,</span> <span class="n">node_2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> 
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">node_0</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="n">variable_id</span><span class="p">:</span> <span class="mi">1</span>
+<span class="lineno">10 </span><span class="n">break_at</span><span class="p">:</span> <span class="mf">3.2</span>
+<span class="lineno">11 </span><span class="n">val</span><span class="p">:</span> <span class="kc">None</span>
+<span class="lineno">12 </span><span class="n">is_leaf</span><span class="p">:</span> <span class="kc">False</span>
+<span class="lineno">13 </span><span class="n">depth</span><span class="p">:</span> <span class="mi">3</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">node_4</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="n">variable_id</span><span class="p">:</span> <span class="kc">None</span>
+<span class="lineno">16 </span><span class="n">break_at</span><span class="p">:</span> <span class="kc">None</span>
+<span class="lineno">17 </span><span class="n">val</span><span class="p">:</span> <span class="mf">4.5</span>
+<span class="lineno">18 </span><span class="n">is_leaf</span><span class="p">:</span> <span class="kc">True</span>
+<span class="lineno">19 </span><span class="n">depth</span><span class="p">:</span> <span class="mi">1</span>
+<span class="lineno">20 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">10</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]]</span>
+<span class="lineno">21 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">node_0</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">22 </span><span class="p">[</span><span class="mf">2.4</span><span class="p">]</span></code></pre></figure></div>
+</div>
+<p>It&#8217;s worth noting decision trees can approximate universally.</p>
+<h3>Tree growing in gradient boosting machine</h3>
+<p>What is a gradient boosting machine (<span class="caps">GBM</span>) (or gradient boosting regression)? Essentially, a <span class="caps">GBM</span> is just a forest of decision trees.<br />
+If you have heard of random forest (RF), you may know that a random forest is also a bunch of trees. What is the difference between a <span class="caps">GBM</span> and RF?</p>
+<p>Looking at the fitted trees from RF and <span class="caps">GBM</span>, there is no way to tell if the trees are fitted by a RF or a <span class="caps">GBM</span>. The major difference is how these trees are trained, rather than the trees themselves. A minor difference is how these trees are used for prediction. In many RF implementations, the prediction for an instance is the average prediction of each tree within the forest. If it is a classification task, there are two ways to get the final prediction &#8211; (a) predict the class with majority voting directly, i.e., the predicted class is the one with highest frequency among the predicted classes of all trees; (b) predict the probability based on the frequencies, for example, if among five trees there are three trees output class 1 then the predicted probability of class 1 is equal to $3/5$. In many <span class="caps">GBM</span> implementations, the prediction (for regression tasks) is the sum of the predictions of individual trees.</p>
+<p><span class="caps">GBM</span> fits trees sequentially, but RF fits trees independently. The obvious advantage of fitting trees independently is that it can be done in parallel. But accuracy-wise, <span class="caps">GBM</span> usually performs better according to my limited experience.</p>
+<p>We have seen the structure of a single decision tree in <span class="caps">GBM</span>. Now it&#8217;s time to see how to get these trees fitted in <span class="caps">GBM</span>. Let&#8217;s start from the first tree.</p>
+<p>To grow a tree, we start from its root node. In <span class="caps">GBM</span> fitting, usually we pre-determine a maximum depth $d$ for each tree to grow. And the final tree&#8217;s depth may be equal to or less than the maximum depth $d$. At a high level, the tree is grown in a recursive fashion. Specifically, first we attempt to split the current node and if the splitting improves the performance we grow the left subtree and the right subtree under the root node. When we grow the left subtree, its maximum depth is $d-1$, and the same applies to the right subtree. We can define a tree grow function for such purpose which takes a root node $Node_{root}$ (it is also a leaf) as input. The pseudo code of tree grow function is illustrated below.</p>
+<ul>
+	<li>if $d&gt;1$:<br />
+- call split function on $Node_{root}$<br />
+- if true is returned:
+	<ul>
+		<li>call grow function on the empty $Node_{left}$ with $d-1$ maximum depth</li>
+		<li>call grow function on the empty $Node_{right}$ with $d-1$ maximum depth</li>
+	</ul></li>
+	<li>return</li>
+</ul>
+<p>In fact, the algorithm of tree growing is just a <span class="caps">DFS</span> algorithm.</p>
+<p>To complete the pseudo algorithm above, we need to have a split function which takes a leaf node as input and returns a boolean value as output. If true is returned, we will do the splitting, i.e., to grow the left/right subtree. So now the challenge is how to define the split function, which requires the understanding of the theories behind <span class="caps">GBM</span>.</p>
+<h3>Optimization of <span class="caps">GBM</span></h3>
+<p>Similar to other regression models we have seen so far, <span class="caps">GBM</span> with $K$ trees has a loss function which is defined below.</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}=\sum_{i=1}^{n} {(y_{i}-\hat{y}_{i})^{2}},<br />
+\label{eq:gbm0}<br />
+\end{equation}<br />
+$$<br />
+where</p>
+<p>$$<br />
+\begin{equation}<br />
+\hat{y}_{i} = \sum_{t=1}^{K} {f_{t}(\boldsymbol{x}_{i})}.<br />
+\label{eq:treepred}<br />
+\end{equation}<br />
+$$</p>
+<p>$f_{t}$ denotes the prediction of $t^{th}$ tree in the forest. As we mentioned previously, the fitting is done sequentially. When we fit the $t^{th}$ tree, all the previous $t-1$ trees are fixed. And the loss function for fitting the $t^{th}$ tree is given below.</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}^{(t)}=\sum_{i=1}^{n} {(y_{i}- \sum_{l=1}^{t-1} {f_{l}(\boldsymbol{x}_{i})} &#8211; f_{t}(\boldsymbol{x}_{i}))^{2}}<br />
+\label{eq:gbm_t}<br />
+\end{equation}<br />
+$$</p>
+<p>In practice, a regularized loss function \eqref{eq:treepred1} is used instead of \eqref{eq:treepred} to reduce overfitting.</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}^{(t)}=\sum_{i=1}^{n} {(y_{i}- \sum_{l=1}^{t-1} {f_{l}(\boldsymbol{x}_{i})} &#8211; f_{t}(\boldsymbol{x}_{i}))^{2}} + \Phi(f_{t}).<br />
+\label{eq:treepred1}<br />
+\end{equation}<br />
+$$</p>
+<p>Let&#8217;s follow the paper<sup class="footnote" id="fnr13"><a href="#fn13">13</a></sup> and use the number of leaves as well as the L2 penalty of the values (also called weights) of the leaves for regularization. The loss function then becomes</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}^{(t)}=\sum_{i=1}^{n} {(y_{i}- \sum_{l=1}^{t-1} {f_{l}(\boldsymbol{x}_{i})} &#8211; f_{t}(\boldsymbol{x}_{i}))^{2}} + \gamma T + \frac 1 2 {\lambda \sum_{j=1}^{T}{\omega_{j}^{2}}} ,<br />
+\label{eq:growtree0}<br />
+\end{equation}<br />
+$$<br />
+where $\omega_{j}$ is the value associated with the $j_{th}$ leaf of the current tree.</p>
+<p>Again, we get an optimization problem, i.e., to minimize the loss function \eqref{eq:growtree0}. The minimization problem can also be viewed as a quadratic programming problem. However, it seems different from the other optimization problems we have seen before, in the sense that the decision tree $f_{t}$ is a non-parametric model. A model is non-parametric if the model structure is learned from the data rather than pre-determined.</p>
+<p>A common approach used in <span class="caps">GBM</span> is the second order approximation. By second order approximation, the loss function becomes</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}^{(t)}\approx  \sum_{i=1}^{n} {(y_{i} &#8211; \sum_{l=1}^{t-1} {f_{l}(\boldsymbol{x}_{i})})^2} + \sum_{i=1}^{n} {(g_{i}f_{t}(\boldsymbol{x}_{i}) +\frac 1 2 {h_{i}f_{t}(\boldsymbol{x}_{i})^{2}})} + \gamma T + \frac 1 2 {\lambda \sum_{j=1}^{T}{\omega_{j}^{2}}} ,<br />
+\label{eq:growtree}<br />
+\end{equation}<br />
+$$<br />
+where $g\sb{i}=2(f\sb{t}(\boldsymbol{x}\sb{i}) + \sum\sb{l=1}^{t-1} {f\sb{l}(\boldsymbol{x}_{i})} &#8211; y_{i})$ and $h\sb{i}=2$ are the first and the second order derivatives of the function $(y\sb{i}- \sum_{l=1}^{t-1} {f\sb{l}(\boldsymbol{x}\sb{i})-f\sb{t}(\boldsymbol{x}\sb{i}))^{2}}  $ with respect to the function $f_{t}(\boldsymbol{x}_{i})$.</p>
+<p>Let&#8217;s implement the function to calculate $g$ and $h$ and put them into <code>util.py</code>.</p>
+<language>Python</language>
+<p>chapter6/util.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno">2 </span>
+<span class="lineno">3 </span><span class="k">def</span> <span class="nf">gh_lm</span><span class="p">(</span><span class="n">actual</span><span class="p">,</span> <span class="n">pred</span><span class="p">):</span>
+<span class="lineno">4 </span>    <span class="sd">&#39;&#39;&#39;</span>
+<span class="lineno">5 </span><span class="sd">    gradient and hessian for linear regression loss</span>
+<span class="lineno">6 </span><span class="sd">    &#39;&#39;&#39;</span>
+<span class="lineno">7 </span>    <span class="k">return</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">pred</span><span class="o">-</span><span class="n">actual</span><span class="p">),</span> <span class="mf">2.0</span></code></pre></figure></p>
+<p>Since the first item is a constant, let&#8217;s ignore it.</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}^{(t)}\approx\sum_{i=1}^{n} {(g_{i}f_{t}(\boldsymbol{x}_{i}) +\frac 1 2 {h_{i}f_{t}(\boldsymbol{x}_{i})^{2}})} + \gamma T + \frac 1 2 {\lambda \sum_{j=1}^{T}{\omega_{j}^{2}}} ).<br />
+\label{eq:growtree1}<br />
+\end{equation}<br />
+$$</p>
+<p>Let&#8217;s think of the prediction of an instance of the current tree. The training data, i.e., instances fall under the leaves of a tree. Thus, the prediction of an instance is the value $\omega$ associated with the corresponding leaf that the instance belongs to. Based on this fact, the loss function can be further rewritten as follows,</p>
+<p>$$<br />
+\begin{equation}<br />
+\mathcal{L}^{(t)} \approx  \sum\sb{j=1}^{T} {(\omega \sb{j} \sum\sb{i\in I\sb{j} }{g\sb{i}} + \frac 1 2 {\omega \sb{j} ^{2}( \sum\sb{i\in I\sb{j}} h\sb{i} +\lambda ) }}) + \gamma T .<br />
+\label{eq:growtree2}<br />
+\end{equation}<br />
+$$</p>
+<p>When the structure of the tree is fixed the loss function \eqref{eq:growtree2} is a quadratic convex function of $\omega_{j}$, and the optimal solution can be obtained by setting the derivative to zero.</p>
+<p>$$<br />
+\begin{equation}<br />
+\omega_{j}=- \frac {\sum_{i\in I_{j} } g_{i}} {\sum_{i\in I_{j}} h_{i} +\lambda}<br />
+\label{eq:omega}<br />
+\end{equation}<br />
+$$</p>
+<p>Plugging \eqref{eq:omega} into the loss function results in the minimal loss of the current tree structure</p>
+<p>$$<br />
+\begin{equation}<br />
+-\frac 1 2 \sum_{j=1}^{T} {\frac {(\sum_{i\in I_{j} }g_{i})^{2}} {\sum_{i\in I_{j}}h_{i} +\lambda} } + \gamma T .<br />
+\label{eq:minimalloss}<br />
+\end{equation}<br />
+$$</p>
+<p>Now let&#8217;s go back to the split function required in the tree grow function discussed previously. How to determine if we need a splitting on a leaf? \eqref{eq:minimalloss} gives the solution &#8211; we can calculate the loss reduction after splitting which is given below</p>
+<p>$$<br />
+\begin{equation}<br />
+\frac 1 2  {\bigg(\frac {(\sum\sb{i\in I\sb{left} }g\sb{i})^{2}} {\sum\sb{i\in I\sb{left}}h\sb{i}+ \lambda } + \frac {(\sum\sb{i\in I\sb{right} }g\sb{i})^{2}} {\sum\sb{i\in I\sb{right}}h\sb{i} + \lambda} &#8211; \frac {(\sum\sb{i\in I } g\sb{i})^{2}} {\sum\sb{i\in I} h\sb{i}+\lambda} \bigg)} &#8211; \gamma .<br />
+\label{eq:lossreduction}<br />
+\end{equation}<br />
+$$</p>
+<p>If the loss reduction is positive, the split function returns true otherwise returns false.</p>
+<p>So far, we have a few ingredients ready to implement our own <span class="caps">GBM</span>, which are listed below,</p>
+<ul>
+	<li>the structure of a single decision tree in the forest, i.e., the <code>Tree</code> class defined;</li>
+	<li>the node splitting mechanism, i.e., \eqref{eq:lossreduction};</li>
+	<li>the tree growing mechanism, i.e., the pseudo algorithm with the leaf value calculation \eqref{eq:omega}.</li>
+</ul>
+<p>However, there are a few additional items we need to go through before the implementation.</p>
+<p>In Chapter 5, we have seen how stochasticity works in iterative optimization algorithms. The stochasticity can be applied in both instance-wise and feature-wise. The stochasticity technique is very important is the optimization of <span class="caps">GBM</span>. More specifically, we apply the stochasticity both instance-wise and feature-wise. Instance-wise, when we fit a new tree, we randomly get a subsample from the training sample. And feature-wise, we randomly select a few features/variables when we fit a new tree. The stochasticity technique could help to reduce overfitting. The extent of the stochasticity can be controlled by arguments.</p>
+<p>Like the gradient decent algorithm, in <span class="caps">GBM</span> there is also a learning rate parameter which scales the values of the leaves after a tree is fitted.</p>
+<p>In practice, we may also not want to have too few instances under a leaf, to reduce potential overfitting. When there are two few instances under a leaf, we may just stop the splitting process.</p>
+<p>Now we have almost all the ingredients to make a working <span class="caps">GBM</span>. Let&#8217;s define the <code>split_node</code> function in the code snippet below.</p>
+<language>Python</language>
+<p>chapter6/grow.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">  1 </span><span class="kn">from</span> <span class="nn">tree</span> <span class="k">import</span> <span class="n">Tree</span>
+<span class="lineno">  2 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno">  3 </span><span class="kn">import</span> <span class="nn">pdb</span>
+<span class="lineno">  4 </span>
+<span class="lineno">  5 </span>
+<span class="lineno">  6 </span><span class="k">def</span> <span class="nf">split_node</span><span class="p">(</span><span class="n">f_in_tree</span><span class="p">,</span> <span class="n">x_in_node</span><span class="p">,</span> <span class="n">x_val_sorted</span><span class="p">,</span> <span class="n">x_index_sorted</span><span class="p">,</span> <span class="n">g_tilde</span><span class="p">,</span> <span class="n">h_tilde</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">min_instances</span><span class="p">):</span>
+<span class="lineno">  7 </span>    <span class="sd">&#39;&#39;&#39;</span>
+<span class="lineno">  8 </span><span class="sd">    f_in_tree: a list of booleans indicating which variable/feature is selected in the tree</span>
+<span class="lineno">  9 </span><span class="sd">    x_in_ndoe: a list of booleans indicating which instance is used in the tree</span>
+<span class="lineno"> 10 </span><span class="sd">    x_val_sorted: a nested list, x_val_sorted[feature index] is a list of instance values </span>
+<span class="lineno"> 11 </span><span class="sd">    x_index_sorted: a nested list, x_index_sorted[feature index] is a list of instance indexes</span>
+<span class="lineno"> 12 </span><span class="sd">    g_tilde: first order derivative</span>
+<span class="lineno"> 13 </span><span class="sd">    h_tilde: second order derivative</span>
+<span class="lineno"> 14 </span><span class="sd">    lam: lambda for regularization</span>
+<span class="lineno"> 15 </span><span class="sd">    gamma: gamma for regularization</span>
+<span class="lineno"> 16 </span><span class="sd">    min_instances: the minimal number of instances under a leaf</span>
+<span class="lineno"> 17 </span><span class="sd">    at the beginning we assume all instances are on the right</span>
+<span class="lineno"> 18 </span><span class="sd">    &#39;&#39;&#39;</span>
+<span class="lineno"> 19 </span>    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x_in_node</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_instances</span><span class="p">:</span>
+<span class="lineno"> 20 </span>        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<span class="lineno"> 21 </span>    <span class="n">best_break</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="lineno"> 22 </span>    <span class="n">best_feature</span><span class="p">,</span> <span class="n">best_location</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+<span class="lineno"> 23 </span>    <span class="n">ncol</span><span class="p">,</span> <span class="n">nrow</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_in_tree</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_in_node</span><span class="p">)</span>
+<span class="lineno"> 24 </span>    <span class="n">g</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+<span class="lineno"> 25 </span>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_in_node</span><span class="p">):</span>
+<span class="lineno"> 26 </span>        <span class="k">if</span> <span class="n">e</span><span class="p">:</span>
+<span class="lineno"> 27 </span>            <span class="n">g</span> <span class="o">+=</span> <span class="n">g_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno"> 28 </span>            <span class="n">h</span> <span class="o">+=</span> <span class="n">h_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno"> 29 </span>    <span class="n">base_score</span> <span class="o">=</span> <span class="n">g</span><span class="o">*</span><span class="n">g</span><span class="o">/</span><span class="p">(</span><span class="n">h</span><span class="o">+</span><span class="n">lam</span><span class="p">)</span>
+<span class="lineno"> 30 </span>    <span class="n">score_reduction</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+<span class="lineno"> 31 </span>    <span class="n">best_w_left</span><span class="p">,</span> <span class="n">best_w_right</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<span class="lineno"> 32 </span>    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncol</span><span class="p">):</span>
+<span class="lineno"> 33 </span>        <span class="k">if</span> <span class="n">f_in_tree</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+<span class="lineno"> 34 </span>            <span class="c1"># if the feature is selected for this tree</span>
+<span class="lineno"> 35 </span>            <span class="n">best_n_left_k</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno"> 36 </span>            <span class="n">n_left_k</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno"> 37 </span>            <span class="c1"># feature is in the current tree</span>
+<span class="lineno"> 38 </span>            <span class="n">g_left</span><span class="p">,</span> <span class="n">h_left</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+<span class="lineno"> 39 </span>            <span class="n">g_right</span><span class="p">,</span> <span class="n">h_right</span> <span class="o">=</span> <span class="n">g</span><span class="o">-</span><span class="n">g_left</span><span class="p">,</span> <span class="n">h</span><span class="o">-</span><span class="n">h_left</span>
+<span class="lineno"> 40 </span>            <span class="c1"># score reduction for current feature k</span>
+<span class="lineno"> 41 </span>            <span class="n">score_reduction_k</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+<span class="lineno"> 42 </span>            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrow</span><span class="p">):</span>
+<span class="lineno"> 43 </span>                <span class="c1"># for each in sample, we try to split on it</span>
+<span class="lineno"> 44 </span>                <span class="n">index</span> <span class="o">=</span> <span class="n">x_index_sorted</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno"> 45 </span>                <span class="k">if</span> <span class="n">x_in_node</span><span class="p">[</span><span class="n">index</span><span class="p">]:</span>
+<span class="lineno"> 46 </span>                    <span class="n">n_left_k</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="lineno"> 47 </span>                    <span class="n">best_n_left_k</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="lineno"> 48 </span>                    <span class="n">g_left</span> <span class="o">+=</span> <span class="n">g_tilde</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+<span class="lineno"> 49 </span>                    <span class="n">g_right</span> <span class="o">=</span> <span class="n">g</span><span class="o">-</span><span class="n">g_left</span>
+<span class="lineno"> 50 </span>                    <span class="n">h_left</span> <span class="o">+=</span> <span class="n">h_tilde</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+<span class="lineno"> 51 </span>                    <span class="n">h_right</span> <span class="o">=</span> <span class="n">h</span><span class="o">-</span><span class="n">h_left</span>
+<span class="lineno"> 52 </span>                    <span class="c1"># new score reduction</span>
+<span class="lineno"> 53 </span>                    <span class="n">score_reduction_k_i</span> <span class="o">=</span> <span class="n">g_left</span><span class="o">*</span><span class="n">g_left</span><span class="o">/</span><span class="p">(</span><span class="n">h_left</span><span class="o">+</span><span class="n">lam</span><span class="p">)</span> <span class="o">+</span> \
+<span class="lineno"> 54 </span>                        <span class="p">(</span><span class="n">g_right</span><span class="o">*</span><span class="n">g_right</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">h_right</span><span class="o">+</span><span class="n">lam</span><span class="p">)</span><span class="o">-</span><span class="n">base_score</span>
+<span class="lineno"> 55 </span>                    <span class="k">if</span> <span class="n">score_reduction_k</span> <span class="o">&lt;=</span> <span class="n">score_reduction_k_i</span><span class="p">:</span>
+<span class="lineno"> 56 </span>                        <span class="n">best_n_left_k</span> <span class="o">=</span> <span class="n">n_left_k</span>
+<span class="lineno"> 57 </span>                        <span class="n">best_break_k</span> <span class="o">=</span> <span class="n">x_val_sorted</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno"> 58 </span>                        <span class="n">best_location_k</span> <span class="o">=</span> <span class="n">i</span>
+<span class="lineno"> 59 </span>                        <span class="n">score_reduction_k</span> <span class="o">=</span> <span class="n">score_reduction_k_i</span>
+<span class="lineno"> 60 </span>                        <span class="n">w_left_k</span> <span class="o">=</span> <span class="o">-</span><span class="n">g_left</span><span class="o">/</span><span class="p">(</span><span class="n">h_left</span><span class="o">+</span><span class="n">lam</span><span class="p">)</span>
+<span class="lineno"> 61 </span>                        <span class="n">w_right_k</span> <span class="o">=</span> <span class="o">-</span><span class="n">g_right</span><span class="o">/</span><span class="p">(</span><span class="n">h_right</span><span class="o">+</span><span class="n">lam</span><span class="p">)</span>
+<span class="lineno"> 62 </span>
+<span class="lineno"> 63 </span>            <span class="c1"># if the score reduction on feature k is a better candidate</span>
+<span class="lineno"> 64 </span>            <span class="k">if</span> <span class="n">score_reduction_k</span> <span class="o">&gt;=</span> <span class="n">score_reduction</span><span class="p">:</span>
+<span class="lineno"> 65 </span>                <span class="n">score_reduction</span> <span class="o">=</span> <span class="n">score_reduction_k</span>
+<span class="lineno"> 66 </span>                <span class="n">best_feature</span> <span class="o">=</span> <span class="n">k</span>
+<span class="lineno"> 67 </span>                <span class="n">best_break</span> <span class="o">=</span> <span class="n">best_break_k</span>
+<span class="lineno"> 68 </span>                <span class="n">best_location</span> <span class="o">=</span> <span class="n">best_location_k</span>
+<span class="lineno"> 69 </span>                <span class="n">best_w_left</span> <span class="o">=</span> <span class="n">w_left_k</span>
+<span class="lineno"> 70 </span>                <span class="n">best_w_right</span> <span class="o">=</span> <span class="n">w_right_k</span>
+<span class="lineno"> 71 </span>    <span class="k">return</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">score_reduction</span> <span class="o">&gt;=</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">best_feature</span><span class="p">,</span> <span class="n">best_break</span><span class="p">,</span> <span class="n">best_location</span><span class="p">,</span> <span class="n">best_w_left</span><span class="p">,</span> <span class="n">best_w_right</span><span class="p">,</span> <span class="n">score_reduction</span>
+<span class="lineno"> 72 </span>
+<span class="lineno"> 73 </span>
+<span class="lineno"> 74 </span><span class="k">def</span> <span class="nf">grow_tree</span><span class="p">(</span><span class="n">current_tree</span><span class="p">,</span> <span class="n">f_in_tree</span><span class="p">,</span> <span class="n">x_in_node</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">,</span> <span class="n">x_val_sorted</span><span class="p">,</span> <span class="n">x_index_sorted</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">g_tilde</span><span class="p">,</span> <span class="n">h_tilde</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">min_instances</span><span class="p">):</span>
+<span class="lineno"> 75 </span>    <span class="sd">&#39;&#39;&#39;</span>
+<span class="lineno"> 76 </span><span class="sd">    current_tree: the current tree to grow, i.e., a node</span>
+<span class="lineno"> 77 </span><span class="sd">    f_in_tree, x_in_node, x_val_sorted, x_index_sorted: see split_node function</span>
+<span class="lineno"> 78 </span><span class="sd">    max_depth: maximinum depth to grow</span>
+<span class="lineno"> 79 </span><span class="sd">    eta: learning rate</span>
+<span class="lineno"> 80 </span><span class="sd">    y: the response variable</span>
+<span class="lineno"> 81 </span><span class="sd">    &#39;&#39;&#39;</span>
+<span class="lineno"> 82 </span>    <span class="n">nrow</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno"> 83 </span>    <span class="k">if</span> <span class="n">max_depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="lineno"> 84 </span>        <span class="k">return</span>
+<span class="lineno"> 85 </span>    <span class="c1"># check if we need a split</span>
+<span class="lineno"> 86 </span>    <span class="n">do_split</span><span class="p">,</span> <span class="n">best_feature</span><span class="p">,</span> <span class="n">best_break</span><span class="p">,</span> <span class="n">best_location</span><span class="p">,</span> <span class="n">w_left</span><span class="p">,</span> <span class="n">w_right</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split_node</span><span class="p">(</span>
+<span class="lineno"> 87 </span>        <span class="n">f_in_tree</span><span class="p">,</span> <span class="n">x_in_node</span><span class="p">,</span> <span class="n">x_val_sorted</span><span class="p">,</span> <span class="n">x_index_sorted</span><span class="p">,</span> <span class="n">g_tilde</span><span class="p">,</span> <span class="n">h_tilde</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">min_instances</span><span class="p">)</span>
+<span class="lineno"> 88 </span>
+<span class="lineno"> 89 </span>    <span class="k">if</span> <span class="n">do_split</span><span class="p">:</span>
+<span class="lineno"> 90 </span>        <span class="c1"># update the value/weight with the learning rate eta</span>
+<span class="lineno"> 91 </span>        <span class="n">w_left_scaled</span> <span class="o">=</span> <span class="n">w_left</span><span class="o">*</span><span class="n">eta</span>
+<span class="lineno"> 92 </span>        <span class="n">w_right_scaled</span> <span class="o">=</span> <span class="n">w_right</span><span class="o">*</span><span class="n">eta</span>
+<span class="lineno"> 93 </span>        <span class="n">current_tree</span><span class="o">.</span><span class="n">variable_id</span> <span class="o">=</span> <span class="n">best_feature</span>
+<span class="lineno"> 94 </span>        <span class="n">current_tree</span><span class="o">.</span><span class="n">break_point</span> <span class="o">=</span> <span class="n">best_break</span>
+<span class="lineno"> 95 </span>        <span class="n">current_tree</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="lineno"> 96 </span>
+<span class="lineno"> 97 </span>        <span class="c1"># initialize the left subtree</span>
+<span class="lineno"> 98 </span>        <span class="n">current_tree</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">w_left_scaled</span><span class="p">)</span>
+<span class="lineno"> 99 </span>        <span class="c1"># initialize the right subtree</span>
+<span class="lineno">100 </span>        <span class="n">current_tree</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">w_right_scaled</span><span class="p">)</span>
+<span class="lineno">101 </span>        <span class="c1"># update if an instance is in left or right</span>
+<span class="lineno">102 </span>        <span class="n">x_in_left_node</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">x_in_node</span><span class="p">)</span>
+<span class="lineno">103 </span>        <span class="n">x_in_right_node</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">x_in_node</span><span class="p">)</span>
+<span class="lineno">104 </span>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrow</span><span class="p">):</span>
+<span class="lineno">105 </span>            <span class="n">index</span> <span class="o">=</span> <span class="n">x_index_sorted</span><span class="p">[</span><span class="n">best_feature</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno">106 </span>            <span class="k">if</span> <span class="n">x_in_node</span><span class="p">[</span><span class="n">index</span><span class="p">]:</span>
+<span class="lineno">107 </span>                <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">best_location</span><span class="p">:</span>
+<span class="lineno">108 </span>                    <span class="n">x_in_left_node</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="lineno">109 </span>                <span class="k">else</span><span class="p">:</span>
+<span class="lineno">110 </span>                    <span class="n">x_in_right_node</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="lineno">111 </span>        <span class="c1"># recursively grow its left subtree</span>
+<span class="lineno">112 </span>        <span class="n">grow_tree</span><span class="p">(</span><span class="n">current_tree</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">f_in_tree</span><span class="p">,</span> <span class="n">x_in_left_node</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="lineno">113 </span>                  <span class="n">x_val_sorted</span><span class="p">,</span> <span class="n">x_index_sorted</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">g_tilde</span><span class="p">,</span> <span class="n">h_tilde</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">min_instances</span><span class="p">)</span>
+<span class="lineno">114 </span>        <span class="c1"># recursively grow its right subtree</span>
+<span class="lineno">115 </span>        <span class="n">grow_tree</span><span class="p">(</span><span class="n">current_tree</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">f_in_tree</span><span class="p">,</span> <span class="n">x_in_right_node</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="lineno">116 </span>                  <span class="n">x_val_sorted</span><span class="p">,</span> <span class="n">x_index_sorted</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">g_tilde</span><span class="p">,</span> <span class="n">h_tilde</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">min_instances</span><span class="p">)</span>
+<span class="lineno">117 </span>    <span class="k">else</span><span class="p">:</span>
+<span class="lineno">118 </span>        <span class="c1"># current node is a leaf, so we update the value/weight of the leaf</span>
+<span class="lineno">119 </span>        <span class="n">g</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+<span class="lineno">120 </span>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_in_node</span><span class="p">):</span>
+<span class="lineno">121 </span>            <span class="k">if</span> <span class="n">e</span><span class="p">:</span>
+<span class="lineno">122 </span>                <span class="n">g</span> <span class="o">+=</span> <span class="n">g_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno">123 </span>                <span class="n">h</span> <span class="o">+=</span> <span class="n">h_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="lineno">124 </span>        <span class="n">w_left_scaled</span> <span class="o">=</span> <span class="o">-</span><span class="n">g</span><span class="o">/</span><span class="p">(</span><span class="n">h</span><span class="o">+</span><span class="n">lam</span><span class="p">)</span><span class="o">*</span><span class="n">eta</span>
+<span class="lineno">125 </span>        <span class="n">current_tree</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">w_left_scaled</span></code></pre></figure></p>
+<p>And the implementation of the <code>GBM</code> class is given below.</p>
+<language>Python</language>
+<p>chapter6/gbm.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">from</span> <span class="nn">tree</span> <span class="k">import</span> <span class="n">Tree</span>
+<span class="lineno"> 2 </span><span class="kn">from</span> <span class="nn">grow</span> <span class="k">import</span> <span class="n">grow_tree</span><span class="p">,</span> <span class="n">split_node</span>
+<span class="lineno"> 3 </span><span class="kn">from</span> <span class="nn">utils</span> <span class="k">import</span> <span class="n">gh_lm</span><span class="p">,</span> <span class="n">rmse</span>
+<span class="lineno"> 4 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 5 </span>
+<span class="lineno"> 6 </span>
+<span class="lineno"> 7 </span><span class="k">class</span> <span class="nc">GBM</span><span class="p">:</span>
+<span class="lineno"> 8 </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">sub_sample</span><span class="p">,</span> <span class="n">sub_feature</span><span class="p">,</span> <span class="n">min_instances</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="lineno"> 9 </span>        <span class="sd">&#39;&#39;&#39;</span>
+<span class="lineno">10 </span><span class="sd">        x_train, y_train: training data</span>
+<span class="lineno">11 </span><span class="sd">        depth: maximum depth of each tree</span>
+<span class="lineno">12 </span><span class="sd">        eta: learning rate</span>
+<span class="lineno">13 </span><span class="sd">        lam and gamma: regularization parameters</span>
+<span class="lineno">14 </span><span class="sd">        sub_sample: control the instance-wise stochasticity</span>
+<span class="lineno">15 </span><span class="sd">        sub_feature: control the feature-wise stochasticity</span>
+<span class="lineno">16 </span><span class="sd">        min_instances: control the mimimum number of instances under a leaf</span>
+<span class="lineno">17 </span><span class="sd">        &#39;&#39;&#39;</span>
+<span class="lineno">18 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
+<span class="lineno">19 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_train</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="lineno">20 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x_train</span> <span class="o">=</span> <span class="n">x_train</span>
+<span class="lineno">21 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">y_train</span> <span class="o">=</span> <span class="n">y_train</span>
+<span class="lineno">22 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x_test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_test</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<span class="lineno">23 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="n">depth</span>
+<span class="lineno">24 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="n">eta</span>
+<span class="lineno">25 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">lam</span> <span class="o">=</span> <span class="n">lam</span>
+<span class="lineno">26 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+<span class="lineno">27 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">sub_sample</span> <span class="o">=</span> <span class="n">sub_sample</span>
+<span class="lineno">28 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">sub_feature</span> <span class="o">=</span> <span class="n">sub_feature</span>
+<span class="lineno">29 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">min_instances</span> <span class="o">=</span> <span class="n">min_instances</span>
+<span class="lineno">30 </span>
+<span class="lineno">31 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">y_train</span><span class="p">)</span>
+<span class="lineno">32 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">g_tilde</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_tilde</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> \
+<span class="lineno">33 </span>            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span><span class="p">)</span>
+<span class="lineno">34 </span>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span><span class="p">)):</span>
+<span class="lineno">35 </span>            <span class="bp">self</span><span class="o">.</span><span class="n">g_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gh_lm</span><span class="p">(</span>
+<span class="lineno">36 </span>                <span class="n">y_train</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<span class="lineno">37 </span>        <span class="n">x_columns</span> <span class="o">=</span> <span class="n">x_train</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+<span class="lineno">38 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">nf</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">sub_feature</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)))</span>
+<span class="lineno">39 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x_val_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">x_columns</span><span class="p">)</span>
+<span class="lineno">40 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x_index_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">x_columns</span><span class="p">)</span>
+<span class="lineno">41 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">forest</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="lineno">42 </span>
+<span class="lineno">43 </span>    <span class="k">def</span> <span class="nf">set_test_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">):</span>
+<span class="lineno">44 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x_test</span> <span class="o">=</span> <span class="n">x_test</span>
+<span class="lineno">45 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">y_test</span> <span class="o">=</span> <span class="n">y_test</span>
+<span class="lineno">46 </span>
+<span class="lineno">47 </span>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_new</span><span class="p">):</span>
+<span class="lineno">48 </span>        <span class="n">y_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">x_new</span><span class="p">))</span>
+<span class="lineno">49 </span>        <span class="k">for</span> <span class="n">tree</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="p">:</span>
+<span class="lineno">50 </span>            <span class="n">y_hat</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_new</span><span class="p">))</span>
+<span class="lineno">51 </span>        <span class="k">return</span> <span class="n">y_hat</span>
+<span class="lineno">52 </span>
+<span class="lineno">53 </span>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_tree</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="lineno">54 </span>        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="lineno">55 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">forest</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="lineno">56 </span>        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno">57 </span>        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">max_tree</span><span class="p">:</span>
+<span class="lineno">58 </span>            <span class="c1"># let&#39;s fit tree i</span>
+<span class="lineno">59 </span>            <span class="c1"># instance-wise stochasticity</span>
+<span class="lineno">60 </span>            <span class="n">x_in_node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span>
+<span class="lineno">61 </span>                                         <span class="bp">self</span><span class="o">.</span><span class="n">sub_sample</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">sub_sample</span><span class="p">])</span>
+<span class="lineno">62 </span>            <span class="c1"># feature-wise stochasticity</span>
+<span class="lineno">63 </span>            <span class="n">f_in_tree_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+<span class="lineno">64 </span>                <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nf</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="lineno">65 </span>            <span class="n">f_in_tree</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+<span class="lineno">66 </span>            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f_in_tree_</span><span class="p">:</span>
+<span class="lineno">67 </span>                <span class="n">f_in_tree</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="lineno">68 </span>            <span class="k">del</span> <span class="n">f_in_tree_</span>
+<span class="lineno">69 </span>            <span class="c1"># initialize the root of this tree</span>
+<span class="lineno">70 </span>            <span class="n">root</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="lineno">71 </span>            <span class="c1"># grow the tree from root</span>
+<span class="lineno">72 </span>            <span class="n">grow_tree</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">f_in_tree</span><span class="p">,</span> <span class="n">x_in_node</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_val_sorted</span><span class="p">,</span>
+<span class="lineno">73 </span>                      <span class="bp">self</span><span class="o">.</span><span class="n">x_index_sorted</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_train</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">g_tilde</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_tilde</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_instances</span><span class="p">)</span>
+<span class="lineno">74 </span>            <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="lineno">75 </span>                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="lineno">76 </span>                <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+<span class="lineno">77 </span>            <span class="k">else</span><span class="p">:</span>
+<span class="lineno">78 </span>                <span class="nb">next</span>
+<span class="lineno">79 </span>            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+<span class="lineno">80 </span>                <span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_predict_single</span><span class="p">(</span>
+<span class="lineno">81 </span>                    <span class="bp">self</span><span class="o">.</span><span class="n">x_train</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<span class="lineno">82 </span>                <span class="bp">self</span><span class="o">.</span><span class="n">g_tilde</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_tilde</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">gh_lm</span><span class="p">(</span>
+<span class="lineno">83 </span>                    <span class="bp">self</span><span class="o">.</span><span class="n">y_train</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_tilde</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<span class="lineno">84 </span>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_test</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="lineno">85 </span>                <span class="c1"># test on the testing instances</span>
+<span class="lineno">86 </span>                <span class="n">y_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_test</span><span class="p">)</span>
+<span class="lineno">87 </span>                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;iter: </span><span class="si">{0:&gt;4}</span><span class="s2">   rmse: </span><span class="si">{1:1.6f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+<span class="lineno">88 </span>                    <span class="n">i</span><span class="p">,</span> <span class="n">rmse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)))</span></code></pre></figure></p>
+<p>Now let&#8217;s see the performance of our <span class="caps">GBM</span> implemented from scratch.</p>
+<language>Python</language>
+<p>chapter6/test_gbm.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">from</span> <span class="nn">gbm</span> <span class="k">import</span> <span class="n">GBM</span>
+<span class="lineno"> 2 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 3 </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="lineno"> 4 </span><span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="k">import</span> <span class="n">shuffle</span>
+<span class="lineno"> 5 </span>
+<span class="lineno"> 6 </span>
+<span class="lineno"> 7 </span><span class="k">def</span> <span class="nf">get_boston_data</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="lineno"> 8 </span>    <span class="n">boston</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_boston</span><span class="p">()</span>
+<span class="lineno"> 9 </span>    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">boston</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boston</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+<span class="lineno">10 </span>    <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="lineno">11 </span>    <span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span>
+<span class="lineno">12 </span>    <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:</span><span class="n">offset</span><span class="p">],</span> <span class="n">y</span><span class="p">[:</span><span class="n">offset</span><span class="p">]</span>
+<span class="lineno">13 </span>    <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">offset</span><span class="p">:],</span> <span class="n">y</span><span class="p">[</span><span class="n">offset</span><span class="p">:]</span>
+<span class="lineno">14 </span>    <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span>
+<span class="lineno">15 </span>    
+<span class="lineno">16 </span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="lineno">17 </span>    <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">get_boston_data</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno">18 </span>    <span class="n">gbm</span> <span class="o">=</span> <span class="n">GBM</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">lam</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="lineno">19 </span>              <span class="n">gamma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sub_sample</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sub_feature</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="lineno">20 </span>    <span class="n">gbm</span><span class="o">.</span><span class="n">set_test_data</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+<span class="lineno">21 </span>    <span class="n">gbm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_tree</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span></code></pre></figure></p>
+<p>Running the code above, we have output as below.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="n">chapter6</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">test_gbm</span><span class="o">.</span><span class="n">py</span>
+<span class="lineno"> 2 </span><span class="nb">iter</span><span class="p">:</span>    <span class="mi">1</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">23.063019</span>
+<span class="lineno"> 3 </span><span class="nb">iter</span><span class="p">:</span>    <span class="mi">2</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">21.997972</span>
+<span class="lineno"> 4 </span><span class="nb">iter</span><span class="p">:</span>    <span class="mi">3</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">21.026602</span>
+<span class="lineno"> 5 </span><span class="nb">iter</span><span class="p">:</span>    <span class="mi">4</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">20.043397</span>
+<span class="lineno"> 6 </span><span class="nb">iter</span><span class="p">:</span>    <span class="mi">5</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">19.210746</span>
+<span class="lineno"> 7 </span><span class="o">...</span>
+<span class="lineno"> 8 </span><span class="nb">iter</span><span class="p">:</span>  <span class="mi">196</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">2.560747</span>
+<span class="lineno"> 9 </span><span class="nb">iter</span><span class="p">:</span>  <span class="mi">197</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">2.544847</span>
+<span class="lineno">10 </span><span class="nb">iter</span><span class="p">:</span>  <span class="mi">198</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">2.541102</span>
+<span class="lineno">11 </span><span class="nb">iter</span><span class="p">:</span>  <span class="mi">199</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">2.537366</span>
+<span class="lineno">12 </span><span class="nb">iter</span><span class="p">:</span>  <span class="mi">200</span>   <span class="n">rmse</span><span class="p">:</span> <span class="mf">2.535143</span></code></pre></figure><p>We don&#8217;t implement the model in R, but it is not difficult to do based on the Python implementation above.</p>
+<p><span class="caps">GBM</span> can be used with various loss functions, and the major difference is the implementation of the first/second order derivatives, i.e., $g$ and $h$.</p>
+<p>Regardless of the performance, there are two major missing features in our implementation is a) cross-validation and b) early stopping.<br />
+We have talked about cross-validation, but what is early stopping? It is a very useful technique in <span class="caps">GBM</span>. Usually, the cross-validated loss decreases when we add new trees at the beginning and at a certain point, the loss may increase when more trees are fitted (due to overfitting). Thus, we may select the best number of trees based on the cross-validated loss. Specifically, stop the fitting process when the cross-validated loss doesn&#8217;t decrease. In practice, we don&#8217;t want to stop the fitting immediately when the cross-validated loss starts increasing. Instead, we specify a number of trees, e.g. 50, as a buffer, after which the fitting process should stop if cross-validated loss doesn&#8217;t decrease.</p>
+<p>Early stopping is also used in other machine learning models, for example, neural network. Ideally, we would like to have early stopping based on the cross-validated loss. But when the training process is time-consuming, it&#8217;s fine to use the loss on a testing date set<sup class="footnote" id="fnr14"><a href="#fn14">14</a></sup>.</p>
+<p>The commonly used <span class="caps">GBM</span> packages include <code>XGBoost</code><sup class="footnote" id="fnr15"><a href="#fn15">15</a></sup>, <code>LightGBM</code><sup class="footnote" id="fnr16"><a href="#fn16">16</a></sup> and <code>CatBoost</code><sup class="footnote" id="fnr17"><a href="#fn17">17</a></sup>.</p>
+<p>Let&#8217;s see how to use <code>XGBoost</code> for the same regression task on the Boston dataset.</p>
+<language>R</language>
+<p>chapter6/xgb.R<br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>xgboost<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="kn">library</span><span class="p">(</span>MASS<span class="p">)</span>
+<span class="lineno"> 3 </span><span class="kn">library</span><span class="p">(</span>Metrics<span class="p">)</span>
+<span class="lineno"> 4 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 5 </span>train_index <span class="o">=</span> <span class="kp">sample</span><span class="p">(</span><span class="kp">nrow</span><span class="p">(</span>Boston<span class="p">),</span> <span class="kp">floor</span><span class="p">(</span><span class="m">0.8</span> <span class="o">*</span> <span class="kp">nrow</span><span class="p">(</span>Boston<span class="p">)),</span> replace <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+<span class="lineno"> 6 </span>Boston <span class="o">=</span> <span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">)</span>
+<span class="lineno"> 7 </span>target_col <span class="o">=</span> <span class="kp">which</span><span class="p">(</span><span class="kp">colnames</span><span class="p">(</span>Boston<span class="p">)</span> <span class="o">==</span> <span class="s">&#39;medv&#39;</span><span class="p">)</span>
+<span class="lineno"> 8 </span>X_train <span class="o">=</span> Boston<span class="p">[</span>train_index<span class="p">,</span> <span class="o">-</span>target_col<span class="p">]</span>
+<span class="lineno"> 9 </span>y_train <span class="o">=</span> Boston<span class="p">[</span>train_index<span class="p">,</span> target_col<span class="p">]</span>
+<span class="lineno">10 </span>X_test <span class="o">=</span> Boston<span class="p">[</span><span class="o">-</span>train_index<span class="p">,</span> <span class="o">-</span>target_col<span class="p">]</span>
+<span class="lineno">11 </span>y_test <span class="o">=</span> Boston<span class="p">[</span><span class="o">-</span>train_index<span class="p">,</span> target_col<span class="p">]</span>
+<span class="lineno">12 </span><span class="c1"># prepare the data for training and testing</span>
+<span class="lineno">13 </span>dTrain <span class="o">=</span> xgb.DMatrix<span class="p">(</span>X_train<span class="p">,</span> label <span class="o">=</span> y_train<span class="p">)</span>
+<span class="lineno">14 </span>dTest <span class="o">=</span> xgb.DMatrix<span class="p">(</span>X_test<span class="p">)</span>
+<span class="lineno">15 </span>params <span class="o">=</span> <span class="kt">list</span><span class="p">(</span>
+<span class="lineno">16 </span>  <span class="s">&quot;booster&quot;</span> <span class="o">=</span> <span class="s">&quot;gbtree&quot;</span><span class="p">,</span>
+<span class="lineno">17 </span>  <span class="s">&quot;objective&quot;</span> <span class="o">=</span> <span class="s">&quot;reg:linear&quot;</span><span class="p">,</span>
+<span class="lineno">18 </span>  <span class="s">&quot;eta&quot;</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
+<span class="lineno">19 </span>  <span class="s">&quot;max_depth&quot;</span> <span class="o">=</span> <span class="m">5</span><span class="p">,</span>
+<span class="lineno">20 </span>  <span class="s">&quot;subsample&quot;</span> <span class="o">=</span> <span class="m">0.6</span><span class="p">,</span>
+<span class="lineno">21 </span>  <span class="s">&quot;colsample_bytree&quot;</span> <span class="o">=</span> <span class="m">0.8</span><span class="p">,</span>
+<span class="lineno">22 </span>  <span class="s">&quot;min_child_weight&quot;</span> <span class="o">=</span> <span class="m">2</span>
+<span class="lineno">23 </span><span class="p">)</span>
+<span class="lineno">24 </span><span class="c1"># run the cross-validation</span>
+<span class="lineno">25 </span>hist <span class="o">=</span> xgb.cv<span class="p">(</span>
+<span class="lineno">26 </span>  params <span class="o">=</span> params<span class="p">,</span>
+<span class="lineno">27 </span>  data <span class="o">=</span> dTrain<span class="p">,</span>
+<span class="lineno">28 </span>  nrounds <span class="o">=</span> <span class="m">500</span><span class="p">,</span>
+<span class="lineno">29 </span>  early_stopping_rounds <span class="o">=</span> <span class="m">50</span><span class="p">,</span>
+<span class="lineno">30 </span>  metrics <span class="o">=</span> <span class="s">&#39;rmse&#39;</span><span class="p">,</span>
+<span class="lineno">31 </span>  nfold <span class="o">=</span> <span class="m">5</span><span class="p">,</span>
+<span class="lineno">32 </span>  verbose <span class="o">=</span> <span class="kc">FALSE</span>
+<span class="lineno">33 </span><span class="p">)</span>
+<span class="lineno">34 </span><span class="c1"># since we have the best number of trees from cv, let&#39;s train the model with this number of trees</span>
+<span class="lineno">35 </span>model <span class="o">=</span> xgb.train<span class="p">(</span>params<span class="p">,</span> nrounds <span class="o">=</span> hist<span class="o">$</span>best_iteration<span class="p">,</span> data <span class="o">=</span> dTrain<span class="p">)</span>
+<span class="lineno">36 </span>pred <span class="o">=</span> predict<span class="p">(</span>model<span class="p">,</span> dTest<span class="p">)</span>
+<span class="lineno">37 </span>
+<span class="lineno">38 </span><span class="kp">cat</span><span class="p">(</span>
+<span class="lineno">39 </span>  <span class="s">&quot;rmse on testing instances is&quot;</span><span class="p">,</span>
+<span class="lineno">40 </span>  rmse<span class="p">(</span>y_test<span class="p">,</span> pred<span class="p">),</span>
+<span class="lineno">41 </span>  <span class="s">&quot;with&quot;</span><span class="p">,</span>
+<span class="lineno">42 </span>  hist<span class="o">$</span>best_iteration<span class="p">,</span>
+<span class="lineno">43 </span>  <span class="s">&quot;trees&quot;</span>
+<span class="lineno">44 </span><span class="p">)</span></code></pre></figure></p>
+<language>Python</language>
+<p>chapter6/xgb.py<br />
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">xgboost</span> <span class="k">as</span> <span class="nn">xgb</span>
+<span class="lineno"> 2 </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
+<span class="lineno"> 3 </span><span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="k">import</span> <span class="n">shuffle</span>
+<span class="lineno"> 4 </span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span>
+<span class="lineno"> 5 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 6 </span>
+<span class="lineno"> 7 </span><span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="lineno"> 8 </span><span class="n">boston</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_boston</span><span class="p">()</span>
+<span class="lineno"> 9 </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">boston</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boston</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="n">offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:</span><span class="n">offset</span><span class="p">],</span> <span class="n">y</span><span class="p">[:</span><span class="n">offset</span><span class="p">]</span>
+<span class="lineno">13 </span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">offset</span><span class="p">:],</span> <span class="n">y</span><span class="p">[</span><span class="n">offset</span><span class="p">:]</span>
+<span class="lineno">14 </span>
+<span class="lineno">15 </span><span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;booster&#39;</span><span class="p">:</span> <span class="s1">&#39;gbtree&#39;</span><span class="p">,</span> <span class="s1">&#39;objective&#39;</span><span class="p">:</span> <span class="s1">&#39;reg:linear&#39;</span><span class="p">,</span> <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+<span class="lineno">16 </span>          <span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;subsample&#39;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span> <span class="s1">&#39;colsample_bytree&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span> <span class="s1">&#39;min_child_weight&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<span class="lineno">17 </span>
+<span class="lineno">18 </span><span class="c1"># prepare the data for training and testing</span>
+<span class="lineno">19 </span><span class="n">dtrain</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">DMatrix</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">missing</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="lineno">20 </span><span class="n">dtest</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">DMatrix</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="lineno">21 </span>
+<span class="lineno">22 </span><span class="c1"># run 5-fold cross-validation with maximum 1000 trees, and try to minimize the metric rmse</span>
+<span class="lineno">23 </span><span class="c1"># early stopping 50 trees</span>
+<span class="lineno">24 </span><span class="n">hist</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">cv</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">dtrain</span><span class="o">=</span><span class="n">dtrain</span><span class="p">,</span> <span class="n">nfold</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="lineno">25 </span>              <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;rmse&#39;</span><span class="p">],</span> <span class="n">num_boost_round</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="lineno">26 </span>
+<span class="lineno">27 </span><span class="c1"># find the best number of trees from the cross-validation history</span>
+<span class="lineno">28 </span><span class="n">best_number_trees</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="s1">&#39;test-rmse-mean&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmin</span><span class="p">()</span>
+<span class="lineno">29 </span>
+<span class="lineno">30 </span><span class="c1"># since we have the best number of trees from cv, let&#39;s train the model with this number of trees</span>
+<span class="lineno">31 </span><span class="n">model</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">dtrain</span><span class="p">,</span> <span class="n">num_boost_round</span><span class="o">=</span><span class="n">best_number_trees</span><span class="p">)</span>
+<span class="lineno">32 </span><span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dtest</span><span class="p">)</span>
+<span class="lineno">33 </span><span class="nb">print</span><span class="p">(</span>
+<span class="lineno">34 </span>    <span class="n">f</span><span class="s2">&quot;rmse on testing instances is {mean_squared_error(pred, y_test)**0.5:.6f} with </span><span class="si">{best_number_trees}</span><span class="s2"> trees&quot;</span><span class="p">)</span></code></pre></figure></p>
+<p>The parameters <code>subsample</code> and <code>colsample_bytree</code> control the stochasticity, within the range of $[0, 1]$. If we set these two parameters to 1, then all instances and all features are selected for fitting every tree.</p>
+<p>The two code snippets illustrate a minimal workflow of fitting a <span class="caps">GBM</span> model. First, we conduct (hyper) parameter tuning (such as learning rate, number of trees, regularization parameters, stochasticity parameters) with cross-validation, and next we train the model with the tuned parameters.</p>
+<p>Running the code snippets, we have the following results.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;xgb.R&#39;</span><span class="p">)</span>
+<span class="lineno">2 </span>rmse on testing instances is <span class="m">2.632298</span> with <span class="m">83</span> trees</code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="n">chapter6</span> <span class="err">$</span><span class="n">python3</span><span class="o">.</span><span class="mi">7</span> <span class="n">xgb</span><span class="o">.</span><span class="n">py</span>
+<span class="lineno">2 </span><span class="n">rmse</span> <span class="n">on</span> <span class="n">testing</span> <span class="n">instances</span> <span class="ow">is</span> <span class="mf">2.736038</span> <span class="k">with</span> <span class="mi">179</span> <span class="n">trees</span></code></pre></figure></div>
+</div>
+<p>In <code>XGBoost</code>, we could also use linear regression models as the booster (or base learner) instead of decision trees. However, when <code>'booster':'gblinear'</code> is used, the sum of the prediction from all boosters in the model is equivalent to the prediction from a single (combined) linear model. In that sense, what we get is just a Lasso solution of a linear regression model.</p>
+<p><span class="caps">GBM</span> can be used in different tasks, such as classification, ranking, survival analysis, etc. When we use <span class="caps">GBM</span> for predictive modeling, missing value imputation is not required, which is one big advantage over linear models. But in our own implementation we don&#8217;t consider missing values for simplicity. In <span class="caps">GBM</span>, if a feature is categorical we could do label-encoding<sup class="footnote" id="fnr18"><a href="#fn18">18</a></sup>, i.e., mapping the feature to integers directly without creating dummy variables (such as one-hot encoding). Of course one-hot encoding<sup class="footnote" id="fnr19"><a href="#fn19">19</a></sup> can also be used. But when there are too many new columns created by one-hot encoding, the probability that the original categorical feature is selected is higher than these numerical variables. In other words, we are assigning a prior weight to the categorical feature regarding the feature-wise stochasticity.</p>
 <hr />
 <p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> Andrew R Barron. Universal approximation bounds for superpositions of a sigmoidal function. <span class="caps">IEEE</span> Transactions on Information theory, 39(3):930–945, 1993.</p>
 <p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://docs.python.org/3/reference/import.html</p>
@@ -270,6 +925,14 @@ $$</p>
 <p class="footnote" id="fn9"><a href="#fnr9"><sup>9</sup></a> Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean. Efficient estimation of word representations in vector space. arXiv preprint arXiv:1301.3781, 2013.</p>
 <p class="footnote" id="fn10"><a href="#fnr10"><sup>10</sup></a> https://en.wikipedia.org/wiki/Autoencoder</p>
 <p class="footnote" id="fn11"><a href="#fnr11"><sup>11</sup></a> https://statisticalhorizons.com/multicollinearity</p>
+<p class="footnote" id="fn12"><a href="#fnr12"><sup>12</sup></a> https://github.com/r-lib/R6/issues/140</p>
+<p class="footnote" id="fn13"><a href="#fnr13"><sup>13</sup></a> Tianqi Chen and Carlos Guestrin. Xgboost: A scalable tree boosting system. In Proceedings of the 22nd acm sigkdd international conference on knowledge discovery and data mining, pages 785–794. <span class="caps">ACM</span>, 2016.</p>
+<p class="footnote" id="fn14"><a href="#fnr14"><sup>14</sup></a> https://en.wikipedia.org/wiki/Early_stopping</p>
+<p class="footnote" id="fn15"><a href="#fnr15"><sup>15</sup></a> https://github.com/dmlc/xgboost</p>
+<p class="footnote" id="fn16"><a href="#fnr16"><sup>16</sup></a> https://github.com/microsoft/LightGBM</p>
+<p class="footnote" id="fn17"><a href="#fnr17"><sup>17</sup></a> https://github.com/catboost/catboost</p>
+<p class="footnote" id="fn18"><a href="#fnr18"><sup>18</sup></a> https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html</p>
+<p class="footnote" id="fn19"><a href="#fnr19"><sup>19</sup></a> https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html</p>
     </div> <!-- /container-fluid -->
     <!-- Footer -->
 <div id="footer">
