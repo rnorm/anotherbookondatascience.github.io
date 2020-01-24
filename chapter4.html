@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Another Book on Data Science - Linear Regression</title>
+    <title>Another Book on Data Science - Random Variables & Distributions</title>
     <meta name="description" content="data science, R, Python, programming, machine learning">
     <meta name="author" content="Nailong Zhang">
 
@@ -36,7 +36,7 @@
     <div class="topbar">
       <div class="fill">
         <div class="container-fluid fixed">
-          <h3><a href="index.html">Linear Regression</a></h3>
+          <h3><a href="index.html">Random Variables & Distributions</a></h3>
           <ul class="nav secondary-nav">
             
               <li><a href="chapter3.html">&laquo;Previous</a></li>
@@ -53,501 +53,682 @@
     <div class="container-fluid" style="padding-top: 60px;">
       <p>Sections in this Chapter:</p>
 <ul>
-	<li><a href="#basics">Basics of linear regression</a></li>
-	<li><a href="#hypothesis">Linear hypothesis testing</a></li>
-	<li><a href="#ridge">Ridge regression</a></li>
+	<li><a href="#refresher">A refresher on distributions</a></li>
+	<li><a href="#sampling">Inversion sampling &amp; rejection sampling</a></li>
+	<li><a href="#copula">Joint distribution &amp; copula</a></li>
+	<li><a href="#fit">Fit a distribution</a></li>
+	<li><a href="#ci">Confidence Interval</a></li>
+	<li><a href="#ht">Hypothesis Testing</a></li>
 </ul>
-<p>There are numerous books/online courses available on the theory of linear regression regression, among which my favorites are &#8211; The Elements of Statistical Learning \citep{friedman2001elements} and \citep{greene2003econometric}. So what is the purpose to write a chapter about these models in another book of data science? Many audience would be interested in how to implement their own regression models rather than using the off-the-shelf software packages. By the end of this chapter, we will build up our own linear regression regression models in R/Python. We would also see how we would reuse some functions in different regressions, such as linear regression regression, and these regressions with L2 penalties.</p>
-<h2 id="basics">Basics of linear regression</h2>
-<p>We start from the matrix form of linear regression.</p>
+<p>We will see a few topics related to random variables (r.v.) and distributions in this chapter.</p>
+<h2 id="refresher">A refresher on distributions</h2>
+<p>Distributions describe the random phenomenon in terms of probabilities. Distributions are connected to random variables. A random variable is specified by its distribution. We know a r.v. could be either discrete or continuous. The number of calls received by a call center is an example of discrete r.v., and the amount of time taken to read this book is a continuous random variable.</p>
+<p>There are infinite number of distributions. Many important distributions fall into some distribution families (i.e., a parametric set of probability distributions of a certain form). For example, the multivariate normal distribution belongs to exponential distribution family<sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup>.</p>
+<p>Cumulative distribution function (<span class="caps">CDF</span>) specifies how a real-valued random variable $X$ is distributed, i.e.,</p>
 <p>$$<br />
-\begin{equation}<br />
-\boldsymbol{y}=\boldsymbol{X}\boldsymbol{\beta}+\boldsymbol{\epsilon},<br />
-\label{eq:1}<br />
+\begin{equation}\label{eq:4_0_1}<br />
+F_X(x)=P(X\le x).<br />
 \end{equation}<br />
 $$</p>
-<p>where the column vector $\boldsymbol{y}$ contains $n$ observations on the dependent variable, $\boldsymbol{X}$ is a $n\times (p+1)$ matrix ($n&gt;p$) of independent variables with constant vector $\boldsymbol{1}$ in the first column, $\boldsymbol{\beta}$ is a column vector of unknown population parameters to estimate based on the data, and $\boldsymbol{\epsilon}$ is the error term (or noise). For the sake of illustration, \eqref{eq:1} can be extended as in</p>
+<p>It is worth noting that <span class="caps">CDF</span> is always monotonic.</p>
+<p>When the derivative of <span class="caps">CDF</span> exists, we call the derivative of $F$ as the probability density function (<span class="caps">PDF</span>) which is denoted by the lower case $f_X$. <span class="caps">PDF</span> is associated with continuous random variables. For discrete random variables, the counterpart of <span class="caps">PDF</span> is called probability mass function (<span class="caps">PMF</span>). <span class="caps">PMF</span> gives the probability that a random variable equal to some value, but <span class="caps">PDF</span> does not represent probabilities directly.</p>
+<p>The quantile function is the inverse of <span class="caps">CDF</span>, i.e.,</p>
 <p>$$<br />
-\begin{equation}\label{eq:2}<br />
-\begin{bmatrix}<br />
-  \boldsymbol{y}_1 \\<br />
-  \boldsymbol{y}_2  \\<br />
-  \vdots \\<br />
-  \boldsymbol{y}_n<br />
- \end{bmatrix}<br />
- =<br />
-\begin{bmatrix}<br />
-  1 &amp; \boldsymbol{X}_{11} &amp; \boldsymbol{X}_{21}  &amp; \cdots &amp; \boldsymbol{X}_{p1} \\<br />
-  1 &amp; \boldsymbol{X}_{12} &amp; \boldsymbol{X}_{22} &amp; \cdots &amp; \boldsymbol{X}_{p2} \\<br />
-  \vdots &amp; \vdots &amp; \vdots  &amp; \vdots &amp; \vdots \\<br />
-  1 &amp; \boldsymbol{X}_{1n} &amp; \boldsymbol{X}_{2n} &amp; \cdots &amp; \boldsymbol{X}_{pn}<br />
- \end{bmatrix}<br />
- \begin{bmatrix}<br />
-  \boldsymbol{\beta}_0 \\<br />
-  \boldsymbol{\beta}_1  \\<br />
-  \vdots \\<br />
-  \boldsymbol{\beta}_p<br />
- \end{bmatrix}<br />
- +<br />
- \begin{bmatrix}<br />
-  \boldsymbol{\epsilon}_1 \\<br />
-  \boldsymbol{\epsilon}_2  \\<br />
-  \vdots \\<br />
-  \boldsymbol{\epsilon}_n<br />
- \end{bmatrix}<br />
+\begin{equation}\label{eq:4_0_1_2}<br />
+Q_X(p)=inf \{ x\in \boldsymbol{R}:p\le F_X(x) \}.<br />
 \end{equation}<br />
 $$</p>
-<p>We apply ordinary least squares (<span class="caps">OLS</span>)<sup class="footnote" id="fnr3"><a href="#fn3">3</a></sup> approach to estimate the model parameter $\boldsymbol{\beta}$ since it requires fewer assumptions than other estimation methods such as maximum likelihood estimation<sup class="footnote" id="fnr4"><a href="#fn4">4</a></sup>. Suppose the estimated model parameter is denoted as $\boldsymbol{\hat\beta}$, we define the residual vector of the system as $\boldsymbol{e}=\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\hat\beta}$. The idea of <span class="caps">OLS</span> is to find $\boldsymbol{\hat\beta}$ which can minimize the sum of squared residuals (<span class="caps">SSR</span>), i.e.,</p>
+<p><span class="caps">PDF</span>, <span class="caps">CDF</span> and Quantile functions are all heavily used in quantitative analysis. In R and Python, we can find a number of functions to evaluate these functions. The best known distribution should be univariate normal/Gaussian distribution. Let&#8217;s use Gaussian random variables for illustration.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="c1"># for reproducibility</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span> 
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="c1"># draw samples</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> x <span class="o">=</span> rnorm<span class="p">(</span><span class="m">10</span><span class="p">,</span> mean<span class="o">=</span><span class="m">0</span><span class="p">,</span> sd<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 6 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span>  <span class="m">2.7419169</span> <span class="m">-1.1293963</span>  <span class="m">0.7262568</span>  <span class="m">1.2657252</span>  <span class="m">0.8085366</span>
+<span class="lineno"> 7 </span> <span class="p">[</span><span class="m">6</span><span class="p">]</span> <span class="m">-0.2122490</span>  <span class="m">3.0230440</span> <span class="m">-0.1893181</span>  <span class="m">4.0368474</span> <span class="m">-0.1254282</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span><span class="kp">mean</span><span class="p">(</span>x<span class="p">))</span>
+<span class="lineno"> 9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1.094594</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>sd<span class="p">(</span>x<span class="p">))</span>
+<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1.670898</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> <span class="c1"># evaluate PDF</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> d <span class="o">=</span> dnorm<span class="p">(</span>x<span class="p">,</span> mean<span class="o">=</span><span class="m">0</span><span class="p">,</span> sd<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>d<span class="p">)</span>
+<span class="lineno">15 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.07793741</span> <span class="m">0.17007297</span> <span class="m">0.18674395</span> <span class="m">0.16327110</span> <span class="m">0.18381928</span>
+<span class="lineno">16 </span> <span class="p">[</span><span class="m">6</span><span class="p">]</span> <span class="m">0.19835103</span> <span class="m">0.06364496</span> <span class="m">0.19857948</span> <span class="m">0.02601446</span> <span class="m">0.19907926</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> <span class="c1"># evalute CDF</span>
+<span class="lineno">18 </span><span class="o">&gt;</span> p <span class="o">=</span> pnorm<span class="p">(</span>x<span class="p">,</span> mean<span class="o">=</span><span class="m">0</span><span class="p">,</span> sd<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">19 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>p<span class="p">)</span>
+<span class="lineno">20 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.9148060</span> <span class="m">0.2861395</span> <span class="m">0.6417455</span> <span class="m">0.7365883</span> <span class="m">0.6569923</span> <span class="m">0.4577418</span>
+<span class="lineno">21 </span> <span class="p">[</span><span class="m">7</span><span class="p">]</span> <span class="m">0.9346722</span> <span class="m">0.4622928</span> <span class="m">0.9782264</span> <span class="m">0.4749971</span>
+<span class="lineno">22 </span><span class="o">&gt;</span> <span class="c1"># evaluate quantile</span>
+<span class="lineno">23 </span><span class="o">&gt;</span> q <span class="o">=</span> qnorm<span class="p">(</span>p<span class="p">,</span> mean<span class="o">=</span><span class="m">0</span><span class="p">,</span> sd<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">24 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span><span class="kp">q</span><span class="p">)</span>
+<span class="lineno">25 </span> <span class="p">[</span><span class="m">1</span><span class="p">]</span>  <span class="m">2.7419169</span> <span class="m">-1.1293963</span>  <span class="m">0.7262568</span>  <span class="m">1.2657252</span>  <span class="m">0.8085366</span>
+<span class="lineno">26 </span> <span class="p">[</span><span class="m">6</span><span class="p">]</span> <span class="m">-0.2122490</span>  <span class="m">3.0230440</span> <span class="m">-0.1893181</span>  <span class="m">4.0368474</span> <span class="m">-0.1254282</span></code></pre></figure><p>We see that <code>qnorm(pnorm(x))=x</code>.</p>
+<p>In Python, we use the functions in <code>numpy</code> and <code>scipy.stats</code> for the same purpose.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">scipy.stats</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">scipy.stats</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="p">[</span> <span class="mf">0.99342831</span> <span class="o">-</span><span class="mf">0.2765286</span>   <span class="mf">1.29537708</span>  <span class="mf">3.04605971</span> <span class="o">-</span><span class="mf">0.46830675</span> <span class="o">-</span><span class="mf">0.46827391</span>
+<span class="lineno"> 8 </span>  <span class="mf">3.15842563</span>  <span class="mf">1.53486946</span> <span class="o">-</span><span class="mf">0.93894877</span>  <span class="mf">1.08512009</span><span class="p">]</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">norm</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="p">[</span><span class="mf">0.17632116</span> <span class="mf">0.19757358</span> <span class="mf">0.16172856</span> <span class="mf">0.06254333</span> <span class="mf">0.19407713</span> <span class="mf">0.19407788</span>
+<span class="lineno">13 </span> <span class="mf">0.05732363</span> <span class="mf">0.1485901</span>  <span class="mf">0.17865677</span> <span class="mf">0.17217026</span><span class="p">]</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="mf">0.69030468</span> <span class="mf">0.44501577</span> <span class="mf">0.74140679</span> <span class="mf">0.93612438</span> <span class="mf">0.40743296</span> <span class="mf">0.40743933</span>
+<span class="lineno">17 </span> <span class="mf">0.94285637</span> <span class="mf">0.77858846</span> <span class="mf">0.31936529</span> <span class="mf">0.70628362</span><span class="p">]</span>
+<span class="lineno">18 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">q</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="c1"># ppf is the quantile function</span>
+<span class="lineno">19 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+<span class="lineno">20 </span><span class="p">[</span> <span class="mf">0.99342831</span> <span class="o">-</span><span class="mf">0.2765286</span>   <span class="mf">1.29537708</span>  <span class="mf">3.04605971</span> <span class="o">-</span><span class="mf">0.46830675</span> <span class="o">-</span><span class="mf">0.46827391</span>
+<span class="lineno">21 </span>  <span class="mf">3.15842563</span>  <span class="mf">1.53486946</span> <span class="o">-</span><span class="mf">0.93894877</span>  <span class="mf">1.08512009</span><span class="p">]</span></code></pre></figure><p>A random variable could also be multivariate. In fact, the univariate normal distribution is a special case of multivariate normal distribution whose <span class="caps">PDF</span> is given in</p>
 <p>$$<br />
-\begin{equation}\label{eq:3}<br />
-\min_{\boldsymbol{\hat\beta}} \quad \boldsymbol{e}&#8217;\boldsymbol{e}<br />
+\begin{equation}\label{eq:4_0_1_3}<br />
+p(\boldsymbol{x};\boldsymbol{\mu},\boldsymbol{\Sigma})=\frac {1} {(2\pi)^{m/2}{|\boldsymbol{\Sigma|}}^{1/2}}\exp(-\frac 1 2  (\boldsymbol{x}-\boldsymbol{\mu})^T\boldsymbol{\Sigma}^{-1}(\boldsymbol{x}-\boldsymbol{\mu})),<br />
 \end{equation}<br />
 $$</p>
-<p>Now the question is how to solve the optimization problem \eqref{eq:2}. First, let&#8217;s expand the <span class="caps">SSR</span>.</p>
-<p>$$<br />
-\begin{equation}\label{eq:4}<br />
-\begin{split}<br />
-\boldsymbol{e}&#8217;\boldsymbol{e}&amp;=(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\hat\beta})&#8216;(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\hat\beta}) \\<br />
-&amp;= \boldsymbol{y}&#8217;\boldsymbol{y}-2\hat{\beta}&#8217;\boldsymbol{X}&#8217;\boldsymbol{y}+\hat{\beta}&#8217;\boldsymbol{X}&#8217;\boldsymbol{X}\hat{\boldsymbol{\beta}}<br />
-\end{split}<br />
-\end{equation}<br />
-$$</p>
-<p>The first and second order derivatives are calculated as follows</p>
-<p>$$<br />
-\begin{equation}\label{eq:5}<br />
-\begin{cases}<br />
-\frac{\partial \boldsymbol{e}&#8217;\boldsymbol{e}}{\partial \boldsymbol{\hat\beta}}<br />
-=-2\boldsymbol{X}&#8217;\boldsymbol{y}+2\boldsymbol{X}&#8217;\boldsymbol{X}\boldsymbol{\hat\beta}\\<br />
-\frac{\partial^2 \boldsymbol{e}&#8217;\boldsymbol{e}}{\partial \boldsymbol{\hat\beta} \partial \boldsymbol{\hat\beta}&#8217;}<br />
-=2\boldsymbol{X}&#8217;\boldsymbol{X}.<br />
-\end{cases}<br />
-\end{equation}<br />
-$$</p>
-<p>We see that the second order derivative is positive semidefinite which implies the <span class="caps">SSR</span> in <span class="caps">OLS</span> is a convex function (see section 3.1.4<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>) and for an unconstrained convex optimization problem, the necessary as well as sufficient condition for optimality is that the first order derivative equals 0 (see section 4.2.3<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>). Optimization of convex function is very important in machine learning. Actually, the parameter estimations of many machine learning models are convex optimization problems.</p>
-<p>Based on the analysis above, the solution of \eqref{eq:3} is given in \eqref{eq:6}.</p>
-<p>$$<br />
-\begin{equation}\label{eq:6}<br />
-\boldsymbol{\hat\beta}=(\boldsymbol{X}&#8217;\boldsymbol{X})^{-1}\boldsymbol{X}&#8217;\boldsymbol{y}<br />
-\end{equation}<br />
-$$</p>
-<p>Now it seems we are ready to write our own linear regression model in R/Python. The solution in \eqref{eq:6} involves matrix transportation, multiplication and inversion, all of which are supported in both R and Python. In Python, we can use the <code>numpy</code> module for the matrix operations.</p>
-<p>However, in practice we don&#8217;t solve linear regression with \eqref{eq:6} directly. Why? Let&#8217;s see an example with</p>
-<p>$$<br />
-x=\begin{bmatrix}<br />
-  1e+6 &amp; -1 \\<br />
-  -1 &amp; 1e-6 <br />
-  \end{bmatrix}.<br />
-$$</p>
+<p>where $\boldsymbol{\mu}$ is the mean and $\boldsymbol{\Sigma}$ is the covariance matrix of the random variable $\boldsymbol{x}$.</p>
+<p>Sampling from distributions are involved in many algorithms, such as Monte Carlo simulation. First, let&#8217;s see a simple example in which we draw samples from a 3-dimensional normal distribution.</p>
 <div class="codewrapper">
 <div class="codeleft">
 <language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">array</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">10</span><span class="o">^</span><span class="m">6</span><span class="p">,</span> <span class="m">-1</span><span class="p">,</span> <span class="m">-1</span><span class="p">,</span> <span class="m">10</span><span class="o">^</span><span class="m">-6</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">))</span>
-<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kp">solve</span><span class="p">(</span><span class="kp">t</span><span class="p">(</span>x<span class="p">)</span> <span class="o">%*%</span> x<span class="p">)</span> <span class="c1"># solve() would return the inverse matrix</span>
-<span class="lineno">3 </span>Error <span class="kr">in</span> <span class="kp">solve.default</span><span class="p">(</span><span class="kp">t</span><span class="p">(</span>x<span class="p">)</span> <span class="o">%*%</span> x<span class="p">)</span> <span class="o">:</span> 
-<span class="lineno">4 </span>  system is computationally singular<span class="o">:</span> reciprocal condition number <span class="o">=</span> <span class="m">2.22044e-28</span>\end<span class="p">{</span>rl<span class="p">}</span>
-<span class="lineno">5 </span><span class="p">}</span></code></pre></figure></div>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>mvtnorm<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> cov <span class="o">=</span> <span class="kt">array</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">1.0</span><span class="p">,</span> <span class="m">0.5</span><span class="p">,</span> <span class="m">0.5</span><span class="p">,</span> <span class="m">2.0</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">))</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> x <span class="o">=</span> rmvnorm<span class="p">(</span>n <span class="o">=</span> <span class="m">1</span><span class="p">,</span> mean <span class="o">=</span> mu<span class="p">,</span> sigma <span class="o">=</span> cov<span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 7 </span>         <span class="p">[,</span><span class="m">1</span><span class="p">]</span>     <span class="p">[,</span><span class="m">2</span><span class="p">]</span>
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">,]</span> <span class="m">2.221431</span> <span class="m">1.498778</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> d <span class="o">=</span> dmvnorm<span class="p">(</span>x<span class="p">,</span> mean <span class="o">=</span> mu<span class="p">,</span> sigma <span class="o">=</span> cov<span class="p">)</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>d<span class="p">)</span>
+<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.04007949</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> p <span class="o">=</span> pmvnorm<span class="p">(</span>lower<span class="o">=-</span><span class="kc">Inf</span><span class="p">,</span> upper <span class="o">=</span> x<span class="p">[</span><span class="m">1</span><span class="p">,],</span> mean <span class="o">=</span> mu<span class="p">,</span> sigma <span class="o">=</span> cov<span class="p">)</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>p<span class="p">)</span>
+<span class="lineno">14 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.344201</span>
+<span class="lineno">15 </span><span class="kp">attr</span><span class="p">(,</span><span class="s">&quot;error&quot;</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1e-15</span>
+<span class="lineno">17 </span><span class="kp">attr</span><span class="p">(,</span><span class="s">&quot;msg&quot;</span><span class="p">)</span>
+<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;Normal Completion&quot;</span></code></pre></figure></div>
 <div class="coderight">
 <language>Python</language>
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1e6</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mf">1e-6</span><span class="p">]])</span>
-<span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">x</span><span class="p">))</span>
-<span class="lineno">4 </span><span class="n">array</span><span class="p">([[</span><span class="mf">4.50359963e+03</span><span class="p">,</span> <span class="mf">4.50359963e+09</span><span class="p">],</span>
-<span class="lineno">5 </span>       <span class="p">[</span><span class="mf">4.50359963e+09</span><span class="p">,</span> <span class="mf">4.50359963e+15</span><span class="p">]])</span></code></pre></figure></div>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">multivariate_normal</span> <span class="k">as</span> <span class="n">mvn</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mvn</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">dist</span> <span class="o">=</span> <span class="n">mvn</span><span class="p">(</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mu</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="p">[</span><span class="mf">1.16865045</span> <span class="mf">2.72887797</span><span class="p">]</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="mf">0.10533537790438291</span>
+<span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="mf">0.44523665187828293</span></code></pre></figure></div>
 </div>
-<p>The R code above throws an error because of the singularity of $\boldsymbol{X}&#8217;\boldsymbol{X}$. It&#8217;s interesting that the corresponding Python code doesn&#8217;t behave in the same way as R, which has been reported as an issue on github<sup class="footnote" id="fnr6"><a href="#fn6">6</a></sup>.</p>
-<p>When the matrix $\boldsymbol{X}&#8217;\boldsymbol{X}$ is singular, how to solve the <span class="caps">OLS</span> problem? In this book, we would focus on the QR decomposition based solution. Singular value decomposition (<span class="caps">SVD</span>) can also be used to solve <span class="caps">OLS</span>, which would not be covered in this book.</p>
-<p>In linear algebra, a QR decomposition<sup class="footnote" id="fnr7"><a href="#fn7">7</a></sup> of matrix $\boldsymbol{X}$ would factorize $\boldsymbol{X}$ into a product, i.e., $\boldsymbol{X}=\boldsymbol{Q}\boldsymbol{R}$ where $\boldsymbol{Q}$ are orthogonal matrices and $\boldsymbol{R}$ is an upper triangular matrix. Since the matrix $\boldsymbol{Q}$ is orthogonal ($\boldsymbol{Q}&#8217;=\boldsymbol{Q}^{-1}$), we have</p>
-<p>$$<br />
-\begin{equation}<br />
-\begin{split}<br />
-\boldsymbol{\hat\beta}&amp;=(\boldsymbol{X}&#8217;\boldsymbol{X})^{-1}\boldsymbol{X}&#8217;\boldsymbol{y} \\<br />
-&amp; = (\boldsymbol{R}&#8217;\boldsymbol{Q}&#8217;\boldsymbol{Q}\boldsymbol{R})^{-1}\boldsymbol{R}&#8217;\boldsymbol{Q}&#8217;\boldsymbol{y} \\<br />
-&amp; = (\boldsymbol{R}&#8217;\boldsymbol{R})^{-1}\boldsymbol{R}&#8217;\boldsymbol{Q}&#8217;\boldsymbol{y} \\<br />
-&amp; = \boldsymbol{R}^{-1}\boldsymbol{Q}&#8217;\boldsymbol{y} <br />
-\end{split}<br />
-\label{eq:7}<br />
-\end{equation}<br />
-$$</p>
-<p>Now we are ready to write our simple R/Python functions for linear regression with the help of QR decomposition according to $\eqref{eq:7}$.</p>
+<p>Please note in the example above, we do not calculate the quantiles. For multivariable distributions, the quantiles are not necessary to be fixed points.</p>
+<h2 id="sampling">Inversion sampling &amp; rejection sampling</h2>
+<h3>Inversion sampling</h3>
+<p>Sampling from the Gaussian or other famous distributions could be as simple as just calling a function. What if we want to draw samples from any distribution with its <span class="caps">CDF</span>? Inversion sampling is a generic solution. There are two steps to draw a sample with inversion sampling approach.</p>
+<ul>
+	<li>draw independent and identical (i.i.d.) distribution random variables $u_1,&#8230;,u_n$ which are uniformly distributed on from 0 to 1;</li>
+	<li>calculate the quantiles $q_1,&#8230;,q_n$ for $u_1,&#8230;,u_n$ based on the <span class="caps">CDF</span>, and return $q_1,&#8230;,q_n$  as the desired samples to draw.</li>
+</ul>
+<p>Let&#8217;s see how to use the inversion sampling technique to sample from exponential distribution with <span class="caps">CDF</span> $f_X(x;\lambda) = 1-e^{-\lambda x}$.</p>
 <div class="codewrapper">
 <div class="codeleft">
 <language>R</language>
-<p>chapter4/qr_solver.R<br />
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span>qr_solver<span class="o">=</span><span class="kr">function</span><span class="p">(</span>x<span class="p">,</span>y<span class="p">){</span>
-<span class="lineno">2 </span>  <span class="kp">qr.coef</span><span class="p">(</span><span class="kp">qr</span><span class="p">(</span>x<span class="p">),</span>y<span class="p">)</span>
-<span class="lineno">3 </span><span class="p">}</span></code></pre></figure></p>
-</div>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> n<span class="o">=</span><span class="m">1000</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="c1"># step 1, draw from uniform dist</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> u <span class="o">=</span> runif<span class="p">(</span>n<span class="o">=</span>n<span class="p">,</span> min<span class="o">=</span><span class="m">0</span><span class="p">,</span>max<span class="o">=</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="c1"># step 2, calculate the quantiles</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> lambda <span class="o">=</span> <span class="m">2.0</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> x <span class="o">=</span> qexp<span class="p">(</span>u<span class="p">,</span> rate <span class="o">=</span> lambda<span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="c1"># the mean is close to 1/lambda</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kp">mean</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">10 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.4818323</span></code></pre></figure></div>
 <div class="coderight">
 <language>Python</language>
-<p>chapter4/qr_solver.py<br />
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="lineno">2 </span>
-<span class="lineno">3 </span><span class="k">def</span> <span class="nf">qr_solver</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">):</span>
-<span class="lineno">4 </span>  <span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno">5 </span>  <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
-<span class="lineno">6 </span>  <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">r</span><span class="p">),</span><span class="n">p</span><span class="p">)</span></code></pre></figure></p>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> 
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">n</span><span class="o">=</span><span class="mi">1000</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># step 1, generate from uniform(0,1)</span>
+<span class="lineno"> 5 </span><span class="o">...</span> <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># step 2, calculate the quantile</span>
+<span class="lineno"> 7 </span><span class="o">...</span> <span class="n">lamb</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">q</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">u</span><span class="p">)</span><span class="o">/</span><span class="n">lamb</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="mf">0.4862529739826122</span></code></pre></figure></div>
 </div>
+<p>In the above R implementation, we used the builtin quantile function in step 2; however, for many distributions there are no builtin quantile functions available and thus we need to specify the quantile function by ourselves (illustrated in the Python implementation).</p>
+<h3>Rejection sampling</h3>
+<p>Rejection sampling is also a basic algorithm to draw samples for a random variable $X$ given its <span class="caps">PDF</span> $f_X$. The basic idea of rejection sampling is to draw samples for a random variable $Y$ with <span class="caps">PDF</span> $f_Y$ and accept the samples with probability $f_X(x)/(Mf_Y(x))$. If the sample generated is rejected, the sampling procedure is repeated until an acceptance. More theoretical details of rejection sampling can be found from the wikipedia<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>.</p>
+<p>Actually, we have used rejection sampling in Chapter 2 in the example to estimate $\pi$. To recap, in order to draw samples inside a circle with radius $r$, we draw samples from a its circumscribed square with side length equal to $2r$ and only accept the samples fallen inside the circle. Another typical use case of rejection sampling algorithm is to sample from truncated distributions. In the example below, we sample from a distribution whose <span class="caps">PDF</span> is $f_X(x;\lambda,b) = \lambda e^{-\lambda x}/( 1-e^{-\lambda b})$. You may notice this <span class="caps">PDF</span> is the <span class="caps">PDF</span> of an exponential distributed random variable $Y$ with rate $\lambda$ conditional on $Y\ge b$.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>n<span class="o">=</span><span class="m">1000</span>
+<span class="lineno"> 2 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span>lambda <span class="o">=</span> <span class="m">1.0</span>
+<span class="lineno"> 4 </span>b <span class="o">=</span> <span class="m">2.0</span>
+<span class="lineno"> 5 </span>x <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> n<span class="p">)</span>
+<span class="lineno"> 6 </span>i <span class="o">=</span> <span class="m">0</span>
+<span class="lineno"> 7 </span><span class="kr">while</span> <span class="p">(</span>i<span class="o">&lt;</span>n<span class="p">){</span>
+<span class="lineno"> 8 </span>  y <span class="o">=</span> rexp<span class="p">(</span>n <span class="o">=</span> <span class="m">1</span><span class="p">,</span> rate <span class="o">=</span> lambda<span class="p">)</span>
+<span class="lineno"> 9 </span>  <span class="kr">if</span> <span class="p">(</span>y<span class="o">&gt;=</span>b<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">10 </span>    i<span class="o">=</span>i<span class="m">+1</span>
+<span class="lineno">11 </span>    x<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> y
+<span class="lineno">12 </span>  <span class="p">}</span>
+<span class="lineno">13 </span><span class="p">}</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> 
+<span class="lineno"> 2 </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="n">lamb</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span>
+<span class="lineno"> 4 </span><span class="n">n</span><span class="o">=</span><span class="mi">1000</span>
+<span class="lineno"> 5 </span><span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="lineno"> 6 </span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno"> 7 </span><span class="k">while</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">n</span><span class="p">:</span>
+<span class="lineno"> 8 </span>  <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">scale</span> <span class="o">=</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+<span class="lineno"> 9 </span>  <span class="k">if</span> <span class="n">y</span><span class="o">&gt;=</span><span class="n">b</span><span class="p">:</span>
+<span class="lineno">10 </span>    <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="lineno">11 </span>    <span class="n">i</span><span class="o">+=</span><span class="mi">1</span></code></pre></figure></div>
 </div>
-<p>Of course, we don&#8217;t need to implement our own <span class="caps">OLS</span> solvers in a production environment; but if you do, still you may find some well-written and well-tested functions such as <code>np.linalg.lstsq</code> to save your time and effort from doing it from scratch.</p>
-<p>Ok, now we have finished the training part of a linear regression model in both R and Python. After we train a model we want to use it, i.e., to make predictions based on the model. For most of machine learning models, training is much more complex than prediction (Exceptions include Lazy-learning models such as <span class="caps">KNN</span>). Let&#8217;s continue developing our own linear regression model by including the prediction function and enclose everything in an object.</p>
+<p>After running the code snippets above, we have the samples stored in $x$ from the truncated exponential distribution. A major drawback of naive rejection sampling algorithm is its efficiency because some samples are rejected.</p>
+<p>We have seen the basic examples on how to draw samples with inversion samples and truncated samples. Now let&#8217;s work on a more challenging problem.</p>
+<appname>Application &#8211; Draw samples from a sphere</appname>
+<blockquote class="appquote">
+<p>
+<p>Without loss of generality, let&#8217;s consider a unit sphere, i.e., the radius $r=1$. We want to draw i.i.d. points from a unit sphere. The problem appears simple at a first glance &#8211; we could utilize the spherical coordinates system and draw samples for $\phi$ and $\theta$. Now the question is how to sample for $\phi$ and $\theta$. A straightforward idea is to draw independent and uniform samples $\phi$ from $0$ to $2\pi$ and $\theta$ from $0$ to $\pi$, respectively. However, this idea is incorrect which will be analyzed below.</p>
+</p>
+</blockquote>
+<figure class="text-center">
+<img src="figures/sphere.png" alt="" style="display: block;margin: auto;" width="40%">
+        <figcaption class="centerfigcaption"></figcaption>
+</figure>
+<p>Let&#8217;s use $f_P(\phi,\theta)$ to denote the <span class="caps">PDF</span> of the joint distribution of $(\phi,\theta)$. We integrate this <span class="caps">PDF</span>, then</p>
+<p>$$<br />
+\begin{equation}\label{eq:4_0_2}<br />
+1 =  \int_{0}^{2\pi} \int_{0}^{\pi} f_P(\phi,\theta)  d\phi d\theta = \int_{0}^{2\pi} \int_{0}^{\pi} f_\Phi(\phi) f_{\Theta|\Phi}(\theta|\phi) d\phi d\theta.<br />
+\end{equation}<br />
+$$</p>
+<p>If we enforce $\Phi$ has a uniform distribution between $0$ and $2\pi$, then $f_\Phi(\phi)=1/{2\pi}$, and</p>
+<p>$$<br />
+\begin{equation}\label{eq:4_0_3}<br />
+1=\int_{0}^{\pi} f_{\Theta|\Phi}(\theta|\phi) d\theta.<br />
+\end{equation}<br />
+$$</p>
+<p>One solution to \eqref{eq:4_0_3} is $f_{\Theta|\Phi}(\theta|\phi)=sin(\theta)/2$.</p>
+<p>Thus, we could generate the samples of $\Phi$ from the uniform distribution and the samples of $\Theta$ from the distribution whose <span class="caps">PDF</span> is $sin(\phi)/2$. Sampling for $\Phi$ is trivial, but how about $\Theta$? We could use the inversion sampling technique. The <span class="caps">CDF</span> of $\Theta$ is $(1-cos(\theta))/2;0\le\theta\le \pi$, and the quantile function is $Q_\Theta(p)=arccos(1-2p)$.</p>
+<p>The implementation of sampling from unit sphere is implemented below.</p>
+<div class="codewrapper">
+<div class="codeleft">
 <language>R</language>
-<p>chapter4/linear_regression.R<br />
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>R6<span class="p">)</span>
-<span class="lineno"> 2 </span>LR <span class="o">=</span> R6Class<span class="p">(</span>
-<span class="lineno"> 3 </span>  <span class="s">&quot;LR&quot;</span><span class="p">,</span>
-<span class="lineno"> 4 </span>  public <span class="o">=</span> <span class="kt">list</span><span class="p">(</span>
-<span class="lineno"> 5 </span>    coef <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
-<span class="lineno"> 6 </span>    initialize <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="p">{</span>
-<span class="lineno"> 7 </span>      
-<span class="lineno"> 8 </span>    <span class="p">},</span>
-<span class="lineno"> 9 </span>    fit <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">10 </span>      self<span class="o">$</span>qr_solver<span class="p">(</span><span class="kp">cbind</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> x<span class="p">),</span> y<span class="p">)</span>
-<span class="lineno">11 </span>    <span class="p">},</span>
-<span class="lineno">12 </span>    qr_solver <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">13 </span>      self<span class="o">$</span>coef <span class="o">=</span> <span class="kp">qr.coef</span><span class="p">(</span><span class="kp">qr</span><span class="p">(</span>x<span class="p">),</span> y<span class="p">)</span>
-<span class="lineno">14 </span>    <span class="p">},</span>
-<span class="lineno">15 </span>    predict <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>new_x<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">16 </span>      <span class="kp">cbind</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> new_x<span class="p">)</span> <span class="o">%*%</span> self<span class="o">$</span>coef
-<span class="lineno">17 </span>    <span class="p">}</span>
-<span class="lineno">18 </span>  <span class="p">)</span>
-<span class="lineno">19 </span><span class="p">)</span></code></pre></figure></p>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>n<span class="o">=</span><span class="m">2000</span>
+<span class="lineno"> 2 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="c1"># sample phi</span>
+<span class="lineno"> 4 </span>phi <span class="o">=</span> runif<span class="p">(</span>n<span class="p">,</span> min <span class="o">=</span> <span class="m">0</span><span class="p">,</span> max <span class="o">=</span> <span class="m">2</span><span class="o">*</span><span class="kc">pi</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="c1"># sample theta by inversion cdf</span>
+<span class="lineno"> 6 </span>u <span class="o">=</span> runif<span class="p">(</span>n<span class="p">,</span> min <span class="o">=</span> <span class="m">0</span><span class="p">,</span> max <span class="o">=</span> <span class="m">1</span><span class="p">)</span>
+<span class="lineno"> 7 </span>theta <span class="o">=</span> <span class="kp">acos</span><span class="p">(</span><span class="m">1-2</span><span class="o">*</span>u<span class="p">)</span>
+<span class="lineno"> 8 </span><span class="c1"># now we calculate the Cartesian coordinates</span>
+<span class="lineno"> 9 </span>x <span class="o">=</span> <span class="kp">sin</span><span class="p">(</span>theta<span class="p">)</span><span class="o">*</span><span class="kp">cos</span><span class="p">(</span>phi<span class="p">)</span>
+<span class="lineno">10 </span>y <span class="o">=</span> <span class="kp">sin</span><span class="p">(</span>theta<span class="p">)</span><span class="o">*</span><span class="kp">sin</span><span class="p">(</span>phi<span class="p">)</span>
+<span class="lineno">11 </span>z <span class="o">=</span> <span class="kp">cos</span><span class="p">(</span>theta<span class="p">)</span></code></pre></figure></div>
+<div class="coderight">
 <language>Python</language>
-<p>chapter4/linear_regression.py<br />
 <figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="lineno"> 2 </span>
-<span class="lineno"> 3 </span><span class="k">class</span> <span class="nc">LR</span><span class="p">:</span>
-<span class="lineno"> 4 </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="lineno"> 5 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="lineno"> 6 </span>
-<span class="lineno"> 7 </span>    <span class="k">def</span> <span class="nf">qr_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-<span class="lineno"> 8 </span>        <span class="n">q</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno"> 9 </span>        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="lineno">10 </span>        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span>
-<span class="lineno">11 </span>
-<span class="lineno">12 </span>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-<span class="lineno">13 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qr_solver</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">x</span><span class="p">)),</span> <span class="n">y</span><span class="p">)</span>
-<span class="lineno">14 </span>
-<span class="lineno">15 </span>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="lineno">16 </span>        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">x</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">coef</span><span class="p">)</span></code></pre></figure></p>
-<p>Now let&#8217;s try to use our linear regression model to solve a real regression problem with the Boston dataset<sup class="footnote" id="fnr8"><a href="#fn8">8</a></sup>, and check the results.</p>
+<span class="lineno"> 2 </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="n">n</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="lineno"> 4 </span><span class="c1"># sample phi</span>
+<span class="lineno"> 5 </span><span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="c1"># sample theta by inversion cdf</span>
+<span class="lineno"> 7 </span><span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="c1"># we calculate the Cartesian coordinates</span>
+<span class="lineno">10 </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span></code></pre></figure></div>
+</div>
+<figure class="text-center">
+<img src="figures/sphere2.png" alt="Uniform samples from a unit sphere" style="display: block;margin: auto;" width="65%">
+        <figcaption class="centerfigcaption">Uniform samples from a unit sphere</figcaption>
+</figure>
+<p>There are also other solutions to this problem, which wouldn&#8217;t be discussed in this book. A related problem is to draw samples inside a sphere. We could solve the inside sphere sampling problem with a similar approach, or using rejection sampling approach, i.e., sampling from a cube with acceptance ratio $\pi/6$.</p>
+<h2 id="copula">Joint distribution &amp; copula</h2>
+<p>We are not trying to introduce these concepts from scratch. This section is more like a recap.</p>
+<p>In previous section, we see the <span class="caps">PDF</span> for multivariate normal distribution in \eqref{eq:4_0_1_3}. A multivariate distribution is also called joint distribution, since the multivariate random variable can be viewed as a joint of multiple univariate random variables. Joint <span class="caps">PDF</span> gives the probability density of a set of random variables. Sometimes we may only be interested in the probability distribution of a single random variable from a set. And that distribution is called marginal distribution. The <span class="caps">PDF</span> of a marginal distribution can be obtained by integrating the joint <span class="caps">PDF</span> over all the other random variables. For example, the integral of \eqref{eq:4_0_1_3} gives the <span class="caps">PDF</span> of a univariate normal distribution.</p>
+<p>The joint distribution is the distribution about the whole population. In the context of a bivariate Gaussian random variable $(X_1,X_2)$, the joint <span class="caps">PDF</span> $f_{X_1,X_2}(x_1,x_2)$ specifies the probability density for all pairs of $(X_1,X_2)$ in the 2-dimension plane. The marginal distribution of $X_1$ is still about the whole population because we are not ruling out any points from the support of the distribution function. Sometimes we are interested in a subpopulation only, for example, the subset of $(X_1,X_2)$ where $X_2=2$ or $X_2&gt;5$. We can use conditional distribution to describe the probability distribution of a subpopulation. To denote conditional distribution, the symbol $|$ is frequently used. We use $f_{X_1|X_2=0}(x_1|x_2)$ to represent the distribution of $X_1$ conditional on $X_2=0$. By the rule of conditional probability $P(A|B)=P(A,B)/P(B)$, the calculation $f_{X_1|X_2}(x_1|x_2)$ is straightforward, i.e., $f_{X_1|X_2}(x_1|x_2)=f_{X_1,X_2}(x_1,x_2)/f_{X_2}(x_2)$.</p>
+<p>The most well-known joint distribution is the multivariate Gaussian distribution. Multivariate Gaussian distribution has many important and useful properties. For example, given the observation of $(X_1,&#8230;,X_k)$ from $(X_1,&#8230;,X_m)$, $(X_k+1,&#8230;,X_m)$ is still following a multivariate Gaussian distribution, which is essential to Gaussian process regression<sup class="footnote" id="fnr3"><a href="#fn3">3</a></sup>.</p>
+<p>We have seen the extension from univariate Gaussian distribution to multivariate Gaussian distribution, but how about other distributions? For example, what is the joint distribution for two univariate exponential distribution? We could use copula<sup class="footnote" id="fnr4"><a href="#fn4">4</a></sup> for such purpose. For the random variable $(X_1,&#8230;,X_m)$, let $(U_1,&#8230;,U_m)=(F_{X_1}(X_1),&#8230;,F_{X_m}(X_m))$ where $F_{X_k}$ is the <span class="caps">CDF</span> of $X_k$. We know $U_k$ is following a uniform distribution. Let $C(U_1,&#8230;,U_m)$ denote the joint <span class="caps">CDF</span> of $(U_1,&#8230;,U_m)$ and the <span class="caps">CDF</span> is called copula.</p>
+<p>There are different copula functions, and one commonly-used is the Gaussian copula. The standard Gaussian copula is specified as below.</p>
+<p>$$<br />
+\begin{equation}\label{eq:4_0_3_0}<br />
+C^{Gauss}_{\Sigma}(u_1,&#8230;,u_m)=\Phi_{\Sigma}(\Phi^{-1}(u_1),&#8230;,\Phi^{-1}(u_m)),<br />
+\end{equation}<br />
+$$</p>
+<p>where $\Phi$ denotes the <span class="caps">CDF</span> of the standard Gaussian distribution, and $\Phi_{\Sigma}$ denotes the <span class="caps">CDF</span> of a multivariate Gaussian distribution with mean $\boldsymbol{0}$ and correlation matrix $\Sigma$.</p>
+<p>Let&#8217;s see an example to draw samples from a bivariate exponential distribution constructed via Gaussian copula. The basic idea of sampling multivariate random variables via copula is to sample $U_1,&#8230;,U_m$ first and then transform it to the desired random variables.</p>
 <language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;linear_regression.R&#39;</span><span class="p">)</span>
-<span class="lineno"> 2 </span><span class="o">&gt;</span> 
-<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>MASS<span class="p">)</span> <span class="c1"># load Boston data from this package</span>
-<span class="lineno"> 4 </span><span class="o">&gt;</span> 
-<span class="lineno"> 5 </span><span class="o">&gt;</span> lr <span class="o">=</span> LR<span class="o">$</span>new<span class="p">()</span>
-<span class="lineno"> 6 </span><span class="o">&gt;</span> <span class="c1"># -i means excluding the ith column from the data.frame</span>
-<span class="lineno"> 7 </span><span class="o">&gt;</span> lr<span class="o">$</span>fit<span class="p">(</span><span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">[,</span><span class="o">-</span><span class="kp">ncol</span><span class="p">(</span>Boston<span class="p">)]),</span>Boston<span class="o">$</span>medv<span class="p">)</span>
-<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>lr<span class="o">$</span>coef<span class="p">)</span>
-<span class="lineno"> 9 </span>                       crim            zn         indus          chas 
-<span class="lineno">10 </span> <span class="m">3.645949e+01</span> <span class="m">-1.080114e-01</span>  <span class="m">4.642046e-02</span>  <span class="m">2.055863e-02</span>  <span class="m">2.686734e+00</span> 
-<span class="lineno">11 </span>          nox            rm           age           dis           rad 
-<span class="lineno">12 </span><span class="m">-1.776661e+01</span>  <span class="m">3.809865e+00</span>  <span class="m">6.922246e-04</span> <span class="m">-1.475567e+00</span>  <span class="m">3.060495e-01</span> 
-<span class="lineno">13 </span>          tax       ptratio         black         lstat 
-<span class="lineno">14 </span><span class="m">-1.233459e-02</span> <span class="m">-9.527472e-01</span>  <span class="m">9.311683e-03</span> <span class="m">-5.247584e-01</span> 
-<span class="lineno">15 </span><span class="o">&gt;</span> <span class="c1"># let&#39;s make prediction on the same data</span>
-<span class="lineno">16 </span><span class="o">&gt;</span> pred<span class="o">=</span>lr<span class="o">$</span>predict<span class="p">(</span><span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">[,</span><span class="o">-</span><span class="kp">ncol</span><span class="p">(</span>Boston<span class="p">)]))</span>
-<span class="lineno">17 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>pred<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">])</span>
-<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">30.00384</span> <span class="m">25.02556</span> <span class="m">30.56760</span> <span class="m">28.60704</span> <span class="m">27.94352</span>
-<span class="lineno">19 </span><span class="o">&gt;</span> 
-<span class="lineno">20 </span><span class="o">&gt;</span> <span class="c1"># compare it with the R built-in linear regression model</span>
-<span class="lineno">21 </span><span class="o">&gt;</span> rlm <span class="o">=</span> lm<span class="p">(</span>medv <span class="o">~</span> <span class="m">.</span><span class="p">,</span> data<span class="o">=</span>Boston<span class="p">)</span>
-<span class="lineno">22 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>rlm<span class="o">$</span>coef<span class="p">)</span>
-<span class="lineno">23 </span>  <span class="p">(</span>Intercept<span class="p">)</span>          crim            zn         indus          chas 
-<span class="lineno">24 </span> <span class="m">3.645949e+01</span> <span class="m">-1.080114e-01</span>  <span class="m">4.642046e-02</span>  <span class="m">2.055863e-02</span>  <span class="m">2.686734e+00</span> 
-<span class="lineno">25 </span>          nox            rm           age           dis           rad 
-<span class="lineno">26 </span><span class="m">-1.776661e+01</span>  <span class="m">3.809865e+00</span>  <span class="m">6.922246e-04</span> <span class="m">-1.475567e+00</span>  <span class="m">3.060495e-01</span> 
-<span class="lineno">27 </span>          tax       ptratio         black         lstat 
-<span class="lineno">28 </span><span class="m">-1.233459e-02</span> <span class="m">-9.527472e-01</span>  <span class="m">9.311683e-03</span> <span class="m">-5.247584e-01</span> 
-<span class="lineno">29 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>rlm<span class="o">$</span>fitted<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">])</span>
-<span class="lineno">30 </span>       <span class="m">1</span>        <span class="m">2</span>        <span class="m">3</span>        <span class="m">4</span>        <span class="m">5</span> 
-<span class="lineno">31 </span><span class="m">30.00384</span> <span class="m">25.02556</span> <span class="m">30.56760</span> <span class="m">28.60704</span> <span class="m">27.94352</span> </code></pre></figure><language>Python</language>
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">load_boston</span>
-<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">linear_regression</span> <span class="k">import</span> <span class="n">LR</span>
-<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">boston</span> <span class="o">=</span> <span class="n">load_boston</span><span class="p">()</span>
-<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">boston</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boston</span><span class="o">.</span><span class="n">target</span>
-<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># first, let&#39;s run our own linear regression</span>
-<span class="lineno"> 6 </span><span class="o">...</span> <span class="n">lr</span> <span class="o">=</span> <span class="n">LR</span><span class="p">()</span>
-<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">lr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">lr</span><span class="o">.</span><span class="n">coef</span><span class="p">)</span>
-<span class="lineno"> 9 </span><span class="p">[</span> <span class="mf">3.64594884e+01</span> <span class="o">-</span><span class="mf">1.08011358e-01</span>  <span class="mf">4.64204584e-02</span>  <span class="mf">2.05586264e-02</span>
-<span class="lineno">10 </span>  <span class="mf">2.68673382e+00</span> <span class="o">-</span><span class="mf">1.77666112e+01</span>  <span class="mf">3.80986521e+00</span>  <span class="mf">6.92224640e-04</span>
-<span class="lineno">11 </span> <span class="o">-</span><span class="mf">1.47556685e+00</span>  <span class="mf">3.06049479e-01</span> <span class="o">-</span><span class="mf">1.23345939e-02</span> <span class="o">-</span><span class="mf">9.52747232e-01</span>
-<span class="lineno">12 </span>  <span class="mf">9.31168327e-03</span> <span class="o">-</span><span class="mf">5.24758378e-01</span><span class="p">]</span>
-<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">lr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="mi">5</span><span class="p">])</span>
-<span class="lineno">14 </span><span class="p">[</span><span class="mf">30.00384338</span> <span class="mf">25.02556238</span> <span class="mf">30.56759672</span> <span class="mf">28.60703649</span> <span class="mf">27.94352423</span><span class="p">]</span>
-<span class="lineno">15 </span><span class="o">&gt;&gt;&gt;</span>
-<span class="lineno">16 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># now, use sklearn&#39;s linear regression model</span>
-<span class="lineno">17 </span><span class="o">...</span> <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="k">import</span> <span class="n">LinearRegression</span>
-<span class="lineno">18 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">reg</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="lineno">19 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">coef_</span><span class="p">)</span>
-<span class="lineno">20 </span><span class="p">[</span><span class="o">-</span><span class="mf">1.08011358e-01</span>  <span class="mf">4.64204584e-02</span>  <span class="mf">2.05586264e-02</span>  <span class="mf">2.68673382e+00</span>
-<span class="lineno">21 </span> <span class="o">-</span><span class="mf">1.77666112e+01</span>  <span class="mf">3.80986521e+00</span>  <span class="mf">6.92224640e-04</span> <span class="o">-</span><span class="mf">1.47556685e+00</span>
-<span class="lineno">22 </span>  <span class="mf">3.06049479e-01</span> <span class="o">-</span><span class="mf">1.23345939e-02</span> <span class="o">-</span><span class="mf">9.52747232e-01</span>  <span class="mf">9.31168327e-03</span>
-<span class="lineno">23 </span> <span class="o">-</span><span class="mf">5.24758378e-01</span><span class="p">]</span>
-<span class="lineno">24 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="mi">5</span><span class="p">])</span>
-<span class="lineno">25 </span><span class="p">[</span><span class="mf">30.00384338</span> <span class="mf">25.02556238</span> <span class="mf">30.56759672</span> <span class="mf">28.60703649</span> <span class="mf">27.94352423</span><span class="p">]</span></code></pre></figure><p>The results from our own linear regression models are almost identical to the results from <code>lm()</code> function or the <code>sklearn.linear_model</code> module, which means we have done a great job so far.</p>
-<h2 id="hypothesis">Linear hypothesis testing</h2>
-<p>I&#8217;m not a big fan of applying hypothesis testing in data science or machine learning. But sometimes it is irreplaceable, or at least useful, for example in the Design of Experiment (<span class="caps">DOE</span>).</p>
-<p>Most of applications of hypothesis testing in machine learning models are about feature/variable selections. There are lots of debates on whether hypothesis-testings-based feature selections are good or bad. The major criticism of such approach is that the entire process is built on the data used for model training and the model performance on testing data is not considered at all.</p>
-<p>I think it is still worth giving a brief introduction of hypothesis testing in linear regression, as it is still popular among data scientists with statistician&#8217;s mindset. I would assume the readers already have basic ideas of hypothesis-testing, p-value, significance level.</p>
-<p>If you have done linear regressions using a computer software (R, Stata, <span class="caps">SPSS</span>, Minitab etc.), you may have noticed that the outputs of these softwares contain the p-values<sup class="footnote" id="fnr9"><a href="#fn9">9</a></sup> and t-statistics of the coefficient of each variable. If the p-value is less than a pre-determined significance level (usually 0.1 or 0.05 are used in practice), <br />
-the null hypothesis (always denoted as $H_0$) should be rejected. The hypothesis against the null hypothesis is called alternative hypothesis (denoted as $H_1$). An example of $H_0$ and $H_1$ regarding model \eqref{eq:2} could be stated as:</p>
-<p>$$<br />
-\begin{equation}<br />
-\begin{split}<br />
-H_0: \boldsymbol{\beta}_1&amp;=0 \\<br />
-H_1:\boldsymbol{\beta}_1 &amp;\neq0.<br />
-\end{split}<br />
-\label{eq:8}<br />
-\end{equation}<br />
-$$</p>
-<p>If the p-value of $\boldsymbol{\beta}_1$ suggests not to reject $H_0$, we may exclude the corresponding feature and re-fit the linear model.</p>
-<p>The theory behind the hypothesis testing in \eqref{eq:8} is not complex. But we have to make an additional assumption for our linear regression model. More specifically, we assume the error term $\boldsymbol{\epsilon}$ follows a multivariate normal distribution, i.e., $\boldsymbol{\epsilon}{\sim}N(\boldsymbol{0},\sigma^2\boldsymbol{I})$. Based on this assumption, we could conclude that $\boldsymbol{\hat\beta}$ also follows a multivariate normal distribution. Furthermore, we can construct a test statistic<sup class="footnote" id="fnr10"><a href="#fn10">10</a></sup> containing $\boldsymbol{\hat\beta_j}$ which follows a t-distribution<sup class="footnote" id="fnr11"><a href="#fn11">11</a></sup>. The additional assumption we made for hypothesis testing is not required for least square estimation. It is also not one of assumptions for the Gauss-Markov theorem<sup class="footnote" id="fnr12"><a href="#fn12">12</a></sup>.</p>
-<p>The example given in \eqref{eq:8} focuses on a single coefficient. Actually, it is a special case of a more general hypothesis testing, which is called linear hypothesis testing. In linear hypothesis testing, people are interested in a linear combination of the coefficients, i.e.,</p>
-<p>$$<br />
-\begin{equation}<br />
-\begin{split}<br />
-H_0: \boldsymbol{A}\boldsymbol{\beta}+\boldsymbol{b}&amp;=0\\<br />
-H_1: \boldsymbol{A}\boldsymbol{\beta} +\boldsymbol{b}&amp;\neq0.<br />
-\end{split}<br />
-\label{eq:9}<br />
-\end{equation}<br />
-$$</p>
-<p>The linear hypothesis testing is usually conducted by constructing a F-distributed test statistic. The general hypothesis testings is very powerful. For example, we may start from a full model with a larger list of variables to train a linear regression model; we may also exclude some variables from the full list to train a reduced model. By setting proper values of $\boldsymbol{A}$ and $\boldsymbol{b}$ in \eqref{eq:9} we can conduct a linear hypothesis testing to accept or reject the reduced model. For example, if the full model involves three variables and in the reduced model we only keep the first variable, we will set</p>
-<p>$$\boldsymbol{A}=\begin{bmatrix}<br />
-  0 &amp; 0 &amp; 0 \\<br />
-  0 &amp; 1 &amp; 0  \\<br />
-  0 &amp; 0 &amp; 1 <br />
-  \end{bmatrix}<br />
-$$<br />
- and <br />
-$$\boldsymbol{b}=\begin{bmatrix}<br />
-  0 \\<br />
-  0 \\<br />
-  0 \\<br />
- \end{bmatrix}.<br />
- $$</p>
-<h2 id="ridge">Ridge regression</h2>
-<p>What is the problem of solving linear regression model specified by \eqref{eq:3}? There is nothing wrong at all with that approach. But I would like to cite my favorite quote &#8211; &#8220;Essentially, all models are wrong, but some are useful&#8221;<sup class="footnote" id="fnr13"><a href="#fn13">13</a></sup>. \eqref{eq:3} provides one solution to model \eqref{eq:1}. There are some alternative solutions, such as lasso regression and ridge regression. In this section, let&#8217;s focus on ridge regression.</p>
-<p>What is ridge regression? Ridge regression doesn&#8217;t change the model itself. Instead, it changes the way to estimate model parameters. By naive <span class="caps">OLS</span>, we minimize the <span class="caps">SSR</span> directly. In ridge regression, we change the objective function (which is commonly called loss function in machine learning models) by adding an additional penalty</p>
-<p>$$<br />
-\begin{equation}\label{eq:10}<br />
-\min_{\boldsymbol{\hat\beta}} \quad \boldsymbol{e}&#8217;\boldsymbol{e} + \lambda\boldsymbol{\beta}&#8217;\boldsymbol{\beta}.<br />
-\end{equation}<br />
-$$</p>
-<p>The optimization problem \eqref{eq:10} is still an unconstrained optimization problem and it is convex. It can also be formulated as a constrained convex optimization problem as</p>
-<p>$$<br />
-\begin{equation}<br />
-\begin{split}<br />
-\min_{\boldsymbol{\hat\beta}}&amp; \quad \boldsymbol{e}&#8217;\boldsymbol{e}\\<br />
-subject\quad  to\quad   &amp;\boldsymbol{\beta}&#8217;\boldsymbol{\beta}\leq{t}.<br />
-\end{split}<br />
-\label{eq:11}<br />
-\end{equation}<br />
-$$</p>
-<p>The theory behind ridge regression can be found from The Elements of Statistical Learning<sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup>. Let&#8217;s turn our attention to the implementation of ridge regression. The solution to \eqref{eq:11} can be obtained in the same way as the solution to \eqref{eq:3}, i.e.,</p>
-<p>$$<br />
-\begin{equation}\label{eq:12}<br />
-\boldsymbol{\hat\beta}=(\boldsymbol{X}&#8217;\boldsymbol{X}+\lambda\boldsymbol{I})^{-1}\boldsymbol{X}&#8217;\boldsymbol{y}.<br />
-\end{equation}<br />
-$$</p>
-<p>Again, in practice we don&#8217;t use \eqref{eq:12} to implement ridge regression for the same reasons that we don&#8217;t use \eqref{eq:6} to solve linear regression without penalty.</p>
-<p>Actually, we don&#8217;t need new techniques to solve \eqref{eq:10}. Let&#8217;s make some transformation on the objective function in \eqref{eq:10}:</p>
-<p>$$<br />
-\begin{equation}<br />
-\begin{split}<br />
-&amp;\boldsymbol{e}&#8217;\boldsymbol{e} + \lambda\boldsymbol{\beta}&#8217;\boldsymbol{\beta}=\sum_{i=1}^{n}(\boldsymbol{y}_i-\boldsymbol{x}&#8217;_i\boldsymbol{\beta})^2+\sum_{i=1}^{p}(0-\sqrt{\lambda}\boldsymbol{\beta}_i)^2 ,<br />
-\end{split}<br />
-\label{eq:13}<br />
-\end{equation}<br />
-$$</p>
-<p>where $\boldsymbol{x}_i=[1,\boldsymbol{X}_{1i},\boldsymbol{X}_{2i},&#8230;,\boldsymbol{X}_{pi}]&#8217;$.</p>
-<p>Let&#8217;s define an augmented data set:</p>
-<p>$$<br />
-\begin{equation}\label{eq:14}<br />
-\boldsymbol{X}_\lambda=<br />
-\begin{bmatrix}<br />
-  1 &amp; \boldsymbol{X}_{11} &amp; \boldsymbol{X}_{21}  &amp; \cdots &amp; \boldsymbol{X}_{p1} \\<br />
-  1 &amp; \boldsymbol{X}_{12} &amp; \boldsymbol{X}_{22} &amp; \cdots &amp; \boldsymbol{X}_{p2} \\<br />
-  \vdots &amp; \vdots &amp; \vdots  &amp; \vdots &amp; \vdots \\<br />
-  1 &amp; \boldsymbol{X}_{1n} &amp; \boldsymbol{X}_{2n} &amp; \cdots &amp; \boldsymbol{X}_{pn} \\<br />
-  \sqrt{\lambda} &amp; 0 &amp; 0 &amp; \cdots &amp; 0\\<br />
-0 &amp;   \sqrt{\lambda}  &amp; 0 &amp; \cdots &amp; 0\\<br />
-0 &amp;   0 &amp; \sqrt{\lambda}  &amp; \cdots &amp; 0\\<br />
-\vdots &amp;   \vdots &amp; \vdots  &amp; \ddots &amp; \vdots\\<br />
-0 &amp;   0 &amp; 0  &amp; 0 &amp;  \sqrt{\lambda}\\<br />
- \end{bmatrix} , \quad <br />
-\boldsymbol{y}_{\lambda} =<br />
-\begin{bmatrix}<br />
-  \boldsymbol{y}_1 \\<br />
-  \boldsymbol{y}_2  \\<br />
-  \vdots \\<br />
-  \boldsymbol{y}_n\\<br />
-  0\\<br />
-  0\\<br />
-  0\\<br />
-  \vdots\\<br />
-  0<br />
- \end{bmatrix}.<br />
- \end{equation}<br />
-$$</p>
-<p>If we regress $\boldsymbol{y}_{\lambda}$ on $\boldsymbol{X}_\lambda$, the <span class="caps">OLS</span> solution is just what we are looking after. However, usually the penalty is not applied on the intercept. Thus, we modify $\boldsymbol{y}_{\lambda}$ and $\boldsymbol{X}_\lambda$ to</p>
-<p>$$<br />
-\begin{equation}\label{eq:15}<br />
-\boldsymbol{X}_\lambda=<br />
-\begin{bmatrix}<br />
-  1 &amp; \boldsymbol{X}_{11} &amp; \boldsymbol{X}_{21}  &amp; \cdots &amp; \boldsymbol{X}_{p1} \\<br />
-  1 &amp; \boldsymbol{X}_{12} &amp; \boldsymbol{X}_{22} &amp; \cdots &amp; \boldsymbol{X}_{p2} \\<br />
-  \vdots &amp; \vdots &amp; \vdots  &amp; \vdots &amp; \vdots \\<br />
-  1 &amp; \boldsymbol{X}_{1n} &amp; \boldsymbol{X}_{2n} &amp; \cdots &amp; \boldsymbol{X}_{pn} \\<br />
-0 &amp;   \sqrt{\lambda}  &amp; 0 &amp; \cdots &amp; 0\\<br />
-0 &amp;   0 &amp; \sqrt{\lambda}  &amp; \cdots &amp; 0\\<br />
-\vdots &amp;   \vdots &amp; \vdots  &amp; \ddots &amp; \vdots\\<br />
-0 &amp;   0 &amp; 0  &amp; 0 &amp;  \sqrt{\lambda}\\<br />
- \end{bmatrix} , \quad <br />
-\boldsymbol{y}_{\lambda} =<br />
-\begin{bmatrix}<br />
-  \boldsymbol{y}_1 \\<br />
-  \boldsymbol{y}_2  \\<br />
-  \vdots \\<br />
-  \boldsymbol{y}_n\\<br />
-    0\\<br />
-  0\\<br />
-  \vdots\\<br />
-  0<br />
- \end{bmatrix}.<br />
- \end{equation}<br />
-$$</p>
-<p>Now we are ready to implement our own ridge regression model based on the description above. It is also common to normalize<sup class="footnote" id="fnr14"><a href="#fn14">14</a></sup> the independent variables before applying ridge regression to make different variables in the same order of magnitude.</p>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>mvtnorm<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">10000</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> rates <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">1.0</span><span class="p">,</span> <span class="m">2.0</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> rho <span class="o">=</span> <span class="m">0.6</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> correlation <span class="o">=</span> <span class="kt">array</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> rho<span class="p">,</span> rho<span class="p">,</span> <span class="m">1</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">))</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="c1"># sample R from multivariate Gaussian</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> r <span class="o">=</span> rmvnorm<span class="p">(</span>n <span class="o">=</span> n<span class="p">,</span> mean <span class="o">=</span> mu<span class="p">,</span> sigma <span class="o">=</span> correlation<span class="p">)</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="c1"># generate U</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> u <span class="o">=</span> pnorm<span class="p">(</span>r<span class="p">)</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> <span class="c1"># calculate the quantile for X</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> x1 <span class="o">=</span> qexp<span class="p">(</span>u<span class="p">[,</span> <span class="m">1</span><span class="p">],</span> rate <span class="o">=</span> rates<span class="p">[</span><span class="m">1</span><span class="p">])</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> x2 <span class="o">=</span> qexp<span class="p">(</span>u<span class="p">[,</span> <span class="m">2</span><span class="p">],</span> rate <span class="o">=</span> rates<span class="p">[</span><span class="m">2</span><span class="p">])</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> x <span class="o">=</span> <span class="kp">cbind</span><span class="p">(</span>x1<span class="p">,</span> x2<span class="p">)</span>
+<span class="lineno">16 </span><span class="o">&gt;</span> cor<span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">17 </span>          x1        x2
+<span class="lineno">18 </span>x1 <span class="m">1.0000000</span> <span class="m">0.5476137</span>
+<span class="lineno">19 </span>x2 <span class="m">0.5476137</span> <span class="m">1.0000000</span>
+<span class="lineno">20 </span><span class="o">&gt;</span> <span class="kp">apply</span><span class="p">(</span>x<span class="p">,</span> <span class="kp">mean</span><span class="p">,</span> MARGIN <span class="o">=</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno">21 </span>       x1        x2 
+<span class="lineno">22 </span><span class="m">0.9934398</span> <span class="m">0.4990758</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span> 
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">multivariate_normal</span> <span class="k">as</span> <span class="n">mvn</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">rho</span> <span class="o">=</span> <span class="mf">0.6</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="n">rho</span><span class="p">],[</span><span class="n">rho</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mvn</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">uvn</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">dist</span> <span class="o">=</span> <span class="n">mvn</span><span class="p">(</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mu</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">rates</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]</span>
+<span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># sample R from multivariate Gaussian</span>
+<span class="lineno">13 </span><span class="o">...</span> <span class="n">r</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># generate U</span>
+<span class="lineno">15 </span><span class="o">...</span> <span class="n">u</span> <span class="o">=</span> <span class="n">uvn</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># calculate the quantile for X</span>
+<span class="lineno">17 </span><span class="o">...</span> <span class="k">def</span> <span class="nf">qexp</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">rate</span><span class="p">):</span> <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">u</span><span class="p">)</span><span class="o">/</span><span class="n">rate</span>
+<span class="lineno">18 </span><span class="o">...</span> 
+<span class="lineno">19 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x1</span> <span class="o">=</span> <span class="n">qexp</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">rate</span> <span class="o">=</span> <span class="n">rates</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="lineno">20 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">qexp</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">rate</span> <span class="o">=</span> <span class="n">rates</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="lineno">21 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">))</span>
+<span class="lineno">22 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="lineno">23 </span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span>        <span class="p">,</span> <span class="mf">0.57359023</span><span class="p">],</span>
+<span class="lineno">24 </span>       <span class="p">[</span><span class="mf">0.57359023</span><span class="p">,</span> <span class="mf">1.</span>        <span class="p">]])</span>
+<span class="lineno">25 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="lineno">26 </span><span class="n">array</span><span class="p">([</span><span class="mf">0.99768825</span><span class="p">,</span> <span class="mf">0.50319692</span><span class="p">])</span></code></pre></figure><p>We plot 2000 samples generated from the bivariate exponential distribution constructed via copula in the figure below.</p>
+<figure class="text-center">
+<img src="figures/copula.png" alt="Samples from a bivariate exponential distribution constructed via Gaussian copula" style="display: block;margin: auto;" width="50%">
+        <figcaption class="centerfigcaption">Samples from a bivariate exponential distribution constructed via Gaussian copula</figcaption>
+</figure>
+<p>With the help of copula, we can even construct joint distribution with marginals from different distributions. For example, let&#8217;s make a joint distribution of a uniform distributed random variable and an exponential distributed random variable.</p>
 <language>R</language>
-<p>chapter4/linear_regression_ridge.R<br />
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="kn">library</span><span class="p">(</span>R6<span class="p">)</span>
-<span class="lineno"> 2 </span>LR_Ridge <span class="o">=</span> R6Class<span class="p">(</span>
-<span class="lineno"> 3 </span>  <span class="s">&quot;LR_Ridge&quot;</span><span class="p">,</span>
-<span class="lineno"> 4 </span>  public <span class="o">=</span> <span class="kt">list</span><span class="p">(</span>
-<span class="lineno"> 5 </span>    coef <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
-<span class="lineno"> 6 </span>    mu <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
-<span class="lineno"> 7 </span>    sd <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
-<span class="lineno"> 8 </span>    lambda <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span>
-<span class="lineno"> 9 </span>    initialize <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>lambda<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">10 </span>      self<span class="o">$</span>lambda <span class="o">=</span> lambda
-<span class="lineno">11 </span>    <span class="p">},</span>
-<span class="lineno">12 </span>    scale <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">13 </span>      self<span class="o">$</span>mu <span class="o">=</span> <span class="kp">apply</span><span class="p">(</span>x<span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="kp">mean</span><span class="p">)</span>
-<span class="lineno">14 </span>      self<span class="o">$</span>sd <span class="o">=</span> <span class="kp">apply</span><span class="p">(</span>x<span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="kr">function</span><span class="p">(</span>e<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">15 </span>        <span class="kp">sqrt</span><span class="p">((</span><span class="kp">length</span><span class="p">(</span>e<span class="p">)</span> <span class="o">-</span> <span class="m">1</span><span class="p">)</span> <span class="o">/</span> <span class="kp">length</span><span class="p">(</span>e<span class="p">))</span> <span class="o">*</span> sd<span class="p">(</span>e<span class="p">)</span>
-<span class="lineno">16 </span>      <span class="p">})</span>
-<span class="lineno">17 </span>    <span class="p">},</span>
-<span class="lineno">18 </span>    transform <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">19 </span>      <span class="kr">return</span><span class="p">(</span><span class="kp">t</span><span class="p">((</span><span class="kp">t</span><span class="p">(</span>x<span class="p">)</span> <span class="o">-</span> self<span class="o">$</span>mu<span class="p">)</span> <span class="o">/</span> self<span class="o">$</span>sd<span class="p">))</span>
-<span class="lineno">20 </span>    <span class="p">},</span>
-<span class="lineno">21 </span>    fit <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">22 </span>      self<span class="o">$</span><span class="kp">scale</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">23 </span>      x_transformed <span class="o">=</span> self<span class="o">$</span><span class="kp">transform</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">24 </span>      x_lambda <span class="o">=</span> <span class="kp">rbind</span><span class="p">(</span>x_transformed<span class="p">,</span> <span class="kp">diag</span><span class="p">(</span><span class="kp">rep</span><span class="p">(</span><span class="kp">sqrt</span><span class="p">(</span>self<span class="o">$</span>lambda<span class="p">),</span> <span class="kp">ncol</span><span class="p">(</span>x<span class="p">))))</span>
-<span class="lineno">25 </span>      y_lambda <span class="o">=</span> <span class="kt">c</span><span class="p">(</span>y<span class="p">,</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="kp">ncol</span><span class="p">(</span>x<span class="p">)))</span>
-<span class="lineno">26 </span>      self<span class="o">$</span>qr_solver<span class="p">(</span><span class="kp">cbind</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="kp">rep</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="kp">nrow</span><span class="p">(</span>
-<span class="lineno">27 </span>        x
-<span class="lineno">28 </span>      <span class="p">)),</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="kp">ncol</span><span class="p">(</span>
-<span class="lineno">29 </span>        x
-<span class="lineno">30 </span>      <span class="p">))),</span> x_lambda<span class="p">),</span> y_lambda<span class="p">)</span>
-<span class="lineno">31 </span>    <span class="p">},</span>
-<span class="lineno">32 </span>    qr_solver <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">,</span> y<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">33 </span>      self<span class="o">$</span>coef <span class="o">=</span> <span class="kp">qr.coef</span><span class="p">(</span><span class="kp">qr</span><span class="p">(</span>x<span class="p">),</span> y<span class="p">)</span>
-<span class="lineno">34 </span>    <span class="p">},</span>
-<span class="lineno">35 </span>    predict <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>new_x<span class="p">)</span> <span class="p">{</span>
-<span class="lineno">36 </span>      new_x_transformed <span class="o">=</span> self<span class="o">$</span><span class="kp">transform</span><span class="p">(</span>new_x<span class="p">)</span>
-<span class="lineno">37 </span>      <span class="kp">cbind</span><span class="p">(</span><span class="kp">rep</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="kp">nrow</span><span class="p">(</span>new_x<span class="p">)),</span> new_x_transformed<span class="p">)</span> <span class="o">%*%</span> self<span class="o">$</span>coef
-<span class="lineno">38 </span>    <span class="p">}</span>
-<span class="lineno">39 </span>  <span class="p">)</span>
-<span class="lineno">40 </span><span class="p">)</span></code></pre></figure></p>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>mvtnorm<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">10000</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> rho <span class="o">=</span> <span class="m">0.6</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> correlation <span class="o">=</span> <span class="kt">array</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> rho<span class="p">,</span> rho<span class="p">,</span> <span class="m">1</span><span class="p">),</span> <span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">))</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="c1"># sample R from multivariate Gaussian</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> r <span class="o">=</span> rmvnorm<span class="p">(</span>n <span class="o">=</span> n<span class="p">,</span> mean <span class="o">=</span> mu<span class="p">,</span> sigma <span class="o">=</span> correlation<span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="c1"># generate U</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> u <span class="o">=</span> pnorm<span class="p">(</span>r<span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> <span class="c1"># calculate the quantile for X</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> <span class="c1"># X1 ~ exp(1.0); X2 ~ unif(0, 2)</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> x1 <span class="o">=</span> qexp<span class="p">(</span>u<span class="p">[,</span> <span class="m">1</span><span class="p">],</span> rate <span class="o">=</span> <span class="m">1.0</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> x2 <span class="o">=</span> qunif<span class="p">(</span>u<span class="p">[,</span> <span class="m">2</span><span class="p">],</span> min <span class="o">=</span> <span class="m">0</span><span class="p">,</span> max <span class="o">=</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> cor<span class="p">(</span>x1<span class="p">,</span> x2<span class="p">)</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.5220363</span></code></pre></figure><figure class="text-center">
+<img src="figures/copula_2.png" alt="Samples from a joint distribution of a uniform marginal and an exponential marginal" style="display: block;margin: auto;" width="50%">
+        <figcaption class="centerfigcaption">Samples from a joint distribution of a uniform marginal and an exponential marginal</figcaption>
+</figure>
+<h2 id="fit">Fit a distribution</h2>
+<p>Statistics is used to solved real-world problems with data. In many cases we may have a collection of observations for a random variable and want to know the distribution which the observations follow. In fact, there are two questions involved in the process of fitting a distribution. First, which distribution to fit? And second, given the distribution how to estimate the parameters. These two questions are essentially the same questions that we have to answer in supervised learning. In supervised learning, we need to choose a model and estimate the parameters (if the model has parameters). We can also call these two questions as model selection and model fitting. Usually, model selection is done based on the model fitting.</p>
+<p>Two widely-used methods in distribution fitting &#8211; method of moments and maximum likelihood method. In this Section we will see the method of moments. The maximum likelihood method would be introduced in Chapter 6. The $k^{th}$ moment of a random variable is defined as $\mu_k=E(x^k)$. If there are $m$ parameters, usually we derive the first $m$ theoretical moments in terms of the parameters, and by equating these theoretical moments to the sample moments $\hat{\mu_k}=1/n\sum_1^n{x_i^k}$ we will get the estimate.</p>
+<p>Let&#8217;s take the univariate Gaussian distribution as an example. We want to estimate the mean $\mu$ and variance $\sigma^2$. The first and second theoretical moments is $\mu$ and $\mu^2+\sigma^2$. Thus, the estimate $\hat\mu$ and $\hat{\sigma}^2$ are $1/n\sum_1^n{x_i}$ and $1/n\sum_1^n{x_i^2}-(1/n\sum_1^n{x_i})^2=1/n\sum_1^n{(x_i-\hat\mu)^2}$. The code snippets below show the implementation.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">1000</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="m">2.5</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> var <span class="o">=</span> <span class="m">1.6</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> x <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu<span class="p">,</span> <span class="kp">sqrt</span><span class="p">(</span>var<span class="p">))</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> mu_est <span class="o">=</span> <span class="kp">mean</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> var_est <span class="o">=</span> <span class="kp">mean</span><span class="p">((</span>x<span class="o">-</span>mu_est<span class="p">)</span><span class="o">^</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>mu_est<span class="p">)</span>
+<span class="lineno"> 9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2.467334</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>var_est<span class="p">)</span>
+<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1.60647</span></code></pre></figure></div>
+<div class="coderight">
 <language>Python</language>
-<p>chapter4/linear_regression_ridge.py<br />
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="lineno"> 2 </span><span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="k">import</span> <span class="n">StandardScaler</span>
-<span class="lineno"> 3 </span>
-<span class="lineno"> 4 </span>
-<span class="lineno"> 5 </span><span class="k">class</span> <span class="nc">LR_Ridge</span><span class="p">:</span>
-<span class="lineno"> 6 </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
-<span class="lineno"> 7 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">=</span> <span class="n">l</span>
-<span class="lineno"> 8 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="lineno"> 9 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
-<span class="lineno">10 </span>
-<span class="lineno">11 </span>    <span class="k">def</span> <span class="nf">qr_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-<span class="lineno">12 </span>        <span class="n">q</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno">13 </span>        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="lineno">14 </span>        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span>
-<span class="lineno">15 </span>
-<span class="lineno">16 </span>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-<span class="lineno">17 </span>        <span class="n">x_transformed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno">18 </span>        <span class="n">x_lambda</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-<span class="lineno">19 </span>            <span class="p">(</span><span class="n">x_transformed</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">l</span><span class="o">**</span><span class="mf">0.5</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
-<span class="lineno">20 </span>        <span class="n">x_lambda</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
-<span class="lineno">21 </span>            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)))),</span> <span class="n">x_lambda</span><span class="p">))</span>
-<span class="lineno">22 </span>        <span class="n">y_lambda</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],))))</span>
-<span class="lineno">23 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qr_solver</span><span class="p">(</span><span class="n">x_lambda</span><span class="p">,</span> <span class="n">y_lambda</span><span class="p">)</span>
-<span class="lineno">24 </span>
-<span class="lineno">25 </span>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="lineno">26 </span>        <span class="n">new_x_transformed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno">27 </span>        <span class="n">new_x_transformed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
-<span class="lineno">28 </span>            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">)),</span> <span class="n">new_x_transformed</span><span class="p">)</span>
-<span class="lineno">29 </span>        <span class="p">)</span>
-<span class="lineno">30 </span>        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">new_x_transformed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coef</span><span class="p">)</span></code></pre></figure></p>
-<p>In R, we implement our own scaler; but in the python implementation, we use <code>StandardScaler</code> from <code>sklearn.preprocessing</code> module, which is very handy. Please pay attention to how we calculation the standard deviation<sup class="footnote" id="fnr15"><a href="#fn15">15</a></sup> in R &#8211; we are using the formula of population standard deviation rather than the formula of sample standard deviation. Actually using which formula to calculate the standard deviation doesn&#8217;t matter at all. I made the choice to use population standard deviation formula in order to generate consistent result of the <code>StandardScaler</code> since in <code>StandardScaler</code> uses the formula of population standard deviation.</p>
-<p>The selection of best $\lambda$ requires solving the <span class="caps">OLS</span> problem repeatedly with different values of $\lambda$, which implies the QR decomposition procedure would be called multiple times. Using <span class="caps">SVD</span> decomposition could be more efficient in terms of selection of best $\lambda$. But it wouldn&#8217;t be covered in the current version of this book.</p>
-<p>We are ready to run our own ridge regression on the Boston dataset.</p>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.6</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.6</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">var_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="n">mu_est</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">mu_est</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="mf">2.524453331300827</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">var_est</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="mf">1.5326479835704276</span></code></pre></figure></div>
+</div>
+<p>We could also fit another distribution to the data generated from a normal distribution. But which one is better? One answer is to compare the likelihood functions evaluated at the fitted parameters and choose the one that gives the larger likelihood value.</p>
+<p>Please note that different methods to fit a distribution may lead to different parameter estimates. For example, the estimate of population variance using maximum likelihood method is different from that using moments method. Actually, the estimator for population mean is biased using methods method but the estimator using maximum likelihood method is unbiased.</p>
+<h2 id="ci">Confidence interval</h2>
+
+<p>In the previous Section we have seen the parameter estimation of a distribution. However, the parameter estimates from either the method of moments or the maximum likelihood estimation are not the exact values of the unknown parameters. There are uncertainties associated with distribution fitting because the data to which the distribution is fit usually is just a random sample rather than a population. Suppose we could repeat the distribution fitting process $m$ times and each time we collect a random sample of size $n$ (i.e., a collection of $n$ observations for the random variable of interest), then we will get $n$ estimates of the distribution parameters. Which estimate is the best to use? In fact, all these $n$ estimates are observations of the estimator random variable. Estimator is a function of the random sample, and itself is a random variable. For example, eq1 is an estimator for the $\mu$ parameter in a Gaussian distribution.</p>
+<h3>Central limit theorem</h3>
+<p>Now we know when we fit a distribution, the parameter estimates are not the exact values of the unknown parameters. The question is how to quantify the uncertainties? To answer this question, we better know the distribution of the estimator. In the example of the Gaussian distribution, what distribution does the estimator $\hat\mu$ follow? It is straightforward to see that estimator is still following a Gaussian distribution since each $X_i$ is following a Gaussian distribution (sum of independent Gaussian random variables still follow a Gaussian distribution). But what if $X_i$ is from an arbitrary distribution? We may still derive an exact distribution of the sample mean $\hat{\mu}$ for an arbitrary distribution, but sometimes the derivation may not be easy. A simple idea is to use the central limit theorem (<span class="caps">CLT</span>), which states that the distribution of the mean of a random sample from a population with finite variance is approximately normally distributed when the sample size is large enough. More specifically, $\sqrt{n}(\bar{X}-\mu)/\sigma\xrightarrow{d} N(0,1)$ where $\mu$ and $\sigma$ are the population mean and standard deviation, respectively. Sometimes we do not have the actual value of the population standard deviation and the sample standard deviation $S$ can be used instead and thus $\sqrt{n}(\bar{X}-\mu)/S\xrightarrow{d} N(0,1)$.</p>
+<p>We know if $Z$ is a Gaussian random variable, $P(- Z_{(1+\alpha)/2} &lt; Z\le Z_{(1+\alpha)/2}) = \alpha$ where $Z_{u}$ denotes the quantile of $u$.<br />
+By <span class="caps">CLT</span>, $P(- Z_{(1+\alpha)/2} \le \sqrt{n}(\bar{X}-\mu)/S \le Z_{(1+\alpha)/2}) = \alpha$, which further leads to $P(\bar{X}- Z_{(1+\alpha)/2}S/\sqrt{n} \le \mu \le \bar{X}+ Z_{(1+\alpha)/2}S/\sqrt{n}) = \alpha$. The interval $\bar{X} \pm Z_{(1+\alpha)/2}S/\sqrt{n}$ is called an $\alpha$ confidence interval (CI) for the population mean $\mu$. For example, since $Z_{(1+0.95)/2}=1.96$ the 95% CI is constructed as $\bar{X} \pm 1.96S/\sqrt{n}$. Of course, if we know the exact value of $\sigma$, we could use $\bar{X} \pm 1.96\sigma/\sqrt{n}$ instead.</p>
+<p>We show an example for the confidence interval calculation of population mean in normal distribution.<br />
+<language>R</language><br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">1000</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="m">2.5</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> var <span class="o">=</span> <span class="m">1.6</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> x <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu<span class="p">,</span> <span class="kp">sqrt</span><span class="p">(</span>var<span class="p">))</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> mu_est <span class="o">=</span> <span class="kp">mean</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="c1"># we can also calculate S with sd(x) in R</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> S <span class="o">=</span> <span class="kp">sqrt</span><span class="p">(</span><span class="kp">sum</span><span class="p">((</span>x <span class="o">-</span> mu_est<span class="p">)</span> <span class="o">^</span> <span class="m">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>n <span class="o">-</span> <span class="m">1</span><span class="p">))</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> alpha <span class="o">=</span> <span class="m">0.95</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> Z_alpha <span class="o">=</span> qnorm<span class="p">((</span><span class="m">1</span> <span class="o">+</span> alpha<span class="p">)</span> <span class="o">/</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> CI <span class="o">=</span> <span class="kt">c</span><span class="p">(</span>mu_est <span class="o">-</span> Z_alpha <span class="o">*</span> S <span class="o">/</span> <span class="kp">sqrt</span><span class="p">(</span>n<span class="p">),</span> mu_est <span class="o">+</span> Z_alpha <span class="o">*</span> S <span class="o">/</span> <span class="kp">sqrt</span><span class="p">(</span>n<span class="p">))</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>CI<span class="p">)</span>
+<span class="lineno">13 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2.388738</span> <span class="m">2.545931</span></code></pre></figure></p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">scipy</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.6</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">norm</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">var</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="n">mu_est</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.95</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">Z_alpha</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">alpha</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">CI</span> <span class="o">=</span> <span class="p">[</span><span class="n">mu_est</span> <span class="o">-</span> <span class="n">Z_alpha</span><span class="o">*</span><span class="n">S</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">mu_est</span> <span class="o">+</span> <span class="n">Z_alpha</span><span class="o">*</span><span class="n">S</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">CI</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="p">[</span><span class="mf">2.4476842124240363</span><span class="p">,</span> <span class="mf">2.6012224501776178</span><span class="p">]</span></code></pre></figure><p>The interpretation of CI is tricky. A 95% CI does not mean the probability that the constructed CI contains the true population mean is $0.95$. Actually, a constructed CI again is a random variable because the CI is created based on each random sample collected. Following the classic explanation from textbooks, when we repeat the procedures to create CI multiple times, the probability that the true parameter falls into the CI is equal to $\alpha$. Let&#8217;s do an example to see that point.<br />
+<language>R</language><br />
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> B <span class="o">=</span> <span class="m">1000</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">1000</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="m">2.5</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> var <span class="o">=</span> <span class="m">1.6</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> alpha <span class="o">=</span> <span class="m">0.95</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> Z_alpha <span class="o">=</span> qnorm<span class="p">((</span><span class="m">1</span> <span class="o">+</span> alpha<span class="p">)</span> <span class="o">/</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> coverage <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> B<span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>B<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">10 </span><span class="o">+</span>   x <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu<span class="p">,</span> <span class="kp">sqrt</span><span class="p">(</span>var<span class="p">))</span>
+<span class="lineno">11 </span><span class="o">+</span>   mu_est <span class="o">=</span> <span class="kp">mean</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">12 </span><span class="o">+</span>   S <span class="o">=</span> <span class="kp">sqrt</span><span class="p">(</span><span class="kp">sum</span><span class="p">((</span>x <span class="o">-</span> mu_est<span class="p">)</span> <span class="o">^</span> <span class="m">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>n <span class="o">-</span> <span class="m">1</span><span class="p">))</span>
+<span class="lineno">13 </span><span class="o">+</span>   CI <span class="o">=</span> <span class="kt">c</span><span class="p">(</span>mu_est <span class="o">-</span> Z_alpha <span class="o">*</span> S <span class="o">/</span> <span class="kp">sqrt</span><span class="p">(</span>n<span class="p">),</span> mu_est <span class="o">+</span> Z_alpha <span class="o">*</span> S <span class="o">/</span> <span class="kp">sqrt</span><span class="p">(</span>n<span class="p">))</span>
+<span class="lineno">14 </span><span class="o">+</span>   coverage<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> <span class="p">(</span>mu <span class="o">&gt;=</span> CI<span class="p">[</span><span class="m">1</span><span class="p">])</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>mu <span class="o">&lt;=</span> CI<span class="p">[</span><span class="m">2</span><span class="p">])</span>
+<span class="lineno">15 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno">16 </span><span class="o">&gt;</span> <span class="c1"># the coverage probability should be close to alpha</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span><span class="kp">mean</span><span class="p">(</span>coverage<span class="p">))</span>
+<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.941</span></code></pre></figure></p>
+<h3>Bootstrap</h3>
+<p>So far we have seen how to create the CI for sample mean. What if we are interested in quantifying the uncertainty of other parameters, for example, the variance of a random variable? If we estimate these parameters with maximum likelihood method, we can still construct the CI in a similar approach with the large sample theory[]. However, we would not discuss it in this book.<br />
+Alternatively, we could use the bootstrap technique.</p>
+<p>Bootstrap is simple yet powerful. It is a simulation-based technique. If we want to estimate a quantity $\theta$, first we write the estimator for $\theta$ as a function of a random sample i.e., $\hat{\theta}=g(X_1,&#8230;,X_n)$. Next, we just draw a random sample and calculate $\hat{\theta}$ and repeat this process $B$ times to get a collection of $\hat{\theta}$ denoted as $\hat{\theta}^{(1)},&#8230;,\hat{\theta}^{(B)}$. From these simulated $\hat{\theta}$, we could simply use the percentile $\hat{\theta}_{(1-\alpha)/2}$ and $\hat{\theta}_{(1+\alpha)/2}$ to construct the $\alpha$ CI. There are also other variants of bootstrapping method with similar ideas.</p>
+<p>Let&#8217;s try to use bootstrap to construct a 95% CI for the population variance of a Gaussian distributed random variable.</p>
 <language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;linear_regression_ridge.R&#39;</span><span class="p">)</span>
-<span class="lineno"> 2 </span><span class="o">&gt;</span> 
-<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>MASS<span class="p">)</span> <span class="c1"># load Boston data from this package</span>
-<span class="lineno"> 4 </span><span class="o">&gt;</span> 
-<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="c1"># let&#39;s try lmabda = 0.5</span>
-<span class="lineno"> 6 </span><span class="o">&gt;</span> ridge <span class="o">=</span> LR_Ridge<span class="o">$</span>new<span class="p">(</span><span class="m">0.5</span><span class="p">)</span>
-<span class="lineno"> 7 </span><span class="o">&gt;</span> ridge<span class="o">$</span>fit<span class="p">(</span><span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">[,</span><span class="o">-</span><span class="kp">ncol</span><span class="p">(</span>Boston<span class="p">)]),</span>Boston<span class="o">$</span>medv<span class="p">)</span>
-<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>ridge<span class="o">$</span>coef<span class="p">)</span>
-<span class="lineno"> 9 </span>                   crim          zn       indus        chas         nox 
-<span class="lineno">10 </span><span class="m">22.53280632</span> <span class="m">-0.92396151</span>  <span class="m">1.07393055</span>  <span class="m">0.12895159</span>  <span class="m">0.68346136</span> <span class="m">-2.04275750</span> 
-<span class="lineno">11 </span>         rm         age         dis         rad         tax     ptratio 
-<span class="lineno">12 </span> <span class="m">2.67854971</span>  <span class="m">0.01627328</span> <span class="m">-3.09063352</span>  <span class="m">2.62636926</span> <span class="m">-2.04312573</span> <span class="m">-2.05646414</span> 
-<span class="lineno">13 </span>      black       lstat 
-<span class="lineno">14 </span> <span class="m">0.84905910</span> <span class="m">-3.73711409</span> 
-<span class="lineno">15 </span><span class="o">&gt;</span> <span class="c1"># let&#39;s make prediction on the same data</span>
-<span class="lineno">16 </span><span class="o">&gt;</span> pred<span class="o">=</span>ridge<span class="o">$</span>predict<span class="p">(</span><span class="kp">data.matrix</span><span class="p">(</span>Boston<span class="p">[,</span><span class="o">-</span><span class="kp">ncol</span><span class="p">(</span>Boston<span class="p">)]))</span>
-<span class="lineno">17 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>pred<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">])</span>
-<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">30.01652</span> <span class="m">25.02429</span> <span class="m">30.56839</span> <span class="m">28.61521</span> <span class="m">27.95385</span></code></pre></figure><language>Python</language>
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">load_boston</span>
-<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">linear_regression_ridge</span> <span class="k">import</span> <span class="n">LR_Ridge</span>
-<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span>
-<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">boston</span> <span class="o">=</span> <span class="n">load_boston</span><span class="p">()</span>
-<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">boston</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boston</span><span class="o">.</span><span class="n">target</span>
-<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># first, let&#39;s run our own linear regression</span>
-<span class="lineno"> 7 </span><span class="o">...</span>
-<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">ridge</span> <span class="o">=</span> <span class="n">LR_Ridge</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">ridge</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">ridge</span><span class="o">.</span><span class="n">coef</span><span class="p">)</span>
-<span class="lineno">11 </span><span class="p">[</span> <span class="mf">2.25328063e+01</span> <span class="o">-</span><span class="mf">9.23961511e-01</span>  <span class="mf">1.07393055e+00</span>  <span class="mf">1.28951591e-01</span>
-<span class="lineno">12 </span>  <span class="mf">6.83461360e-01</span> <span class="o">-</span><span class="mf">2.04275750e+00</span>  <span class="mf">2.67854971e+00</span>  <span class="mf">1.62732755e-02</span>
-<span class="lineno">13 </span> <span class="o">-</span><span class="mf">3.09063352e+00</span>  <span class="mf">2.62636926e+00</span> <span class="o">-</span><span class="mf">2.04312573e+00</span> <span class="o">-</span><span class="mf">2.05646414e+00</span>
-<span class="lineno">14 </span>  <span class="mf">8.49059103e-01</span> <span class="o">-</span><span class="mf">3.73711409e+00</span><span class="p">]</span>
-<span class="lineno">15 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">ridge</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="mi">5</span><span class="p">])</span>
-<span class="lineno">16 </span><span class="p">[</span><span class="mf">30.01652397</span> <span class="mf">25.02429359</span> <span class="mf">30.56839459</span> <span class="mf">28.61520864</span> <span class="mf">27.95385422</span><span class="p">]</span></code></pre></figure><p>It&#8217;s excited to see the outputs from R and Python are quite consistent.</p>
-<p>Linear regression is not as simple as it seems. To learn more about it, I recommend the book Econometric Analysis<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>.</p>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> B <span class="o">=</span> <span class="m">1000</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">1000</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="m">2.5</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> var <span class="o">=</span> <span class="m">1.6</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> alpha <span class="o">=</span> <span class="m">0.95</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> Z_alpha <span class="o">=</span> qnorm<span class="p">((</span><span class="m">1</span> <span class="o">+</span> alpha<span class="p">)</span> <span class="o">/</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> var_sample <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> B<span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>B<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">10 </span><span class="o">+</span>   x <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu<span class="p">,</span> <span class="kp">sqrt</span><span class="p">(</span>var<span class="p">))</span>
+<span class="lineno">11 </span><span class="o">+</span>   var_sample<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> <span class="kp">sum</span><span class="p">((</span>x<span class="o">-</span><span class="kp">mean</span><span class="p">(</span>x<span class="p">))</span><span class="o">^</span><span class="m">2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span>n<span class="m">-1</span><span class="p">)</span>
+<span class="lineno">12 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> quantile<span class="p">(</span>var_sample<span class="p">,</span> <span class="kt">c</span><span class="p">((</span><span class="m">1</span><span class="o">-</span>alpha<span class="p">)</span><span class="o">/</span><span class="m">2</span><span class="p">,</span> <span class="p">(</span><span class="m">1</span><span class="o">+</span>alpha<span class="p">)</span><span class="o">/</span><span class="m">2</span><span class="p">))</span>
+<span class="lineno">14 </span>    <span class="m">2.5</span><span class="o">%    97.5%</span> 
+<span class="lineno">15 </span><span class="m">1.466778</span> <span class="m">1.738675</span> </code></pre></figure><h2 id="ht">Hypothesis testing</h2>
+<p>We have talked about confidence interval, which is used to quantify the uncertainty in parameter estimation. The root cause of uncertainty in parameter estimation is that we do the inference based on random samples. Hypothesis testing is another technique related to confidence interval calculation.</p>
+<p>A hypothesis test is an assertion about populations based on random samples. The assertion could be for a single population or multiple populations. When we collect a random sample, we may try to use the random sample as evidence to judge the hypothesis. Usually a hypothesis testing consists of two hypotheses:</p>
+<ul>
+	<li>$H_0$: the null hypothesis;</li>
+	<li>$H_1$: the alternative hypothesis.</li>
+</ul>
+<p>When we perform a hypothesis testing, there are two possible outcomes, i.e., a) reject $H_0$ if the evidence is likely to support the alternative hypothesis, and b) do not reject $H_0$ because of insufficient evidence.</p>
+<p>The key point to understand hypothesis testing is the significant level which is usually denoted as $\alpha$. When the null hypothesis is true, the rejection of null hypothesis is called type I error. And the significance level is the probability of committing a type I error. When the alternative hypothesis is true, the acceptance of null hypothesis is called type II error. And the probability of committing a type II error is denoted as $\beta$. $1-\beta$ is called the power of a test.</p>
+<p>To conduct a hypothesis testing, there are a few steps to go. First we have to specify the null and alternative hypotheses, and the significance level. Next, we calculate the test statistic based on the data collected. Finally, we calculate the $p$-value. If the $p$-value is smaller than the significance level, we reject the null hypothesis; otherwise we accept it. Some books may describe a procedure to compare the test statistic with a critic region, which is essentially the same as the $p$-value approach. The real challenge to conduct a hypothesis testing is to calculate the $p$-value, whose calculation depends on which hypothesis test to use. Please note that the $p$-value itself is a random variable since it is calculated from the random sample. And when the null hypothesis is true, the distribution of $p$-value is uniform from $0$ to $1$.</p>
+<p>$p$-value is also a conditional probability. A major misinterpretation about $p$-value is that it is the conditional probability that given the observed data the null hypothesis is true. Actually, $p$-value is the probability of the observation given the null hypothesis is true.</p>
+<p>For many reasons, we will not go in-depth into the calculation of $p$-values in this book. But the basic idea is to figure out the statistical distribution of the test statistic. Let&#8217;s skip all the theories behind and go to the tools in R/Python.</p>
+<h3>One-sample $t$ test</h3>
+<p>Probably one-sample $t$ test is the most basic and useful hypothesis tests. It can determine if the sample mean is statistically different from a hypothesized population mean for continuous random variables. To use one-sample $t$ test some assumptions are usually required. For example, the observations should be independent. Another assumption is the normality, i.e., the population should be normal distributed or approximately normal distributed. However, the normality assumption is controversial but it is beyond the scope of this book.</p>
+<p>In one-sample $t$ test, the alternative hypothesis could be two-sided, or one-sided. A two-sided $H_1$ does not specify if the population mean is greater or smaller than the hypothesized population mean. In contrast, a one-sided $H_1$ specifies the direction.</p>
+<p>Now let&#8217;s see how to perform one-sample $t$ test in R/Python.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">50</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="m">2.5</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> sigma <span class="o">=</span> <span class="m">1.0</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="c1"># set the significance level</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> alpha <span class="o">=</span> <span class="m">0.05</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="c1"># sample 50 independent observations from a normal distribution</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> x <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu<span class="p">,</span> sigma<span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> mu_test <span class="o">=</span> <span class="m">2.5</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> 
+<span class="lineno">11 </span><span class="o">&gt;</span> <span class="c1"># first, let&#39;s do two-sided t test</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> <span class="c1"># H0: the population mean is equal to mu_test</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> <span class="c1"># H1: the population mean is not equal to mu_test</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> t1 <span class="o">=</span> t.test<span class="p">(</span>x<span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;two.sided&quot;</span><span class="p">,</span> mu <span class="o">=</span> mu_test<span class="p">)</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>t1<span class="p">)</span>
+<span class="lineno">16 </span>
+<span class="lineno">17 </span>	One Sample <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">18 </span>
+<span class="lineno">19 </span>data<span class="o">:</span>  x
+<span class="lineno">20 </span>t <span class="o">=</span> <span class="m">-0.21906</span><span class="p">,</span> df <span class="o">=</span> <span class="m">49</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.8275</span>
+<span class="lineno">21 </span>alternative hypothesis<span class="o">:</span> true mean is not equal to <span class="m">2.5</span>
+<span class="lineno">22 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">23 </span> <span class="m">2.137082</span> <span class="m">2.791574</span>
+<span class="lineno">24 </span>sample estimates<span class="o">:</span>
+<span class="lineno">25 </span>mean of x 
+<span class="lineno">26 </span> <span class="m">2.464328</span> 
+<span class="lineno">27 </span>
+<span class="lineno">28 </span><span class="o">&gt;</span> <span class="c1"># based on the p-value (&gt; alpha), we accept the null hypothesis stated above</span>
+<span class="lineno">29 </span><span class="o">&gt;</span> t1<span class="o">$</span>value
+<span class="lineno">30 </span><span class="kc">NULL</span>
+<span class="lineno">31 </span><span class="o">&gt;</span> 
+<span class="lineno">32 </span><span class="o">&gt;</span> <span class="c1"># next, let&#39;s do a one-sided t test</span>
+<span class="lineno">33 </span><span class="o">&gt;</span> <span class="c1"># H0: the population mean is equal to mu_test</span>
+<span class="lineno">34 </span><span class="o">&gt;</span> <span class="c1"># H1: the population mean is greater than mu_test</span>
+<span class="lineno">35 </span><span class="o">&gt;</span> t2 <span class="o">=</span> t.test<span class="p">(</span>x<span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;greater&quot;</span><span class="p">,</span> mu <span class="o">=</span> mu_test<span class="p">)</span>
+<span class="lineno">36 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>t2<span class="p">)</span>
+<span class="lineno">37 </span>
+<span class="lineno">38 </span>	One Sample <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">39 </span>
+<span class="lineno">40 </span>data<span class="o">:</span>  x
+<span class="lineno">41 </span>t <span class="o">=</span> <span class="m">-0.21906</span><span class="p">,</span> df <span class="o">=</span> <span class="m">49</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.5862</span>
+<span class="lineno">42 </span>alternative hypothesis<span class="o">:</span> true mean is greater than <span class="m">2.5</span>
+<span class="lineno">43 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">44 </span> <span class="m">2.191313</span>      <span class="kc">Inf</span>
+<span class="lineno">45 </span>sample estimates<span class="o">:</span>
+<span class="lineno">46 </span>mean of x 
+<span class="lineno">47 </span> <span class="m">2.464328</span> 
+<span class="lineno">48 </span>
+<span class="lineno">49 </span><span class="o">&gt;</span> <span class="c1"># based on the p-value (&gt; alpha), we accept the null hypothesis stated above</span>
+<span class="lineno">50 </span><span class="o">&gt;</span> t2<span class="o">$</span>p.value
+<span class="lineno">51 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.5862418</span>
+<span class="lineno">52 </span><span class="o">&gt;</span> 
+<span class="lineno">53 </span><span class="o">&gt;</span> <span class="c1"># let&#39;s change mu_test and perform a one-sided test again</span>
+<span class="lineno">54 </span><span class="o">&gt;</span> mu_tes_new <span class="o">=</span> <span class="m">2.0</span>
+<span class="lineno">55 </span><span class="o">&gt;</span> t3 <span class="o">=</span> t.test<span class="p">(</span>x<span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;greater&quot;</span><span class="p">,</span> mu <span class="o">=</span> mu_tes_new<span class="p">)</span>
+<span class="lineno">56 </span><span class="o">&gt;</span> <span class="kp">print</span><span class="p">(</span>t3<span class="p">)</span>
+<span class="lineno">57 </span>
+<span class="lineno">58 </span>	One Sample <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">59 </span>
+<span class="lineno">60 </span>data<span class="o">:</span>  x
+<span class="lineno">61 </span>t <span class="o">=</span> <span class="m">2.8514</span><span class="p">,</span> df <span class="o">=</span> <span class="m">49</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.003177</span>
+<span class="lineno">62 </span>alternative hypothesis<span class="o">:</span> true mean is greater than <span class="m">2</span>
+<span class="lineno">63 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">64 </span> <span class="m">2.191313</span>      <span class="kc">Inf</span>
+<span class="lineno">65 </span>sample estimates<span class="o">:</span>
+<span class="lineno">66 </span>mean of x 
+<span class="lineno">67 </span> <span class="m">2.464328</span> 
+<span class="lineno">68 </span>
+<span class="lineno">69 </span><span class="o">&gt;</span> <span class="c1"># based on the p-value (&lt; alpha), we reject the null hypothesis stated above, i.e., we conclude the population mean is greater than 2.</span>
+<span class="lineno">70 </span><span class="o">&gt;</span> t3<span class="o">$</span>p.value
+<span class="lineno">71 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0.003177329</span></code></pre></figure><language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">ttest_1samp</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.0</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># generate 50 independent samples from a normal distribution</span>
+<span class="lineno"> 7 </span><span class="o">...</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">mu_test</span> <span class="o">=</span> <span class="mf">2.5</span>
+<span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># H0: population mean equals mu_test</span>
+<span class="lineno">11 </span><span class="o">...</span> <span class="c1"># H1: population mean does not equal to mu_test</span>
+<span class="lineno">12 </span><span class="o">...</span> <span class="c1"># perform a two-sided t test</span>
+<span class="lineno">13 </span><span class="o">...</span> <span class="n">t1</span> <span class="o">=</span> <span class="n">ttest_1samp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu_test</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="c1"># based on the p-value (&gt; alpha), we accept the null hypothesis stated aboveprint(t1.pvalue)</span>
+<span class="lineno">15 </span><span class="o">...</span> <span class="nb">print</span><span class="p">(</span><span class="n">t1</span><span class="o">.</span><span class="n">pvalue</span><span class="p">)</span>
+<span class="lineno">16 </span><span class="mf">0.09403837414922567</span></code></pre></figure><p>In the R code snippet we show both one-sided and two-sided one-sample $t$ tests. However, we only show a two-sided test in the Python program. It is feasible to perform a one-sided test in an indirect manner with the same function, but I don&#8217;t think it&#8217;s worth discussing here. For hypothesis testing, it seems R is a better choice than Python.</p>
+<h3>Two-sample $t$ test</h3>
+<p>Two-sample $t$ test is a bit of more complex than one-sample $t$ test. There are two types of $t$ tests commonly used in practice, i.e., paired $t$ test and unpaired $t$ test. In paired $t$ test, the samples are paired together. For example, we may want to know if there is a significant difference of the human blood pressures in morning and in evening. Hypothesis testing may help. To do so, we may conduct an experiment and collect the blood pressures in morning and in evening from a number of participants, respectively. Let $X_i$ denote the morning blood pressure and $Y_i$ denote the even blood pressure of participant $i$. We should pair $X_i$ and $Y_i$ since the pair is measured from the same person. Then the paired $t$ test can be used to compare the population means. The null hypothesis usually states that the difference of two population means is equal to a hypothesized value. Just like the one-sample $t$ test, we could do one-sided or two-sided paired $t$ test.</p>
+<p>Now let&#8217;s see how to do paired $t$ test in R/Python.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">library</span><span class="p">(</span>mvtnorm<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">50</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> <span class="c1"># we sample from a bivariate normal distribution</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> mu <span class="o">=</span> <span class="kt">c</span><span class="p">(</span><span class="m">2.0</span><span class="p">,</span> <span class="m">1.0</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> sigma <span class="o">=</span> <span class="kp">diag</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">1.0</span><span class="p">,</span> <span class="m">1.5</span><span class="p">))</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> <span class="c1"># significance level</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> alpha <span class="o">=</span> <span class="m">0.95</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="c1"># sample 50 independent observations from the normal distribution</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> mu_diff <span class="o">=</span> <span class="m">1.2</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> x <span class="o">=</span> rmvnorm<span class="p">(</span>n<span class="p">,</span> mu<span class="p">,</span> sigma<span class="p">)</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> 
+<span class="lineno">13 </span><span class="o">&gt;</span> <span class="c1"># first, let&#39;s do a two-sided t test</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> <span class="c1"># H0: the population means&#39; difference is equal to mu_diff</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> <span class="c1"># H1: the population means&#39; difference is not equal to mu_diff</span>
+<span class="lineno">16 </span><span class="o">&gt;</span> t.test<span class="p">(</span>x<span class="o">=</span>x<span class="p">[,</span><span class="m">1</span><span class="p">],</span> y<span class="o">=</span>x<span class="p">[,</span><span class="m">2</span><span class="p">],</span> mu<span class="o">=</span>mu_diff<span class="p">,</span> paired <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;two.sided&quot;</span><span class="p">)</span>
+<span class="lineno">17 </span>
+<span class="lineno">18 </span>	Paired <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">19 </span>
+<span class="lineno">20 </span>data<span class="o">:</span>  x<span class="p">[,</span> <span class="m">1</span><span class="p">]</span> and x<span class="p">[,</span> <span class="m">2</span><span class="p">]</span>
+<span class="lineno">21 </span>t <span class="o">=</span> <span class="m">-0.86424</span><span class="p">,</span> df <span class="o">=</span> <span class="m">49</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.3917</span>
+<span class="lineno">22 </span>alternative hypothesis<span class="o">:</span> true difference <span class="kr">in</span> means is not equal to <span class="m">1.2</span>
+<span class="lineno">23 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">24 </span> <span class="m">0.5417625</span> <span class="m">1.4623353</span>
+<span class="lineno">25 </span>sample estimates<span class="o">:</span>
+<span class="lineno">26 </span>mean of the differences 
+<span class="lineno">27 </span>               <span class="m">1.002049</span> 
+<span class="lineno">28 </span>
+<span class="lineno">29 </span><span class="o">&gt;</span> <span class="c1"># we can&#39;t reject H0 based on the fact p-value&gt;alpha</span>
+<span class="lineno">30 </span><span class="o">&gt;</span> 
+<span class="lineno">31 </span><span class="o">&gt;</span> <span class="c1"># next, let&#39;s do an one-sided t test</span>
+<span class="lineno">32 </span><span class="o">&gt;</span> <span class="c1"># H0: the population means&#39; difference is equal to mu_diff</span>
+<span class="lineno">33 </span><span class="o">&gt;</span> <span class="c1"># H1: the population means&#39; difference is less than mu_diff</span>
+<span class="lineno">34 </span><span class="o">&gt;</span> t.test<span class="p">(</span>x<span class="o">=</span>x<span class="p">[,</span><span class="m">1</span><span class="p">],</span> y<span class="o">=</span>x<span class="p">[,</span><span class="m">2</span><span class="p">],</span> mu<span class="o">=</span>mu_diff<span class="p">,</span> paired <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;less&quot;</span><span class="p">)</span>
+<span class="lineno">35 </span>
+<span class="lineno">36 </span>	Paired <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">37 </span>
+<span class="lineno">38 </span>data<span class="o">:</span>  x<span class="p">[,</span> <span class="m">1</span><span class="p">]</span> and x<span class="p">[,</span> <span class="m">2</span><span class="p">]</span>
+<span class="lineno">39 </span>t <span class="o">=</span> <span class="m">-0.86424</span><span class="p">,</span> df <span class="o">=</span> <span class="m">49</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.1958</span>
+<span class="lineno">40 </span>alternative hypothesis<span class="o">:</span> true difference <span class="kr">in</span> means is less than <span class="m">1.2</span>
+<span class="lineno">41 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">42 </span>     <span class="o">-</span><span class="kc">Inf</span> <span class="m">1.386057</span>
+<span class="lineno">43 </span>sample estimates<span class="o">:</span>
+<span class="lineno">44 </span>mean of the differences 
+<span class="lineno">45 </span>               <span class="m">1.002049</span> 
+<span class="lineno">46 </span>
+<span class="lineno">47 </span><span class="o">&gt;</span> <span class="c1"># we can&#39;t reject H0 based on the fact p-value&gt;alpha</span></code></pre></figure><p>Paired $t$ test can also be done in Python, but we would not show the examples.</p>
+<p>Unpaired $t$ test is also about two population means&#8217; difference, but the samples are not paired. For example, we may want to study if the average blood pressure of men is higher than that of women. In the unpaired $t$ test, we also have to specify if we assume the two populations have equal variance or not.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> n <span class="o">=</span> <span class="m">50</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> alpha <span class="o">=</span> <span class="m">0.05</span>
+<span class="lineno"> 4 </span><span class="o">&gt;</span> mu1 <span class="o">=</span> <span class="m">2.0</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> mu2 <span class="o">=</span> <span class="m">1.0</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> sigma1 <span class="o">=</span> <span class="m">1.0</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> sigma2 <span class="o">=</span> <span class="m">1.5</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="c1"># generate two samples independently</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> x1 <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu1<span class="p">,</span> sigma1<span class="p">)</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> x2 <span class="o">=</span> rnorm<span class="p">(</span>n<span class="p">,</span> mu2<span class="p">,</span> sigma2<span class="p">)</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> <span class="c1"># first, let&#39;s do a two-sided t test</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> <span class="c1"># assume equal variance for the two populations</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> mu_diff <span class="o">=</span> <span class="m">0.5</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> <span class="c1"># H0: the population means&#39; difference is equal to mu_diff</span>
+<span class="lineno">15 </span><span class="o">&gt;</span> <span class="c1"># H1: the population means&#39; difference is not equal to mu_diff</span>
+<span class="lineno">16 </span><span class="o">&gt;</span> t.test<span class="p">(</span>x1<span class="p">,</span> x2<span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;two.sided&quot;</span><span class="p">,</span> mu <span class="o">=</span> mu_diff<span class="p">,</span> paired <span class="o">=</span> <span class="kc">FALSE</span><span class="p">,</span> var.equal <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+<span class="lineno">17 </span>
+<span class="lineno">18 </span>	Two Sample <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">19 </span>
+<span class="lineno">20 </span>data<span class="o">:</span>  x1 and x2
+<span class="lineno">21 </span>t <span class="o">=</span> <span class="m">1.2286</span><span class="p">,</span> df <span class="o">=</span> <span class="m">98</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.2222</span>
+<span class="lineno">22 </span>alternative hypothesis<span class="o">:</span> true difference <span class="kr">in</span> means is not equal to <span class="m">0.5</span>
+<span class="lineno">23 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">24 </span> <span class="m">0.3072577</span> <span class="m">1.3192945</span>
+<span class="lineno">25 </span>sample estimates<span class="o">:</span>
+<span class="lineno">26 </span>mean of x mean of y 
+<span class="lineno">27 </span> <span class="m">1.964328</span>  <span class="m">1.151052</span> 
+<span class="lineno">28 </span>
+<span class="lineno">29 </span><span class="o">&gt;</span> <span class="c1"># we accept the null hypothesis since p-value&gt;alpha </span>
+<span class="lineno">30 </span><span class="o">&gt;</span> 
+<span class="lineno">31 </span><span class="o">&gt;</span> <span class="c1"># now, we don&#39;t assume the equal variance</span>
+<span class="lineno">32 </span><span class="o">&gt;</span> t.test<span class="p">(</span>x1<span class="p">,</span> x2<span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;two.sided&quot;</span><span class="p">,</span> mu <span class="o">=</span> mu_diff<span class="p">,</span> paired <span class="o">=</span> <span class="kc">FALSE</span><span class="p">,</span> var.equal <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+<span class="lineno">33 </span>
+<span class="lineno">34 </span>	Welch Two Sample <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">35 </span>
+<span class="lineno">36 </span>data<span class="o">:</span>  x1 and x2
+<span class="lineno">37 </span>t <span class="o">=</span> <span class="m">1.2286</span><span class="p">,</span> df <span class="o">=</span> <span class="m">94.78</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.2223</span>
+<span class="lineno">38 </span>alternative hypothesis<span class="o">:</span> true difference <span class="kr">in</span> means is not equal to <span class="m">0.5</span>
+<span class="lineno">39 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">40 </span> <span class="m">0.3070428</span> <span class="m">1.3195094</span>
+<span class="lineno">41 </span>sample estimates<span class="o">:</span>
+<span class="lineno">42 </span>mean of x mean of y 
+<span class="lineno">43 </span> <span class="m">1.964328</span>  <span class="m">1.151052</span> 
+<span class="lineno">44 </span>
+<span class="lineno">45 </span><span class="o">&gt;</span> <span class="c1"># there is no big change for p-value, we also accept the null hypothesis since p-value&gt;alpha </span>
+<span class="lineno">46 </span><span class="o">&gt;</span> 
+<span class="lineno">47 </span><span class="o">&gt;</span> <span class="c1"># let&#39;s try a one sided test without equal variance</span>
+<span class="lineno">48 </span><span class="o">&gt;</span> <span class="c1"># H0: the population means&#39; difference is equal to mu_diff</span>
+<span class="lineno">49 </span><span class="o">&gt;</span> <span class="c1"># H1: the population means&#39; difference larger than mu_diff</span>
+<span class="lineno">50 </span><span class="o">&gt;</span> t.test<span class="p">(</span>x1<span class="p">,</span> x2<span class="p">,</span> alternative <span class="o">=</span> <span class="s">&quot;less&quot;</span><span class="p">,</span> mu <span class="o">=</span> mu_diff<span class="p">,</span> paired <span class="o">=</span> <span class="kc">FALSE</span><span class="p">,</span> var.equal <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+<span class="lineno">51 </span>
+<span class="lineno">52 </span>	Welch Two Sample <span class="kp">t</span><span class="o">-</span>test
+<span class="lineno">53 </span>
+<span class="lineno">54 </span>data<span class="o">:</span>  x1 and x2
+<span class="lineno">55 </span>t <span class="o">=</span> <span class="m">1.2286</span><span class="p">,</span> df <span class="o">=</span> <span class="m">94.78</span><span class="p">,</span> p<span class="o">-</span>value <span class="o">=</span> <span class="m">0.8889</span>
+<span class="lineno">56 </span>alternative hypothesis<span class="o">:</span> true difference <span class="kr">in</span> means is less than <span class="m">0.5</span>
+<span class="lineno">57 </span><span class="m">95</span> percent confidence interval<span class="o">:</span>
+<span class="lineno">58 </span>     <span class="o">-</span><span class="kc">Inf</span> <span class="m">1.236837</span>
+<span class="lineno">59 </span>sample estimates<span class="o">:</span>
+<span class="lineno">60 </span>mean of x mean of y 
+<span class="lineno">61 </span> <span class="m">1.964328</span>  <span class="m">1.151052</span> 
+<span class="lineno">62 </span>
+<span class="lineno">63 </span><span class="o">&gt;</span> <span class="c1"># we accept the null hypothesis since p-value&gt;alpha</span></code></pre></figure><p>There are many other important hypothesis tests, such as the chi-squared test<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>, likelihood-ratio test<sup class="footnote" id="fnr6"><a href="#fn6">6</a></sup>.</p>
 <hr />
-<p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> Jerome Friedman, Trevor Hastie, and Robert Tibshirani. The elements of statistical learning. Springer series in statistics New York, NY, <span class="caps">USA</span>:, second edition, 2009.</p>
-<p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> William H Greene. Econometric analysis. Pearson Education India, 2003.</p>
-<p class="footnote" id="fn3"><a href="#fnr3"><sup>3</sup></a> https://en.wikipedia.org/wiki/Ordinary_least_squares</p>
-<p class="footnote" id="fn4"><a href="#fnr4"><sup>4</sup></a> https://en.wikipedia.org/wiki/Maximum_likelihood_estimation</p>
-<p class="footnote" id="fn5"><a href="#fnr5"><sup>5</sup></a> Stephen Boyd and Lieven Vandenberghe. Convex optimization. Cambridge university press, 2004.</p>
-<p class="footnote" id="fn6"><a href="#fnr6"><sup>6</sup></a> https://github.com/numpy/numpy/issues/10471</p>
-<p class="footnote" id="fn7"><a href="#fnr7"><sup>7</sup></a> https://en.wikipedia.org/wiki/QR_decomposition</p>
-<p class="footnote" id="fn8"><a href="#fnr8"><sup>8</sup></a> https://www.cs.toronto.edu/~delve/data/boston/bostonDetail.html</p>
-<p class="footnote" id="fn9"><a href="#fnr9"><sup>9</sup></a> https://www.statsdirect.com/help/basics/p_values.htm</p>
-<p class="footnote" id="fn10"><a href="#fnr10"><sup>10</sup></a> https://en.wikipedia.org/wiki/Test_statistic</p>
-<p class="footnote" id="fn11"><a href="#fnr11"><sup>11</sup></a> https://en.wikipedia.org/wiki/Student\%27s_t-distribution</p>
-<p class="footnote" id="fn12"><a href="#fnr12"><sup>12</sup></a> https://en.wikipedia.org/wiki/Gauss-Markov_theorem</p>
-<p class="footnote" id="fn13"><a href="#fnr13"><sup>13</sup></a> https://en.wikipedia.org/wiki/All_models_are_wrong</p>
-<p class="footnote" id="fn14"><a href="#fnr14"><sup>14</sup></a> https://en.wikipedia.org/wiki/Normalization_(statistics)</p>
+<p style="vertical-align:middle;" class="footnote" id="fn1"><a href="#fnr1"><sup>1</sup></a> https://en.wikipedia.org/wiki/Exponential_family</p>
+<p class="footnote" id="fn2"><a href="#fnr2"><sup>2</sup></a> https://en.wikipedia.org/wiki/Rejection_sampling</p>
+<p class="footnote" id="fn3"><a href="#fnr3"><sup>3</sup></a> http://www.gaussianprocess.org/gpml/chapters/RW2.pdf</p>
+<p class="footnote" id="fn4"><a href="#fnr4"><sup>4</sup></a> https://en.wikipedia.org/wiki/Copula_(probability_theory)</p>
+<p class="footnote" id="fn5"><a href="#fnr5"><sup>5</sup></a> https://en.wikipedia.org/wiki/Chi-squared_test</p>
+<p class="footnote" id="fn6"><a href="#fnr6"><sup>6</sup></a> https://en.wikipedia.org/wiki/Likelihood-ratio_test</p>
     </div> <!-- /container-fluid -->
     <!-- Footer -->
 <div id="footer">
