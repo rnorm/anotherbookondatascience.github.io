@@ -177,7 +177,7 @@ $$</p>
 <p>Please note in the example above, we do not calculate the quantiles. For multivariable distributions, the quantiles are not necessary to be fixed points.</p>
 <h2 id="sampling">Inversion sampling &amp; rejection sampling</h2>
 <h3>Inversion sampling</h3>
-<p>Sampling from the Gaussian or other famous distributions could be as simple as just calling a function. What if we want to draw samples from any distribution with its <span class="caps">CDF</span>? Inversion sampling is a generic solution. There are two steps to draw a sample with inversion sampling approach.</p>
+<p>Sampling from the Gaussian or other famous distributions could be as simple as just calling a function. What if we want to draw samples from any distribution with its <span class="caps">CDF</span>? Inversion sampling is a generic solution. The key idea of inversion sampling is that $F_{X}(x)$ is always following a uniform distribution between $0$ and $1$. There are two steps to draw a sample with inversion sampling approach.</p>
 <ul>
 	<li>draw independent and identical (i.i.d.) distribution random variables $u_1,&#8230;,u_n$ which are uniformly distributed on from 0 to 1;</li>
 	<li>calculate the quantiles $q_1,&#8230;,q_n$ for $u_1,&#8230;,u_n$ based on the <span class="caps">CDF</span>, and return $q_1,&#8230;,q_n$  as the desired samples to draw.</li>
@@ -211,8 +211,9 @@ $$</p>
 </div>
 <p>In the above R implementation, we used the builtin quantile function in step 2; however, for many distributions there are no builtin quantile functions available and thus we need to specify the quantile function by ourselves (illustrated in the Python implementation).</p>
 <h3>Rejection sampling</h3>
-<p>Rejection sampling is also a basic algorithm to draw samples for a random variable $X$ given its <span class="caps">PDF</span> $f_X$. The basic idea of rejection sampling is to draw samples for a random variable $Y$ with <span class="caps">PDF</span> $f_Y$ and accept the samples with probability $f_X(x)/(Mf_Y(x))$. If the sample generated is rejected, the sampling procedure is repeated until an acceptance. More theoretical details of rejection sampling can be found from the wikipedia<sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>.</p>
-<p>Actually, we have used rejection sampling in Chapter 2 in the example to estimate $\pi$. To recap, in order to draw samples inside a circle with radius $r$, we draw samples from a its circumscribed square with side length equal to $2r$ and only accept the samples fallen inside the circle. Another typical use case of rejection sampling algorithm is to sample from truncated distributions. In the example below, we sample from a distribution whose <span class="caps">PDF</span> is $f_X(x;\lambda,b) = \lambda e^{-\lambda x}/( 1-e^{-\lambda b})$. You may notice this <span class="caps">PDF</span> is the <span class="caps">PDF</span> of an exponential distributed random variable $Y$ with rate $\lambda$ conditional on $Y\ge b$.</p>
+<p>Rejection sampling is also a basic algorithm to draw samples for a random variable $X$ given its <span class="caps">PDF</span> $f_X$. The basic idea of rejection sampling is to draw samples for a random variable $Y$ with <span class="caps">PDF</span> $f_Y$ and accept the samples with probability $f_X(x)/(Mf_Y(x))$. $M$ is selected such that $f_X(x)/(Mf_Y(x))\le1$. If the sample generated is rejected, the sampling procedure is repeated until an acceptance. More theoretical details of rejection sampling can be found from the wikipedia <sup class="footnote" id="fnr2"><a href="#fn2">2</a></sup>. The distribution $f_Y$ is called proposal distribution.</p>
+<p>Let&#8217;s try to draw samples from an exponential distribution truncated between $0$ and $b$. The <span class="caps">PDF</span> of this random variable is specified by $f_X(x;\lambda, b) = \lambda e^{-\lambda x}/( 1-e^{-\lambda b})$.</p>
+<p>A naive approach is to sample from the untruncated exponential distribution and only accept the samples smaller than $b$, which is implemented as follows.</p>
 <div class="codewrapper">
 <div class="codeleft">
 <language>R</language>
@@ -243,7 +244,44 @@ $$</p>
 <span class="lineno">10 </span>    <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="lineno">11 </span>    <span class="n">i</span><span class="o">+=</span><span class="mi">1</span></code></pre></figure></div>
 </div>
-<p>After running the code snippets above, we have the samples stored in $x$ from the truncated exponential distribution. A major drawback of naive rejection sampling algorithm is its efficiency because some samples are rejected.</p>
+<p>After running the code snippets above, we have the samples stored in $x$ from the truncated exponential distribution.</p>
+<p>Now let&#8217;s use the rejection sampling technique for this task. Since we want to sample the random variable between $0$ and $b$, one natural choice of the proposal distribution $f_Y$ is a uniform distribution between $0$ and $b$ and we choose $M=b\lambda/(1-e^{-\lambda b})$. As a result, the acceptance probability $f_X(x)/(Mf_Y(x))$ becomes $e^{-\lambda x}$.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span>n<span class="o">=</span><span class="m">1000</span>
+<span class="lineno"> 2 </span><span class="kp">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span>lambda <span class="o">=</span> <span class="m">1.0</span>
+<span class="lineno"> 4 </span>b <span class="o">=</span> <span class="m">2.0</span>
+<span class="lineno"> 5 </span>x <span class="o">=</span> <span class="kp">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> n<span class="p">)</span>
+<span class="lineno"> 6 </span>i <span class="o">=</span> <span class="m">0</span>
+<span class="lineno"> 7 </span><span class="kr">while</span> <span class="p">(</span>i<span class="o">&lt;</span>n<span class="p">){</span>
+<span class="lineno"> 8 </span>  <span class="c1"># sample from the proposal distribution</span>
+<span class="lineno"> 9 </span>  y <span class="o">=</span> runif<span class="p">(</span><span class="m">1</span><span class="p">,</span> min <span class="o">=</span> <span class="m">0</span><span class="p">,</span> max <span class="o">=</span> b<span class="p">)</span>
+<span class="lineno">10 </span>  <span class="c1"># calculate the acceptance probability</span>
+<span class="lineno">11 </span>  p <span class="o">=</span> <span class="kp">exp</span><span class="p">(</span><span class="o">-</span>lambda<span class="o">*</span>y<span class="p">)</span>
+<span class="lineno">12 </span>  <span class="kr">if</span> <span class="p">(</span>runif<span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="o">&lt;=</span>p<span class="p">)</span> <span class="p">{</span>
+<span class="lineno">13 </span>    i<span class="o">=</span>i<span class="m">+1</span>
+<span class="lineno">14 </span>    x<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> y
+<span class="lineno">15 </span>  <span class="p">}</span>
+<span class="lineno">16 </span><span class="p">}</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="lineno"> 2 </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="n">lamb</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span>
+<span class="lineno"> 4 </span><span class="n">n</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="lineno"> 5 </span><span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="lineno"> 6 </span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="lineno"> 7 </span><span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+<span class="lineno"> 8 </span>    <span class="c1"># sample from the proposal distribution</span>
+<span class="lineno"> 9 </span>    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
+<span class="lineno">10 </span>    <span class="c1"># calculate the acceptance probability</span>
+<span class="lineno">11 </span>    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lamb</span><span class="o">*</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">12 </span>    <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">():</span>
+<span class="lineno">13 </span>        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">14 </span>        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span></code></pre></figure></div>
+</div>
 <p>We have seen the basic examples on how to draw samples with inversion samples and truncated samples. Now let&#8217;s work on a more challenging problem.</p>
 <appname>Application &#8211; Draw samples from a sphere</appname>
 <blockquote class="appquote">
