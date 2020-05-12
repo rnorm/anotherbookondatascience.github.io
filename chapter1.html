@@ -56,6 +56,7 @@
 	<li><a href="#functions">Functions</a></li>
 	<li><a href="#control">Control flows</a></li>
 	<li><a href="#builtindata">Some built-in data structures</a></li>
+	<li><a href="#revisit">Revisit of variables</a></li>
 	<li><a href="#oop">Object-oriented programming (<span class="caps">OOP</span>) in R/Python</a></li>
 	<li><a href="#miscellaneous">Miscellaneous</a></li>
 </ul>
@@ -617,49 +618,6 @@ The default values of <code>start</code> and <code>step</code> are 0 and 1, resp
 <span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
 <span class="lineno">4 </span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span></code></pre></figure></div>
 </div>
-<p>Although the vector structure in R and the list structure in Python looks similar regarding their usages and purposes, the implementation of these two structures are essentially different. The list structure in Python is mutable. A mutable object can be changed after it is created, but an immutable object can&#8217;t. However, the mutability of vector in R is a bit of complicated. If we change the value of an element in a vector without changing the type of the element, the vector is mutable. If we change an element to another type, the behavior of the vector is immutable. A variable itself is a reference or pointer to an object (usually stored in the machine&#8217;s memory). To check the mutability of a variable, we can trace the memory address.</p>
-<div class="codewrapper">
-<div class="codeleft">
-<language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">)</span>
-<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span> <span class="c1"># print the memory address of x whenever the address changes</span>
-<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7ff360c95c08&gt;&quot;</span>
-<span class="lineno">4 </span><span class="o">&gt;</span> x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=-</span>x<span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="c1"># type not changed, i.e., from integer to integer</span>
-<span class="lineno">5 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7ff360c95c08&gt;&quot;</span>
-<span class="lineno">7 </span><span class="o">&gt;</span> x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span><span class="m">-1.0</span>
-<span class="lineno">8 </span><span class="kp">tracemem</span><span class="p">[</span><span class="mh">0x7ff360c95c08</span> <span class="o">-&gt;</span> <span class="mh">0x7ff3604692d8</span><span class="p">]</span><span class="o">:</span> </code></pre></figure></div>
-<div class="coderight">
-<language>Python</language>
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1001</span><span class="p">))</span> <span class="c1"># list() convert a range object to a list</span>
-<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="c1"># print the memory address of x</span>
-<span class="lineno">3 </span><span class="s1">&#39;0x10592d908&#39;</span>
-<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mf">1.0</span> <span class="c1"># from integer to float</span>
-<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-<span class="lineno">6 </span><span class="s1">&#39;0x10592d908&#39;</span></code></pre></figure></div>
-</div>
-<p>From the code snippet above, in Python the memory address doesn&#8217;t change after we change the value of the first element because list in Python is mutable. When we try to modify the value of <code>x[1]</code> in R, the memory address of <code>x</code> doesn&#8217;t change. (you probably would see different addresses on your machine). But when we change the value of <code>x[1]</code> from the integer type to a double type, the memory address got changed. It&#8217;s worth noting since R 3.5 arithmetic sequences created by <code>1:n, seq_along</code>, and the like now use compact internal representations via the <span class="caps">ALTREP</span> framework<sup class="footnote" id="fnr4"><a href="#fn4">4</a></sup>. Let&#8217;s the example below.</p>
-<div class="codewrapper">
-<div class="codeleft">
-<language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span><span class="o">:</span><span class="m">3</span>
-<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828e84c110&gt;&quot;</span>
-<span class="lineno">4 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>x<span class="p">))</span>
-<span class="lineno">5 </span><span class="o">@</span><span class="m">7</span>f828e84c110 <span class="m">13</span> INTSXP g0c0 <span class="p">[</span>NAM<span class="p">(</span><span class="m">3</span><span class="p">),</span>TR<span class="p">]</span>  <span class="m">1</span> <span class="o">:</span> <span class="m">3</span> <span class="p">(</span>compact<span class="p">)</span>
-<span class="lineno">6 </span><span class="o">&gt;</span> x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span><span class="m">2L</span>
-<span class="lineno">7 </span><span class="kp">tracemem</span><span class="p">[</span><span class="mh">0x7f828e84c110</span> <span class="o">-&gt;</span> <span class="mh">0x7f828fe49848</span><span class="p">]</span><span class="o">:</span> </code></pre></figure></div>
-<div class="coderight">
-<language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">)</span>
-<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828fe498c8&gt;&quot;</span>
-<span class="lineno">4 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>x<span class="p">))</span>
-<span class="lineno">5 </span><span class="o">@</span><span class="m">7</span>f828fe498c8 <span class="m">13</span> INTSXP g0c2 <span class="p">[</span>NAM<span class="p">(</span><span class="m">1</span><span class="p">),</span>TR<span class="p">]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
-<span class="lineno">6 </span><span class="o">&gt;</span> x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span><span class="m">2L</span>
-<span class="lineno">7 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828fe498c8&gt;&quot;</span></code></pre></figure></div>
-</div>
 <p>Two or multiple vectors/lists can be concatenated easily.</p>
 <div class="codewrapper">
 <div class="codeleft">
@@ -691,19 +649,7 @@ The default values of <code>start</code> and <code>step</code> are 0 and 1, resp
 <span class="lineno">10 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">last</span>
 <span class="lineno">11 </span><span class="mi">6</span>
 <span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
-<span class="lineno">13 </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span></code></pre></figure><p>Is there any immutable data structure in Python? Yes, for example tuple is immutable, which contains a sequence of elements. The element accessing and subset slicing of tuple is following the same rules of list in Python.</p>
-<language>Python</language>
-<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,)</span> <span class="c1"># use () to create a tuple in Python, it is better to always put a comma in the end</span>
-<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno"> 3 </span><span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">tuple</span><span class="s1">&#39;&gt;</span>
-<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="lineno"> 5 </span><span class="mi">3</span>
-<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="lineno"> 7 </span><span class="mi">1</span>
-<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=-</span><span class="mi">1</span>
-<span class="lineno"> 9 </span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-<span class="lineno">10 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-<span class="lineno">11 </span><span class="ne">TypeError</span><span class="p">:</span> <span class="s1">&#39;tuple&#39;</span> <span class="nb">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">support</span> <span class="n">item</span> <span class="n">assignment</span></code></pre></figure><p>I like the list structure in Python much more than the vector structure in R. list in Python has a lot more useful features which can be found from the python official documentation<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>.</p>
+<span class="lineno">13 </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span></code></pre></figure><p>I like the list structure in Python much more than the vector structure in R. list in Python has a lot more useful features which can be found from the python official documentation<sup class="footnote" id="fnr5"><a href="#fn5">5</a></sup>.</p>
 <h3>array</h3>
 <p>Array is one of the most important data structures in scientific programming. In R, there is also an object type &#8220;matrix&#8221;, but according to my own experience, we can almost ignore its existence and use array instead. We can definitely use list as array in Python, but lots of linear algebra operations are not supported for the list type. Fortunately, there is a Python package <code>numpy</code> off the shelf.</p>
 <language>R</language>
@@ -836,22 +782,7 @@ The default values of <code>start</code> and <code>step</code> are 0 and 1, resp
 <span class="lineno">11 </span><span class="o">&gt;</span> x<span class="p">[[</span><span class="m">2</span><span class="p">]]</span>
 <span class="lineno">12 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;hello world!&quot;</span>
 <span class="lineno">13 </span><span class="o">&gt;</span> <span class="kp">length</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">14 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span></code></pre></figure><p>The mutability of the list structure in R is similar to the vector structure. The difference is that when we change the type of an element in a list, the memory address doesn&#8217;t change in general.</p>
-<language>R</language>
-<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">list</span><span class="p">(</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span><span class="s">&#39;Hello World!&#39;</span><span class="p">)</span>
-<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno"> 3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828fe497c8&gt;&quot;</span>
-<span class="lineno"> 4 </span><span class="o">&gt;</span> x<span class="p">[[</span><span class="m">1</span><span class="p">]]</span><span class="o">=</span><span class="m">1.0</span>
-<span class="lineno"> 5 </span><span class="o">&gt;</span> x<span class="p">[[</span><span class="m">2</span><span class="p">]]</span><span class="o">=</span><span class="m">2.0</span>
-<span class="lineno"> 6 </span><span class="o">&gt;</span> x
-<span class="lineno"> 7 </span><span class="p">[[</span><span class="m">1</span><span class="p">]]</span>
-<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
-<span class="lineno"> 9 </span>
-<span class="lineno">10 </span><span class="p">[[</span><span class="m">2</span><span class="p">]]</span>
-<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span>
-<span class="lineno">12 </span>
-<span class="lineno">13 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
-<span class="lineno">14 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828fe497c8&gt;&quot;</span></code></pre></figure><p>list in R could be named and support accessing by name via either <code>[[]]</code> or <code>$</code> operator. But vector in R can also be named and support accessing by name.</p>
+<span class="lineno">14 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span></code></pre></figure><p>list in R could be named and support accessing by name via either <code>[[]]</code> or <code>$</code> operator. But vector in R can also be named and support accessing by name.</p>
 <language>R</language>
 <figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="o">=</span><span class="m">1</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="o">=</span><span class="m">2</span><span class="p">)</span>
 <span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kp">names</span><span class="p">(</span>x<span class="p">)</span>
@@ -934,6 +865,309 @@ The default values of <code>start</code> and <code>step</code> are 0 and 1, resp
 <span class="lineno">16 </span>       <span class="p">[</span> <span class="mf">0.01540508</span><span class="p">,</span>  <span class="mf">0.63556266</span><span class="p">,</span>  <span class="mf">0.16800583</span><span class="p">,</span>  <span class="mf">0.17594448</span><span class="p">],</span>
 <span class="lineno">17 </span>       <span class="p">[</span><span class="o">-</span><span class="mf">1.21598262</span><span class="p">,</span>  <span class="mf">0.52860817</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.61757696</span><span class="p">,</span>  <span class="mf">0.18445057</span><span class="p">]])</span></code></pre></figure><p>In general, operations on an array/matrix is much faster than that on a data frame. In R, we may use the built-in function <code>data.matrix</code> to convert a data.frame to an array/matrix. In Python, we could use the function <code>asarray</code> in <code>numpy</code> module.</p>
 <p>Although data.frame is a built-in type, it is not quite efficient for many operations. I would suggest to use data.table<sup class="footnote" id="fnr8"><a href="#fn8">8</a></sup> whenever possible. dplyr<sup class="footnote" id="fnr9"><a href="#fn9">9</a></sup> is also a very popular package in R for data manipulation. Many good online resources are available online to learn data.table and pandas.</p>
+<h2 id="revisit">Revisit of variables</h2>
+<p>We have talked about variables and functions so far. When a function has a name, its name is also a valid variable. After all, what is a variable?</p>
+<p>In mathematics, a variable is a symbol that represents an element, and we do not care whether we conceptualize a variable in our mind, or write it down on a paper. However, in programming a variable is not only a symbol. We have to understand that a variable is a name given to a memory location in computer systems. When we run <code>x=2</code> in R or Python, somewhere in memory has the value 2, and the variable (name) points to this memory address. If we further run <code>y=x</code>, the variable <code>y</code> points to the same memory location pointed to by <code>x</code>. What if we run <code>x=3</code>? It doesn&#8217;t modify the memory which stores the value <code>2</code>. Instead, somewhere in the memory now has the value 3 and this memory location has a name <code>x</code>. And the variable <code>y</code> is not affected at all, as well as the memory location it points to.</p>
+<h3>Mutability</h3>
+<p>Almost everything in R or Python is an object, including these data structures we introduced in previous sections. Mutability is a property of objects, not variables, because a variable is just a name.</p>
+<p>A list in Python is mutable meaning that we could change the elements stored in the list object without copying the list object from one memory location to another. We can use the <code>id</code> function in Python to check the memory location for a variable. In the code below, we modified the first element of the list object with name <code>x</code>. And since Python list is mutable, the memory address of the list doesn&#8217;t change.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1001</span><span class="p">))</span> <span class="c1"># list() convert a range object to a list</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="c1"># print the memory address of x</span>
+<span class="lineno">3 </span><span class="s1">&#39;0x10592d908&#39;</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mf">1.0</span> <span class="c1"># from integer to float</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="lineno">6 </span><span class="s1">&#39;0x10592d908&#39;</span></code></pre></figure><p>Is there any immutable data structure in Python? Yes, for example tuple is immutable, which contains a sequence of elements. The element accessing and subset slicing of tuple is following the same rules of list in Python.</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,)</span> <span class="c1"># use () to create a tuple in Python, it is better to always put a comma in the end</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">tuple</span><span class="s1">&#39;&gt;</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="mi">3</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="lineno"> 7 </span><span class="mi">1</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=-</span><span class="mi">1</span>
+<span class="lineno"> 9 </span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+<span class="lineno">10 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="lineno">11 </span><span class="ne">TypeError</span><span class="p">:</span> <span class="s1">&#39;tuple&#39;</span> <span class="nb">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">support</span> <span class="n">item</span> <span class="n">assignment</span></code></pre></figure><p>If we have two Python variables pointed to the same memory, when we modify the memory via one variable the other is also affected as we expect (see the example below).</p>
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="mi">4535423616</span>
+<span class="lineno"> 4 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y</span><span class="o">=</span><span class="n">x</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="mi">4535459104</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="mi">4535459104</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+<span class="lineno">12 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno">13 </span><span class="mi">4535459104</span>
+<span class="lineno">14 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">15 </span><span class="mi">4535459104</span>
+<span class="lineno">16 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
+<span class="lineno">17 </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="lineno">18 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y</span>
+<span class="lineno">19 </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span></code></pre></figure><p>In contrast, the mutability of vector in R is more complex and sometimes confusing. First, let&#8217;s see the behavior when there is a single name given to the vector object stored in memory.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> a<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>a<span class="p">))</span>
+<span class="lineno">3 </span><span class="o">@</span><span class="m">7</span>fe94408f3c8 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">1</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno">4 </span><span class="o">&gt;</span> a<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span><span class="m">0</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>a<span class="p">))</span>
+<span class="lineno">6 </span><span class="o">@</span><span class="m">7</span>fe94408f3c8 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">1</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">0</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span></code></pre></figure><p>It is clear in this case the vector object is mutable since the memory address doesn&#8217;t change after the modification. What if there is an additional name given to the memory?</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> a<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> b<span class="o">=</span>a
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>a<span class="p">))</span>
+<span class="lineno"> 4 </span><span class="o">@</span><span class="m">7</span>fe94408f238 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">2</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>b<span class="p">))</span>
+<span class="lineno"> 6 </span><span class="o">@</span><span class="m">7</span>fe94408f238 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">2</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> a<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span><span class="m">0</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>a<span class="p">))</span>
+<span class="lineno"> 9 </span><span class="o">@</span><span class="m">7</span>fe94408f0a8 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">1</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">0</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>b<span class="p">))</span>
+<span class="lineno">11 </span><span class="o">@</span><span class="m">7</span>fe94408f238 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">2</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> a
+<span class="lineno">13 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0</span> <span class="m">2</span> <span class="m">3</span>
+<span class="lineno">14 </span><span class="o">&gt;</span> b
+<span class="lineno">15 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span> <span class="m">2</span> <span class="m">3</span></code></pre></figure><p>Before the modification, both variable <code>a</code> and <code>b</code> point to the same vector object in the memory. But surprisingly, after the modification the memory address of variable <code>a</code> also changed, which is called &#8220;copy on modify&#8221; in R. And because of this unique behavior, the modification of <code>a</code> doesn&#8217;t affect the object stored in the old memory and thus the vector object is immutable in this case. The mutability of R <code>list</code> is similar to that of R <code>vector</code>.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span> <span class="c1"># print the memory address of x whenever the address changes</span>
+<span class="lineno">3 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7ff360c95c08&gt;&quot;</span>
+<span class="lineno">4 </span><span class="o">&gt;</span> x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=-</span>x<span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="c1"># type not changed, i.e., from integer to integer</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7ff360c95c08&gt;&quot;</span>
+<span class="lineno">7 </span><span class="o">&gt;</span> x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span><span class="m">-1.0</span>
+<span class="lineno">8 </span><span class="kp">tracemem</span><span class="p">[</span><span class="mh">0x7ff360c95c08</span> <span class="o">-&gt;</span> <span class="mh">0x7ff3604692d8</span><span class="p">]</span><span class="o">:</span> </code></pre></figure><h3>Variable as function argument</h3>
+<p>Most of functions/methods in R and Python take some variables as argument. What happens when we pass the variables into a function?</p>
+<p>In Python, the variable, i.e., the name of the object is passed into a function. If the variable points to an immutable object, any modification to the variable, i.e., the name doesn&#8217;t persist. However, when the variable points to a mutable object, the modification of the object stored in memory persist. Let&#8217;s see the examples below.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno"> 2 </span><span class="o">...</span>   <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="lineno"> 3 </span><span class="o">...</span>   <span class="n">x</span><span class="o">-=</span><span class="mi">1</span>
+<span class="lineno"> 4 </span><span class="o">...</span>   <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="lineno"> 5 </span><span class="o">...</span>   <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">=</span><span class="mi">1</span>
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="lineno"> 8 </span><span class="mi">4531658512</span>
+<span class="lineno"> 9 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="lineno">10 </span><span class="mi">4531658512</span>
+<span class="lineno">11 </span><span class="mi">4531658480</span>
+<span class="lineno">12 </span><span class="mi">0</span>
+<span class="lineno">13 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
+<span class="lineno">14 </span><span class="mi">1</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="lineno"> 2 </span><span class="o">...</span>   <span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">...</span>   <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-=</span><span class="mi">1</span>
+<span class="lineno"> 4 </span><span class="o">...</span>   <span class="nb">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="lineno"> 6 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="lineno"> 7 </span><span class="mi">4535423616</span>
+<span class="lineno"> 8 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="mi">4535423616</span>
+<span class="lineno">10 </span><span class="mi">4535423616</span>
+<span class="lineno">11 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
+<span class="lineno">12 </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span></code></pre></figure></div>
+</div>
+<p>We see that the object is passed into function by its name. If the object is immutable, a new copy is created in memory when any modification is made to the original object. When the object is immutable, no new copy is made and the thus the change persists out of the function.</p>
+<p>In R, the passed object is always copied on a modification inside the function, and thus no modification can be made on the original object in memory.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> f<span class="o">=</span><span class="kr">function</span><span class="p">(</span>x<span class="p">){</span>
+<span class="lineno"> 2 </span><span class="o">+</span>   <span class="kp">print</span><span class="p">(</span><span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>x<span class="p">)))</span>
+<span class="lineno"> 3 </span><span class="o">+</span>   x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">=</span>x<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="m">-1</span>
+<span class="lineno"> 4 </span><span class="o">+</span>   <span class="kp">print</span><span class="p">(</span><span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>x<span class="p">)))</span>
+<span class="lineno"> 5 </span><span class="o">+</span>   <span class="kp">print</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno"> 6 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> 
+<span class="lineno"> 8 </span><span class="o">&gt;</span> a<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">)</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="m">.</span>Internal<span class="p">(</span>inspect<span class="p">(</span>a<span class="p">))</span>
+<span class="lineno">10 </span><span class="o">@</span><span class="m">7</span>fe945538688 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">1</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno">11 </span><span class="o">&gt;</span> f<span class="p">(</span>a<span class="p">)</span>
+<span class="lineno">12 </span><span class="o">@</span><span class="m">7</span>fe945538688 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">3</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno">13 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span> <span class="m">2</span> <span class="m">3</span>
+<span class="lineno">14 </span><span class="o">@</span><span class="m">7</span>fe945538598 <span class="m">14</span> REALSXP g0c3 <span class="p">[</span>NAM<span class="p">(</span><span class="m">1</span><span class="p">)]</span> <span class="p">(</span>len<span class="o">=</span><span class="m">3</span><span class="p">,</span> tl<span class="o">=</span><span class="m">0</span><span class="p">)</span> <span class="m">0</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span>
+<span class="lineno">15 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0</span> <span class="m">2</span> <span class="m">3</span>
+<span class="lineno">16 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">0</span> <span class="m">2</span> <span class="m">3</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> a
+<span class="lineno">18 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span> <span class="m">2</span> <span class="m">3</span></code></pre></figure><p>People may argue that R functions are not as flexible as Python functions. However, it makes more sense to do functional programming in R since we usually can&#8217;t modify object passed into a function.</p>
+<h3>Scope of variables</h3>
+<p>What is the scope of a variable and why does it matter? Let&#8217;s first have a look at the code snippets below.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> var_func_1 <span class="o">=</span> <span class="kr">function</span><span class="p">(){</span><span class="kp">print</span><span class="p">(</span>x<span class="p">)}</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> var_func_1<span class="p">()</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> var_func_2 <span class="o">=</span> <span class="kr">function</span><span class="p">(){</span>x<span class="o">=</span>x<span class="m">+1</span><span class="p">;</span> <span class="kp">print</span><span class="p">(</span>x<span class="p">)}</span>
+<span class="lineno">6 </span><span class="o">&gt;</span> var_func_2<span class="p">()</span>
+<span class="lineno">7 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span>
+<span class="lineno">8 </span><span class="o">&gt;</span> x
+<span class="lineno">9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno"> 1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="mi">1</span>
+<span class="lineno"> 2 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">var_func_1</span><span class="p">():</span><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="lineno"> 3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">var_func_1</span><span class="p">()</span>
+<span class="lineno"> 4 </span><span class="mi">1</span>
+<span class="lineno"> 5 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">var_func_2</span><span class="p">():</span><span class="n">x</span><span class="o">+=</span><span class="mi">1</span>
+<span class="lineno"> 6 </span><span class="o">...</span> 
+<span class="lineno"> 7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">var_func_2</span><span class="p">()</span>
+<span class="lineno"> 8 </span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+<span class="lineno"> 9 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="lineno">10 </span>  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="n">var_func_2</span>
+<span class="lineno">11 </span><span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s1">&#39;x&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span></code></pre></figure></div>
+</div>
+<p>The results of the code above seem strange before knowing the concept of variable scope. Inside a function, a variable may refer to a function argument/parameter or it could be formally declared inside the function which is called a local variable. But in the code above, <code>x</code> is neither a function argument nor a local variable. How does the <code>print()</code> function know where the identifier <code>x</code> points to?</p>
+<p>The scope of a variable determines where the variable is available/accessible (can be referenced). Both R and Python apply lexical/static scoping for variables, which set the scope of a variable based on the structure of the program. In static scoping, when an &#8216;unknown&#8217; variable referenced, the function will try to find it from the most closely enclosing block. That explains how the <code>print()</code> function could find the variable <code>x</code>.</p>
+<p>In the R code above, <code>x=x+1</code> the first <code>x</code> is a local variable created by the <code>=</code> operator; the second <code>x</code> is referenced inside the function so the static scoping rule applies. As a result, a local variable <code>x</code> which is equal to 2 is created, which is independent with the <code>x</code> outside of the function <code>var_func_2()</code>. However, in Python when a variable is assigned a value in a statement the variable would treated as a local variable and that explains the <code>UnboundLocalError</code>.</p>
+<p>Is it possible to change a variable inside a function which is declared outside the function without passing it as an argument? Based on the static scoping rule only, it&#8217;s impossible. But there are workarounds in both R/Python. In R, we need the help of environment; and in Python we can use the keyword <code>global</code>.</p>
+<p>So what is an environment in R? An environment is a place where objects are stored. When we invoke the interactive R session, an environment named as <code>.GlobalEnv</code> is created automatically. We can also use the function <code>environment()</code> to get the present environment. The <code>ls()</code> function can take an environment as the argument to list all objects inside the environment.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kp">typeof</span><span class="p">(</span><span class="m">.</span>GlobalEnv<span class="p">)</span>
+<span class="lineno"> 2 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;environment&quot;</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> <span class="kp">environment</span><span class="p">()</span>
+<span class="lineno"> 4 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> R_GlobalEnv<span class="o">&gt;</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span>
+<span class="lineno"> 6 </span><span class="o">&gt;</span> <span class="kp">ls</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno"> 7 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;x&quot;</span>
+<span class="lineno"> 8 </span><span class="o">&gt;</span> env_func_1<span class="o">=</span><span class="kr">function</span><span class="p">(</span>x<span class="p">){</span>
+<span class="lineno"> 9 </span><span class="o">+</span>   y<span class="o">=</span>x<span class="m">+1</span>
+<span class="lineno">10 </span><span class="o">+</span>   <span class="kp">print</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno">11 </span><span class="o">+</span>   <span class="kp">ls</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno">12 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno">13 </span><span class="o">&gt;</span> env_func_1<span class="p">(</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">14 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> <span class="mh">0x7fc59d165a20</span><span class="o">&gt;</span>
+<span class="lineno">15 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;x&quot;</span> <span class="s">&quot;y&quot;</span>
+<span class="lineno">16 </span><span class="o">&gt;</span> env_func_2<span class="o">=</span><span class="kr">function</span><span class="p">(){</span><span class="kp">print</span><span class="p">(</span><span class="kp">environment</span><span class="p">())}</span>
+<span class="lineno">17 </span><span class="o">&gt;</span> env_func_2<span class="p">()</span>
+<span class="lineno">18 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> <span class="mh">0x7fc59d16f520</span><span class="o">&gt;</span></code></pre></figure><p>The above code shows that each function has its own environment containing all function arguments and local variables declared inside the function. In order to change a variable declared outside of a function, we need the access of the environment enclosing the variable to change. There is a function <code>parent_env(e)</code> that returns the parent environment of the given environment <code>e</code> in R. Using this function, we are able to change the value of <code>x</code> declared in <code>.GlobalEnv</code> inside a function which is also declared in <code>.GlobalEnv</code>. The <code>global</code> keyword in Python works in a totally different way, which is simple but less flexible.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="m">1</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> env_func_3<span class="o">=</span><span class="kr">function</span><span class="p">(){</span>
+<span class="lineno">3 </span><span class="o">+</span>   cur_env<span class="o">=</span><span class="kp">environment</span><span class="p">()</span>
+<span class="lineno">4 </span><span class="o">+</span>   par_env<span class="o">=</span><span class="kp">parent.env</span><span class="p">(</span>cur_env<span class="p">)</span>
+<span class="lineno">5 </span><span class="o">+</span>   par_env<span class="o">$</span>x<span class="o">=</span><span class="m">2</span>
+<span class="lineno">6 </span><span class="o">+</span> <span class="p">}</span>
+<span class="lineno">7 </span><span class="o">&gt;</span> env_func_3<span class="p">()</span>
+<span class="lineno">8 </span><span class="o">&gt;</span> x
+<span class="lineno">9 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">env_func_3</span><span class="p">():</span>
+<span class="lineno">2 </span><span class="o">...</span>   <span class="k">global</span> <span class="n">x</span>
+<span class="lineno">3 </span><span class="o">...</span>   <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="lineno">4 </span><span class="o">...</span> 
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="o">=</span><span class="mi">1</span>
+<span class="lineno">6 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">env_func_3</span><span class="p">()</span>
+<span class="lineno">7 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
+<span class="lineno">8 </span><span class="mi">2</span></code></pre></figure></div>
+</div>
+<p>I seldomly use the <code>global</code> keyword in Python, if any. But the environment in R could be very handy in some occasions. In R, environment could be used as a purely mutable version of the <code>list</code> data structure.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="c1"># list is not purely mutable</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kt">list</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f829183f6f8&gt;&quot;</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> x<span class="o">$</span>a<span class="o">=</span><span class="m">2</span>
+<span class="lineno">6 </span><span class="o">&gt;</span> <span class="kp">tracemem</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">7 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;&lt;0x7f828f4d05c8&gt;&quot;</span></code></pre></figure></div>
+<div class="coderight">
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="c1"># environment is purely mutable</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> x<span class="o">=</span><span class="kp">new.env</span><span class="p">()</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> x
+<span class="lineno">4 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> <span class="mh">0x7f8290aee7e8</span><span class="o">&gt;</span>
+<span class="lineno">5 </span><span class="o">&gt;</span> x<span class="o">$</span>a<span class="o">=</span><span class="m">2</span>
+<span class="lineno">6 </span><span class="o">&gt;</span> x
+<span class="lineno">7 </span><span class="o">&lt;</span><span class="kp">environment</span><span class="o">:</span> <span class="mh">0x7f8290aee7e8</span><span class="o">&gt;</span></code></pre></figure></div>
+</div>
+<p>Actually, the object of an R6 class type is also an environment.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno">1 </span><span class="o">&gt;</span> <span class="c1"># load the Complex class that we defined in chapter 1</span>
+<span class="lineno">2 </span><span class="o">&gt;</span> x <span class="o">=</span> Complex<span class="o">$</span>new<span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="o">&gt;</span> <span class="kp">typeof</span><span class="p">(</span>x<span class="p">)</span>
+<span class="lineno">4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;environment&quot;</span></code></pre></figure><p>In Python, we can assign values to multiple variables in one line.</p>
+<div class="codewrapper">
+<div class="codeleft">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="c1"># list is not purely mutable</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span><span class="mi">2</span>
+<span class="lineno">3 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
+<span class="lineno">4 </span><span class="mi">1</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">y</span>
+<span class="lineno">6 </span><span class="mi">2</span></code></pre></figure></div>
+<div class="coderight">
+<language>Python</language>
+<figure class="highlight"><pre><code class="language-python3" data-lang="python3"><span></span><span class="lineno">1 </span><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">2 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">3 </span><span class="mi">1</span> <span class="mi">2</span>
+<span class="lineno">4 </span><span class="o">&gt;&gt;&gt;</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">5 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">6 </span><span class="mi">1</span> <span class="mi">2</span>
+<span class="lineno">7 </span><span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="lineno">8 </span><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="lineno">9 </span><span class="mi">1</span> <span class="mi">2</span></code></pre></figure></div>
+</div>
+<p>Even though in the left snippet above there aren&#8217;t parentheses embracing <code>1, 2</code> after the <code>=</code> operator, a tuple is created first and then the tuple is unpacked and assigned to <code>x,y</code>. Such mechanism doesn&#8217;t exist in R, but we can define our own multiple assignment operator with the help of environment.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="sb">`%=%`</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>left<span class="p">,</span> right<span class="p">)</span> <span class="p">{</span>
+<span class="lineno"> 2 </span>  <span class="c1"># we require the RHS to be a list strictly</span>
+<span class="lineno"> 3 </span>  <span class="kp">stopifnot</span><span class="p">(</span><span class="kp">is.list</span><span class="p">(</span>right<span class="p">))</span>
+<span class="lineno"> 4 </span>  <span class="c1"># dest_env is the desitination environment enclosing the variables on LHS</span>
+<span class="lineno"> 5 </span>  dest_env <span class="o">=</span> <span class="kp">parent.env</span><span class="p">(</span><span class="kp">environment</span><span class="p">())</span>
+<span class="lineno"> 6 </span>  left <span class="o">=</span> <span class="kp">substitute</span><span class="p">(</span>left<span class="p">)</span>
+<span class="lineno"> 7 </span>
+<span class="lineno"> 8 </span>  recursive_assign <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>left<span class="p">,</span> right<span class="p">,</span> dest_env<span class="p">)</span> <span class="p">{</span>
+<span class="lineno"> 9 </span>    <span class="kr">if</span> <span class="p">(</span><span class="kp">length</span><span class="p">(</span>left<span class="p">)</span> <span class="o">==</span> <span class="m">1</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno">10 </span>      <span class="kp">assign</span><span class="p">(</span>x <span class="o">=</span> <span class="kp">deparse</span><span class="p">(</span>left<span class="p">),</span>
+<span class="lineno">11 </span>             value <span class="o">=</span> right<span class="p">,</span>
+<span class="lineno">12 </span>             envir <span class="o">=</span> dest_env<span class="p">)</span>
+<span class="lineno">13 </span>      <span class="kr">return</span><span class="p">()</span>
+<span class="lineno">14 </span>    <span class="p">}</span>
+<span class="lineno">15 </span>    <span class="kr">if</span> <span class="p">(</span><span class="kp">length</span><span class="p">(</span>left<span class="p">)</span> <span class="o">!=</span> <span class="kp">length</span><span class="p">(</span>right<span class="p">)</span> <span class="o">+</span> <span class="m">1</span><span class="p">)</span> <span class="p">{</span>
+<span class="lineno">16 </span>      <span class="kp">stop</span><span class="p">(</span><span class="s">&quot;LHS and RHS must have the same shapes&quot;</span><span class="p">)</span>
+<span class="lineno">17 </span>    <span class="p">}</span>
+<span class="lineno">18 </span>
+<span class="lineno">19 </span>    <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">2</span><span class="o">:</span><span class="kp">length</span><span class="p">(</span>left<span class="p">))</span> <span class="p">{</span>
+<span class="lineno">20 </span>      recursive_assign<span class="p">(</span>left<span class="p">[[</span>i<span class="p">]],</span> right<span class="p">[[</span>i <span class="o">-</span> <span class="m">1</span><span class="p">]],</span>  dest_env<span class="p">)</span>
+<span class="lineno">21 </span>    <span class="p">}</span>
+<span class="lineno">22 </span>  <span class="p">}</span>
+<span class="lineno">23 </span>
+<span class="lineno">24 </span>  recursive_assign<span class="p">(</span>left<span class="p">,</span> right<span class="p">,</span> dest_env<span class="p">)</span>
+<span class="lineno">25 </span><span class="p">}</span></code></pre></figure><p>Before going into the script deeper, first let&#8217;s see the usage of the multiple assignment operator we defined.</p>
+<language>R</language>
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span></span><span class="lineno"> 1 </span><span class="o">&gt;</span> <span class="kn">source</span><span class="p">(</span><span class="s">&#39;multi_assignment.R&#39;</span><span class="p">)</span>
+<span class="lineno"> 2 </span><span class="o">&gt;</span> <span class="kt">c</span><span class="p">(</span>x<span class="p">,</span>y<span class="p">,</span>z<span class="p">)</span> <span class="o">%=%</span> <span class="kt">list</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="s">&quot;Hello World!&quot;</span><span class="p">,</span><span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">))</span>
+<span class="lineno"> 3 </span><span class="o">&gt;</span> x
+<span class="lineno"> 4 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno"> 5 </span><span class="o">&gt;</span> y
+<span class="lineno"> 6 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;Hello World!&quot;</span>
+<span class="lineno"> 7 </span><span class="o">&gt;</span> z
+<span class="lineno"> 8 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">2</span> <span class="m">3</span>
+<span class="lineno"> 9 </span><span class="o">&gt;</span> <span class="kt">list</span><span class="p">(</span>a<span class="p">,</span>b<span class="p">)</span> <span class="o">%=%</span> <span class="kt">list</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="kp">as.Date</span><span class="p">(</span><span class="s">&#39;2019-01-01&#39;</span><span class="p">))</span>
+<span class="lineno">10 </span><span class="o">&gt;</span> a
+<span class="lineno">11 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="m">1</span>
+<span class="lineno">12 </span><span class="o">&gt;</span> b
+<span class="lineno">13 </span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="s">&quot;2019-01-01&quot;</span></code></pre></figure><p>In the <code>\%=\%</code> operator defined above, we used two functions <code>substitute, deparse</code> which are very powerful but less known by R novices. To better understand these functions as well as some other less known R functions, the Rchaeology<sup class="footnote" id="fnr19"><a href="#fn19">19</a></sup> tutorial is worth reading.</p>
+<p>It is also interesting to see that we defined the function <code>recursive_assign</code> inside the <code>\%=\%</code> function. Both R and Python support the concept of first class functions. More specifically, a function in R/Python is an object, which can be</p>
+<ul>
+	<li>stored as a variable;</li>
+	<li>passed as a function argument;</li>
+	<li>returned from a function.</li>
+</ul>
+<p>The essential idea behind the <code>recursive_assign</code> function is a depth-first search (<span class="caps">DFS</span>), which is a fundamental graph traversing algorithm<sup class="footnote" id="fnr20"><a href="#fn20">20</a></sup>. In the context of the <code>recursive_assign</code> function, we use <span class="caps">DFS</span> to traverse the parse tree of the <code>left</code> argument created by calling <code>substitute(left)</code>.</p>
 <h2 id="oop">Object-oriented programming (<span class="caps">OOP</span>) in R/Python</h2>
 <p>All the codes we wrote above follow the procedural programming paradigm<sup class="footnote" id="fnr10"><a href="#fn10">10</a></sup>. We can also do functional programming (FP) and <span class="caps">OOP</span> in R/Python. In this section, let&#8217;s focus on <span class="caps">OOP</span> in R/Python.</p>
 <p>Class is the key concept in <span class="caps">OOP</span>. In R there are two commonly used built-in systems to define classes, i.e., S3 and S4. In addition, there is an external package R6<sup class="footnote" id="fnr11"><a href="#fn11">11</a></sup> which defines R6 classes. S3 is a light-weight system but its style is quite different from <span class="caps">OOP</span> in many other programming languages. S4 system follows the principles of modern object oriented programming much better than S3. However, the usage of S4 classes is quite tedious. I would ignore S3/S4 and introduce R6, which is more close to the class in Python.</p>
@@ -1142,6 +1376,8 @@ Within the <span class="caps">ASCII</span> range (U+0001..U+007F), the valid cha
 <p class="footnote" id="fn16"><a href="#fnr16"><sup>16</sup></a> https://cran.r-project.org/doc/manuals/r-release/R-lang.html\#Identifiers</p>
 <p class="footnote" id="fn17"><a href="#fnr17"><sup>17</sup></a> https://packaging.python.org/tutorials/installing-packages</p>
 <p class="footnote" id="fn18"><a href="#fnr18"><sup>18</sup></a> https://google.github.io/styleguide/Rguide.xml</p>
+<p class="footnote" id="fn19"><a href="#fnr19"><sup>19</sup></a> https://en.wikipedia.org/wiki/Depth-first\_search</p>
+<p class="footnote" id="fn20"><a href="#fnr20"><sup>20</sup></a> https://cran.r-project.org/web/packages/rockchalk/vignettes/Rchaeology.pdf</p>
     </div> <!-- /container-fluid -->
     <!-- Footer -->
 <div id="footer">
