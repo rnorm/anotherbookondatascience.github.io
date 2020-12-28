@@ -865,7 +865,7 @@ Considering the importance of vectorization in scientific programming, let&#8217
 <span class="lineno"> 3 </span>
 <span class="lineno"> 4 </span><span class="c1">// [[Rcpp::export]]</span>
 <span class="lineno"> 5 </span><span class="kt">int</span> <span class="nf">Fibonacci</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
-<span class="lineno"> 6 </span>  <span class="k">if</span> <span class="p">(</span><span class="n">n</span><span class="o">==</span><span class="mi">1</span> <span class="n">or</span> <span class="n">n</span><span class="o">==</span><span class="mi">2</span><span class="p">){</span>
+<span class="lineno"> 6 </span>  <span class="k">if</span> <span class="p">(</span><span class="n">n</span><span class="o">==</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">n</span><span class="o">==</span><span class="mi">2</span><span class="p">){</span>
 <span class="lineno"> 7 </span>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
 <span class="lineno"> 8 </span>  <span class="p">}</span> 
 <span class="lineno"> 9 </span>  <span class="k">return</span> <span class="n">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">Fibonacci</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">);</span>
